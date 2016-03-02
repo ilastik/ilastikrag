@@ -1,25 +1,14 @@
 import os
 import tempfile
 from collections import OrderedDict
-import numpy as np
-import vigra
-import nose
 
-try:
-    import pandas as pd
-    _has_pandas = True
-except ImportError:
-    # For now, pandas is optional, but Rag doesn't work without it.
-    _has_pandas = False
-else:
-    from lazyflow.utility.rag import Rag
+import numpy as np
+import pandas as pd
+import vigra
+
+from ilastikrag import Rag
 
 class TestRag(object):
-    
-    @classmethod
-    def setupClass(cls):
-        if not _has_pandas:
-            raise nose.SkipTest
     
     def generate_superpixels(self, shape, num_sp):
         """

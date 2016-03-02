@@ -1,4 +1,5 @@
 from itertools import izip, imap
+
 import numpy as np
 import pandas as pd
 import vigra
@@ -6,8 +7,8 @@ import vigra
 import logging
 logger = logging.getLogger(__name__)
 
-from sp_utils import label_vol_mapping, edge_mask_for_axis, edge_ids_for_axis, \
-                     unique_edge_labels, extract_edge_values_for_axis, nonzero_coord_array
+from .util import label_vol_mapping, edge_mask_for_axis, edge_ids_for_axis, \
+                  unique_edge_labels, extract_edge_values_for_axis, nonzero_coord_array
 
 class Rag(object):
     """

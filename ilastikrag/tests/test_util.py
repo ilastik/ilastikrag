@@ -1,6 +1,6 @@
 import numpy as np
 
-from ilastikrag.sp_utils import label_vol_mapping
+from ilastikrag.util import label_vol_mapping
 
 def test_label_vol_mapping():
     # 1 2

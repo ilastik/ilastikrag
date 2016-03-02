@@ -7,9 +7,7 @@
 *.backup
 build
 dist
-lazyflow.egg-info
+ilastikrag.egg-info
 *.*~
 *.jpg
 *.swp
-
-lazyflow/drtile/drtile.pyd

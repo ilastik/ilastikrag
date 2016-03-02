@@ -429,20 +429,20 @@ class Rag(object):
         vigra_feature_names: Feature names exactly as passed to vigra.analysis.extractRegionFeatures()
         """
         for feature_name in vigra_feature_names:
-           for nonsupported_name in ('coord', 'region'):
-               # We can't use vigra to compute coordinate-based features because 
-               # we've already flattened the edge pixels into a 1D array.
-               # However, the coordinates are already recorded in the axial_edge_df,
-               # so it would be easy to compute RegionRadii directly, without vigra.
-               assert nonsupported_name not in feature_name.lower(), \
-                   "Coordinate-based edge features are not currently supported!"
+            for nonsupported_name in ('coord', 'region'):
+                # We can't use vigra to compute coordinate-based features because 
+                # we've already flattened the edge pixels into a 1D array.
+                # However, the coordinates are already recorded in the axial_edge_df,
+                # so it would be easy to compute RegionRadii directly, without vigra.
+                assert nonsupported_name not in feature_name.lower(), \
+                    "Coordinate-based edge features are not currently supported!"
 
         # Must extract all edge values first,
         # so we can compute a global histogram_range
         all_edge_values = []
         for axis, axial_edge_df in enumerate(self.axial_edge_dfs):
             logger.debug("Axis {}: Extracting values...".format( axis ))
-            mask_coords = tuple(series.values for k,series in axial_edge_df['mask_coord'].iteritems())
+            mask_coords = tuple(series.values for _,series in axial_edge_df['mask_coord'].iteritems())
             all_edge_values.append( extract_edge_values_for_axis(axis, mask_coords, value_img) )
 
         # Now pre-compute histogram_range
@@ -703,7 +703,7 @@ class Rag(object):
         # Edge DFs
         rag.axial_edge_dfs =[]
         axial_df_parent_group = h5py_group['axial_edge_dfs']
-        for groupname, df_group in sorted(axial_df_parent_group.items()):
+        for _, df_group in sorted(axial_df_parent_group.items()):
             rag.axial_edge_dfs.append( Rag.dataframe_from_hdf5(df_group) )
 
         # Final lookup DF
@@ -764,6 +764,7 @@ class Rag(object):
         Not tested with more complicated DataFrame structures. 
         """
         from numpy import array # We use eval() for the column index, which uses 'array'
+        array # Avoid linter usage errors
         row_index_values = h5py_group['row_index'][:]
         column_index_names = list(eval(h5py_group['column_index'][()]))
         if isinstance(column_index_names[0], np.ndarray):

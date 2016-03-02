@@ -1,0 +1,15 @@
+.project
+.pydevproject
+#KDevelop project files
+*.kdev4
+*.pyc
+*.pyo
+*.backup
+build
+dist
+lazyflow.egg-info
+*.*~
+*.jpg
+*.swp
+
+lazyflow/drtile/drtile.pyd

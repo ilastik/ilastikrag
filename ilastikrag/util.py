@@ -3,8 +3,9 @@ import pandas as pd
 
 def contingency_table(vol1, vol2, maxlabels=None):
     """
-    Return a 2D array 'table' such that table[i,j] represents
-    the count of overlapping pixels with value i in vol1 and value j in vol2. 
+    Return a 2D array 'table' such that ``table[i,j]`` represents
+    the count of overlapping pixels with value ``i`` in ``vol1``
+    and value ``j`` in ``vol2``. 
     """
     maxlabels = maxlabels or (vol1.max(), vol2.max())
     table = np.zeros( (maxlabels[0]+1, maxlabels[1]+1), dtype=np.uint32 )
@@ -15,12 +16,15 @@ def contingency_table(vol1, vol2, maxlabels=None):
 
 def label_vol_mapping(vol_from, vol_to):
     """
-    Determine how remap voxel IDs in vol_from into corresponding
-    IDs in vol_to, according to maxiumum overlap.
+    Determine how remap voxel IDs in ``vol_from`` into corresponding
+    IDs in ``vol_to``, according to maxiumum overlap.
     (Note that this is not a commutative operation.)
     
-    Returns: A 1D index array such that mapping[i] = j, where i
-             is a voxel ID in vol_from, and j is the corresponding ID in vol_to.
+    Returns
+    -------
+        A 1D index array such that ``mapping[i] = j``, where ``i``
+        is a voxel ID in ``vol_from``, and ``j`` is the corresponding
+        ID in ``vol_to``.
     """
     table = contingency_table(vol_from, vol_to)
     mapping = np.argmax(table, axis=1)
@@ -31,7 +35,7 @@ def edge_mask_for_axis( label_img, axis ):
     Find all supervoxel edges along the given axis and return
     a 'left-hand' mask indicating where the edges are located
     (i.e. a boolean array indicating voxels that are just to the left of an edge).
-    Note that this mask is less wide (by 1 pixel) than label_img along the chosen axis.
+    Note that this mask is less wide (by 1 pixel) than ``label_img`` along the chosen axis.
     """
     if axis < 0:
         axis += label_img.ndim
@@ -50,12 +54,15 @@ def edge_ids_for_axis(label_img, edge_mask, axis):
     """
     Given an 'left-hand' edge_mask indicating where edges are located along the given axis,
     return an array of of edge ids (u,v) corresonding to the voxel ids of every voxel under the mask,
-    in the same order as mask.nonzero().
+    in the same order as ``edge_mask.nonzero()``.
     
-    The edge ids returned in scan-order (i.e. like .nonzero()), but are *not* sorted such that u < v.
+    The edge ids returned in scan-order (i.e. like ``.nonzero()``), but are *not* sorted such that u < v.
     Instead, each edge id (u,v) is ordered from 'left' to 'right'.
-    
-    Do get sorted ids, call edge_ids.sort(axis=1)
+
+    Returns
+    -------
+        ``ndarray`` of ``edge_ids``, ``shape=(N,2)``
+        To sort each pair, call ``edge_ids.sort(axis=1)``
     """
     if axis < 0:
         axis += label_img.ndim
@@ -79,10 +86,10 @@ def edge_ids_for_axis(label_img, edge_mask, axis):
 
 def unique_edge_labels( all_edge_ids ):
     """
-    Given a *list* of edge_id arrays (each of which has shape (N,2))
-    Merge all edge_id arrays into a single pandas.DataFrame with
-    columns ['sp1', 'sp2', and 'edge_label], where `edge_label`
-    is a unique ID number for each edge_id pair.
+    Given a *list* of ``edge_id`` arrays (each of which has shape ``(N,2)``),
+    merge all ``edge_id`` arrays into a single ``pandas.DataFrame`` with
+    columns ``['sp1', 'sp2', and 'edge_label']``, where ``edge_label``
+    is a unique ID number for each ``edge_id`` pair.
     (The DataFrame will have no duplicate entries.)
     """
     all_dfs = []
@@ -111,8 +118,8 @@ def unique_edge_labels( all_edge_ids ):
 
 def extract_edge_values_for_axis( axis, edge_mask, value_img ):
     """
-    Returns 1D ndarray, in the same order as edge_mask.nonzero().
-    Result is float32, regardless of value_img.dtype
+    Returns 1D ``ndarray``, in the same order as ``edge_mask.nonzero()``.
+    Result is ``float32``, regardless of ``value_img.dtype``.
     """
     left_slicing = ((slice(None),) * axis) + (np.s_[:-1],)
     right_slicing = ((slice(None),) * axis) + (np.s_[1:],)
@@ -138,7 +145,7 @@ def extract_edge_values_for_axis( axis, edge_mask, value_img ):
 def get_edge_ids( label_img ):
     """
     Convenience function.
-    Returns a DataFrame with columns ['sp1', 'sp2', 'edge_label'], sorted by ('sp1', 'sp2')
+    Returns a DataFrame with columns ``['sp1', 'sp2', 'edge_label']``, sorted by ``('sp1', 'sp2')``.
     """
     all_edge_ids = []
     for axis in range(label_img.ndim):
@@ -152,11 +159,12 @@ def get_edge_ids( label_img ):
 
 def nonzero_coord_array(a):
     """
-    Equivalent to np.transpose(a.nonzero()), but much
+    Equivalent to ``np.transpose(a.nonzero())``, but much
     faster for large arrays, thanks to a little trick:
-    The elements of the tuple returned by a.nonzero() share a common base,
+    
+    The elements of the tuple returned by ``a.nonzero()`` share a common ``base``,
     so we can avoid the copy that would normally be incurred when
-    calling transpose() on the tuple.
+    calling ``transpose()`` on the tuple.
     """
     base_array = a.nonzero()[0].base
     

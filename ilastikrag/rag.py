@@ -17,37 +17,64 @@ class Rag(object):
     Initialized with an ND label image of superpixels, and stores
     the edges between superpixels.
 
+    ..
+       (The following |br| definition is the only way
+       I can force numpydoc to display explicit newlines...) 
+    
+    .. |br| raw:: html
+    
+       <br />
+
     Attributes
     ----------
-    label_img: The label volume
+
+    label_img
+        The label volume you passed in.
+
+    sp_ids
+        1D ndarray of superpixel ID values, sorted.
+
+    max_sp
+        The maximum superpixel ID in the label volume
+
+    num_sp
+        The number of superpixels in ``label_img``. |br|
+        Not necessarily the same as max_sp.
     
-    sp_ids: 1D ndarray of (possibly non-consecutive) superpixel ID values, sorted.
+    num_edges
+        The number of edges in the label volume.
 
-    max_sp: The maximum superpixel ID in the label volume
-
-    num_sp: The number of superpixels in the volume.
-            Not necessarily the same as max_sp.
+    edge_ids
+        *ndarray, shape=(N,2)* |br|
+        List of adjacent superpixel IDs, sorted. |br|
+        Guarantee: For all edge_ids (u,v), u < v. |br|
+        (No duplicates.)
     
-    num_edges: The number of edges in the label volume.
+    edge_label_lookup_df
+        *pandas.DataFrame* |br|
+        Columns: ``[sp1, sp2, edge_label]``, where ``edge_label`` |br|
+        uniquely identifies each edge ``(sp1, sp2)``.
+        
 
-    edge_ids: ndarray of adjacent superpixel IDs, shape=(num_edges, 2). Sorted.
-              Guarantee: For all edge_ids (u,v), u < v.
+    """
     
-    edge_label_lookup_df: A pandas DataFrame listing pairs of adjacent superpixels 
-                          and a column of uint32 values to uniquely identify each edge.
-                          Columns: 'sp1', 'sp2', 'edge_label'
-                          (No duplicate rows.)
-
-    axial_edge_dfs: (Mostly for internal use.)
-                    A list of pandas DataFrames (one per axis).
-                    Each DataFrame stores the list of all pixel edge pairs
-                    in the volume along a particular axis.
-                    Columns: ['sp1', 'sp2', 'forwardness', 'edge_label', 'mask_coord']
-                        'forwardness': True if sp1 < sp2, otherwise False.
-                        'edge_label': A uint32 that uniquely identifies this (sp1,sp2) pair, regardless of axis.
-                        'mask_coord': N columns (e.g. 'z', 'y', 'x') using a multi-level index.
-                                      Stores coordinates of pixel just to the 'left' of
-                                      each pixel edge (or 'before', 'above', etc. depending on the axis).
+    ##
+    ## ADDITIONAL DEVELOPER DOCUMENTATION
+    ##
+    """
+    Internal Attributes
+    -------------------
+    axial_edge_dfs
+        (Mostly for internal use.)
+        A list of pandas DataFrames (one per axis).
+        Each DataFrame stores the list of all pixel edge pairs
+        in the volume along a particular axis.
+        Columns: ['sp1', 'sp2', 'forwardness', 'edge_label', 'mask_coord']
+                  'forwardness': True if sp1 < sp2, otherwise False.
+                  'edge_label': A uint32 that uniquely identifies this (sp1,sp2) pair, regardless of axis.
+                  'mask_coord': N columns (e.g. 'z', 'y', 'x') using a multi-level index.
+                                Stores coordinates of pixel just to the 'left' of
+                                each pixel edge (or 'before', 'above', etc. depending on the axis).
 
     Implementation notes
     --------------------
@@ -116,9 +143,12 @@ class Rag(object):
         
         Parameters
         ----------
-        label_img: ND label volume.
-                   Label values do not need to be consecutive, but *excessively* high label values
-                   will require extra RAM when computing features, due to zeros in the RegionFeatureAccumulators.
+        
+        label_img
+            *VigraArray* |br|
+            Label values do not need to be consecutive, but *excessively* high label values
+            will require extra RAM when computing features, due to zeros stored
+            within ``RegionFeatureAccumulators``.
         """
         if isinstance(label_img, str) and label_img == '__will_deserialize__':
             return
@@ -210,6 +240,9 @@ class Rag(object):
             self.axial_edge_dfs.append( axial_edge_df )
 
     def _init_sp_attributes(self):
+        """
+        Compute and store our properties for sp_ids, num_sp, max_sp
+        """
         # Cache the unique sp ids to expose as an attribute
         unique_left = self._final_edge_label_lookup_df['sp1'].unique()
         unique_right = self._final_edge_label_lookup_df['sp2'].unique()
@@ -251,40 +284,43 @@ class Rag(object):
 
     def compute_highlevel_features(self, value_img, highlevel_feature_names):
         """
-        The primary API function for computing features.
-        Returns a pandas DataFrame with columns ['sp1', 'sp2', ...output feature names...]
+        The primary API function for computing features. |br|
+        Returns a pandas DataFrame with columns ``['sp1', 'sp2', ...output feature names...]``
         
         Parameters
         ----------
-        value_img: ND array, same shape as self.label_img.
-                   Pixel values are converted to float32 internally.
+        value_img
+            *VigraArray*, same shape as ``self.label_img``. |br|
+            Pixel values are converted to ``float32`` internally.
         
-        highlevel_feature_names: A list of feaature names to compute.
-                                 All features are computed with the vigra RegionFeatureAccumulators library.
-                                 
-                                 Names must begin with a prefix of either 'edge_' or 'sp_' indicating whether
-                                 the feature is to be computed on the edge-adjacent pixels themselves, or over
-                                 the entire superpixels adjacent to the edges.
-                                 
-                                 Additionally, quantile features must have a suffix to indicate which quantile
-                                 value to extract, e.g. '_25'.
-                                 
-                                 Coordinate-based features (such as RegionAxes) are not supported.
-                                 With minor changes, we could support them for superpixels.
-                                 Supporting them for edge features would require significant changes,
-                                 but would be possible (at a cost).
+        highlevel_feature_names:
+            A list of feaature names to compute.
+            All features are computed with the vigra RegionFeatureAccumulators library.
+            
+            Names must begin with a prefix of either ``edge_`` or ``sp_`` indicating whether
+            the feature is to be computed on the edge-adjacent pixels themselves, or over
+            the entire superpixels adjacent to the edges.
+            
+            Additionally, quantile features must have a suffix to indicate which quantile
+            value to extract, e.g. ``_25``.
+            
+            Coordinate-based features (such as RegionAxes) are not supported.
+            With minor changes, we could support them for superpixels.
+            Supporting them for edge features would require significant changes,
+            but would be possible (at a cost).
 
-                                SUPPORTED FEATURE NAMES:
-                                
-                                (edge_|sp_) + ( count|sum|minimum|maximum|mean|variance|kurtosis|skewness
-                                                |quantiles_10|quantiles_25|quantiles_50|quantiles_75|quantiles_90 )
-                                For example: highlevel_features = ['edge_count', 'edge_mean', 'sp_quantiles_75']
-                                
-                                All 'sp' feature names result in *two* output columns, for the sum and difference
-                                between the two superpixels adjacent to the edge.
-                                
-                                As a special case, the 'sp_count' feature is reduced via cube-root (or square-root)
-                                (as done in the multicut paper). Same goes for the 'sp_sum' feature.
+            SUPPORTED FEATURE NAMES::
+           
+               (edge_ | sp_) + ( count|sum|minimum|maximum|mean|variance|kurtosis|skewness
+                                 |quantiles_10|quantiles_25|quantiles_50|quantiles_75|quantiles_90 )
+            
+            For example: highlevel_features = ``['edge_count', 'edge_mean', 'sp_quantiles_75']``
+           
+           All ``sp`` feature names result in *two* output columns, for the ``_sum`` and ``_difference``
+           between the two superpixels adjacent to the edge.
+           
+           As a special case, the ``sp_count`` feature is reduced via cube-root (or square-root)
+           (as done in the multicut paper).
         """
         assert hasattr(value_img, 'axistags'), \
             "For optimal performance, make sure value_img is a VigraArray with accurate axistags"
@@ -310,10 +346,10 @@ class Rag(object):
         indicating whether each edge in this RAG should be ON or OFF for best
         consistency with the groundtruth.
         
-        The result is returned in the same order as self.edge_ids.
+        The result is returned in the same order as ``self.edge_ids``.
         An OFF edge means that the two superpixels are merged in the reference volume.
         
-        If asdict=True, return the result as a dict of {(sp1, sp2) : bool}
+        If ``asdict=True``, return the result as a dict of ``{(sp1, sp2) : bool}``
         """
         sp_to_gt_mapping = label_vol_mapping(self._label_img, groundtruth_vol)
 
@@ -329,15 +365,17 @@ class Rag(object):
         Given a list of ON/OFF labels for the Rag edges, compute a new label volume in which
         all supervoxels with at least one inactive edge between them are merged together.
         
-        Requires networkx.
+        Requires ``networkx``.
         
         Parameters
         ----------
-        edge_decisions: 1D bool array of shape (N,), in the same order as self.edge_ids
-                        1 means "active", i.e. the two superpixels are separated across that edge, at least
-                        0 means "inactive", i.e. the two superpixels will be joined in the final result.
+        edge_decisions
+            1D bool array in the same order as ``self.edge_ids`` |br|
+            ``1`` means "active", i.e. the two superpixels are separated across that edge, at least. |br|
+            ``0`` means "inactive", i.e. the two superpixels will be joined in the final result. |br|
     
-        out: Optional. Must be same shape as self.dtype, but may have different dtype.
+        out
+            Optional. Must be same shape as ``self.label_img``, but may have different ``dtype``.
         """
         import networkx as nx
         assert out is None or hasattr(out, 'axistags'), \
@@ -399,10 +437,12 @@ class Rag(object):
         
         Parameters
         ----------
-        value_img: ND array, same shape as self.label_img.
-                   Pixel values are converted to float32 internally.
+        value_img
+            VigraArray, same shape as self.label_img.
+            Pixel values are converted to float32 internally.
         
-        generic_vigra_feature_names: See feature naming convention notes in source comments above.
+        generic_vigra_feature_names
+            See feature naming convention notes in source comments above.
         """
         vigra_feature_names = Rag._process_generic_vigra_feature_names(generic_vigra_feature_names)
 
@@ -423,10 +463,12 @@ class Rag(object):
         
         Parameters
         ----------
-        value_img: ND array, same shape as self.label_img.
-                   Pixel values are converted to float32 internally.
+        value_img
+            ND array, same shape as self.label_img.
+            Pixel values are converted to float32 internally.
         
-        vigra_feature_names: Feature names exactly as passed to vigra.analysis.extractRegionFeatures()
+        vigra_feature_names
+            Feature names exactly as passed to vigra.analysis.extractRegionFeatures()
         """
         for feature_name in vigra_feature_names:
             for nonsupported_name in ('coord', 'region'):
@@ -482,10 +524,12 @@ class Rag(object):
         
         Parameters
         ----------
-        value_img: ND array, same shape as self.label_img.
-                   Pixel values are converted to float32 internally.
+        value_img
+            *VigraArray*, same shape as ``self.label_img``. |br|
+            Pixel values are converted to float32 internally.
         
-        generic_vigra_feature_names: See feature naming convention notes in source comments above.
+        generic_vigra_feature_names
+            See feature naming convention notes in source comments above.
         """
         if not generic_vigra_feature_names:
             # No superpixel features requested. We're done.
@@ -534,13 +578,17 @@ class Rag(object):
         
         Parameters
         ----------
-        generic_vigra_feature_names: See feature naming convention notes in source comments above.
+        generic_vigra_feature_names
+            See feature naming convention notes in source comments above.
 
-        acc: A RegionFeatureAccumulator from which to extract the specified features.
+        acc
+            A RegionFeatureAccumulator from which to extract the specified features.
 
-        df: A pandas.DataFrame to append the features to
+        df
+            A pandas.DataFrame to append the features to
 
-        output_prefix: Prefix column names with the given string.  Must be either 'edge_' or 'sp_'.
+        output_prefix
+            Prefix column names with the given string.  Must be either 'edge_' or 'sp_'.
         """
         assert output_prefix in ('edge_', 'sp_')
         # Add a column for each feature we'll need
@@ -570,20 +618,24 @@ class Rag(object):
 
         Parameters
         ----------
-        edge_df: The dataframe with edge features.
-                 First columns must be 'sp1', 'sp2'.
-                 len(edge_df) == self.num_edges
+        edge_df
+            The dataframe with edge features.
+            First columns must be 'sp1', 'sp2'.
+            len(edge_df) == self.num_edges
                  
-        sp_df: The dataframe with raw superpixel features.
-               First column must be 'sp_id'.
-               len(sp_df) == self.num_sp
+        sp_df
+            The dataframe with raw superpixel features.
+            First column must be 'sp_id'.
+            len(sp_df) == self.num_sp
 
-        generic_vigra_features: Superpixel feature names without 'sp_' prefix or '_sp1' suffix,
-                                 but possibly with quantile suffix, e.g. '_25'.
-                                 See feature naming convention notes above for details.
+        generic_vigra_features
+            Superpixel feature names without 'sp_' prefix or '_sp1' suffix,
+            but possibly with quantile suffix, e.g. '_25'.
+            See feature naming convention notes above for details.
         
-        ndim: The dimensionality of the original label volume (an integer).
-              Used to normalize the 'count' and 'sum' features.
+        ndim
+            The dimensionality of the original label volume (an integer).
+            Used to normalize the 'count' and 'sum' features.
         """
         # Add two columns to the edge_df for every sp_df column (for sp1 and sp2)
         # note: pd.merge() is like a SQL 'join' operation.
@@ -657,20 +709,33 @@ class Rag(object):
         """
         Serialize the Rag to the given hdf5 group.
 
-        store_labels: If True, the labels will be stored as a (compressed) h5py Dataset.
-                      If False, the labels are *not* stored, but you are responsible 
-                      for loading them separately when calling dataframe_to_hdf5(),
-                      unless you don't plan to use superpixel features.
+        Parameters
+        ----------
+        h5py_group
+            *h5py.Group* |br|
+            Where to store the data. Should not hold any other data.
+            
+        store_labels
+            If True, the labels will be stored as a (compressed) h5py Dataset. |br|
+            If False, the labels are *not* stored, but you are responsible |br|
+            for loading them separately when calling _dataframe_to_hdf5(), |br|
+            unless you don't plan to use superpixel features.
+        
+        compression
+            Passed directly to ``h5py.Group.create_dataset``.
+        
+        compression_opts
+            Passed directly to ``h5py.Group.create_dataset``.
         """
         # Edge DFs
         axial_df_parent_group = h5py_group.create_group('axial_edge_dfs')
         for axis, axial_edge_df in enumerate(self.axial_edge_dfs):
             df_group = axial_df_parent_group.create_group('{}'.format(axis))
-            Rag.dataframe_to_hdf5(df_group, axial_edge_df)
+            Rag._dataframe_to_hdf5(df_group, axial_edge_df)
 
         # Final lookup DF
         lookup_df_group = h5py_group.create_group('final_edge_label_lookup_df')
-        Rag.dataframe_to_hdf5(lookup_df_group, self._final_edge_label_lookup_df)
+        Rag._dataframe_to_hdf5(lookup_df_group, self._final_edge_label_lookup_df)
 
         # label_img metadata
         labels_dset = h5py_group.create_dataset('label_img',
@@ -692,11 +757,12 @@ class Rag(object):
         """
         Classmethod.
         
-        Deserialize the Rag from the given h5py group,
-        which was written via Rag.serialize_to_hdf5.
+        Deserialize the Rag from the given ``h5py.Group``,
+        which was written via ``Rag.serialize_to_hdf5()``.
 
-        label_img: If not None, don't load labels from hdf5, use this volume instead.
-                   Useful for when serialize_hdf5() was called with store_labels=False. 
+        label_img
+            If not ``None``, don't load labels from hdf5, use this volume instead.
+            Useful for when ``serialize_hdf5()`` was called with ``store_labels=False``. 
         """
         rag = Rag('__will_deserialize__')
         
@@ -704,10 +770,10 @@ class Rag(object):
         rag.axial_edge_dfs =[]
         axial_df_parent_group = h5py_group['axial_edge_dfs']
         for _, df_group in sorted(axial_df_parent_group.items()):
-            rag.axial_edge_dfs.append( Rag.dataframe_from_hdf5(df_group) )
+            rag.axial_edge_dfs.append( Rag._dataframe_from_hdf5(df_group) )
 
         # Final lookup DF
-        rag._final_edge_label_lookup_df = Rag.dataframe_from_hdf5( h5py_group['final_edge_label_lookup_df'] )
+        rag._final_edge_label_lookup_df = Rag._dataframe_from_hdf5( h5py_group['final_edge_label_lookup_df'] )
         
         # label_img
         label_dset = h5py_group['label_img']
@@ -733,7 +799,7 @@ class Rag(object):
         return rag
 
     @classmethod
-    def dataframe_to_hdf5(cls, h5py_group, df):
+    def _dataframe_to_hdf5(cls, h5py_group, df):
         """
         Helper function to serialize a pandas.DataFrame to an h5py.Group.
 
@@ -751,10 +817,10 @@ class Rag(object):
             columns_group['{:03}'.format(col_index)] = df[col_name].values
 
     @classmethod
-    def dataframe_from_hdf5(cls, h5py_group):
+    def _dataframe_from_hdf5(cls, h5py_group):
         """
         Helper function to deserialize a pandas.DataFrame from an h5py.Group,
-        as written by Rag.dataframe_to_hdf5().
+        as written by Rag._dataframe_to_hdf5().
 
         Note: This function uses a custom storage format,
               not the same format as pandas.read_hdf().
@@ -787,8 +853,8 @@ class Rag(object):
 
     class _EmptyLabels(object):
         """
-        A little stand-in for a labels object, in case the user wants
-        to deserialize the Rag without a copy of the original labels.
+        A little stand-in object for a missing labels array, in case the user
+        wants to deserialize the Rag without a copy of the original labels.
         All functions in Rag can work with this object, except for
         SP computation, which needs the original label image.
         """

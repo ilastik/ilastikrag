@@ -38,24 +38,22 @@ class Rag(object):
         The maximum superpixel ID in the label volume
 
     num_sp
-        The number of superpixels in ``label_img``. |br|
+        The number of superpixels in ``label_img``.                    |br|
         Not necessarily the same as max_sp.
     
     num_edges
         The number of edges in the label volume.
 
     edge_ids
-        *ndarray, shape=(N,2)* |br|
-        List of adjacent superpixel IDs, sorted. |br|
-        Guarantee: For all edge_ids (u,v), u < v. |br|
+        *ndarray, shape=(N,2)*                                         |br|
+        List of adjacent superpixel IDs, sorted.                       |br|
+        Guarantee: For all edge_ids (u,v), u < v.                      |br|
         (No duplicates.)
     
     edge_label_lookup_df
-        *pandas.DataFrame* |br|
-        Columns: ``[sp1, sp2, edge_label]``, where ``edge_label`` |br|
+        *pandas.DataFrame*                                             |br|
+        Columns: ``[sp1, sp2, edge_label]``, where ``edge_label``      |br|
         uniquely identifies each edge ``(sp1, sp2)``.
-        
-
     """
     
     ##
@@ -139,13 +137,11 @@ class Rag(object):
 
     def __init__( self, label_img ):
         """
-        Constructor.
-        
         Parameters
         ----------
         
         label_img
-            *VigraArray* |br|
+            *VigraArray*  |br|
             Label values do not need to be consecutive, but *excessively* high label values
             will require extra RAM when computing features, due to zeros stored
             within ``RegionFeatureAccumulators``.
@@ -290,7 +286,7 @@ class Rag(object):
         Parameters
         ----------
         value_img
-            *VigraArray*, same shape as ``self.label_img``. |br|
+            *VigraArray*, same shape as ``self.label_img``.         |br|
             Pixel values are converted to ``float32`` internally.
         
         highlevel_feature_names:
@@ -370,12 +366,12 @@ class Rag(object):
         Parameters
         ----------
         edge_decisions
-            1D bool array in the same order as ``self.edge_ids`` |br|
-            ``1`` means "active", i.e. the two superpixels are separated across that edge, at least. |br|
-            ``0`` means "inactive", i.e. the two superpixels will be joined in the final result. |br|
+            1D bool array in the same order as ``self.edge_ids``                        |br|
+            ``1`` means "active", i.e. the SP are separated across that edge, at least. |br|
+            ``0`` means "inactive", i.e. the SP will be joined in the final result.     |br|
     
         out
-            Optional. Must be same shape as ``self.label_img``, but may have different ``dtype``.
+            Optional. Same shape as ``self.label_img``, but may have different ``dtype``.
         """
         import networkx as nx
         assert out is None or hasattr(out, 'axistags'), \
@@ -484,7 +480,7 @@ class Rag(object):
         all_edge_values = []
         for axis, axial_edge_df in enumerate(self.axial_edge_dfs):
             logger.debug("Axis {}: Extracting values...".format( axis ))
-            mask_coords = tuple(series.values for _,series in axial_edge_df['mask_coord'].iteritems())
+            mask_coords = tuple(series.values for _colname, series in axial_edge_df['mask_coord'].iteritems())
             all_edge_values.append( extract_edge_values_for_axis(axis, mask_coords, value_img) )
 
         # Now pre-compute histogram_range
@@ -525,7 +521,7 @@ class Rag(object):
         Parameters
         ----------
         value_img
-            *VigraArray*, same shape as ``self.label_img``. |br|
+            *VigraArray*, same shape as ``self.label_img``.     |br|
             Pixel values are converted to float32 internally.
         
         generic_vigra_feature_names
@@ -712,13 +708,13 @@ class Rag(object):
         Parameters
         ----------
         h5py_group
-            *h5py.Group* |br|
+            *h5py.Group*                                                       |br|
             Where to store the data. Should not hold any other data.
             
         store_labels
             If True, the labels will be stored as a (compressed) h5py Dataset. |br|
-            If False, the labels are *not* stored, but you are responsible |br|
-            for loading them separately when calling _dataframe_to_hdf5(), |br|
+            If False, the labels are *not* stored, but you are responsible     |br|
+            for loading them separately when calling _dataframe_to_hdf5(),     |br|
             unless you don't plan to use superpixel features.
         
         compression
@@ -758,6 +754,8 @@ class Rag(object):
         Deserialize the Rag from the given ``h5py.Group``,
         which was written via ``Rag.serialize_to_hdf5()``.
 
+        Parameters
+        ----------
         label_img
             If not ``None``, don't load labels from hdf5, use this volume instead.
             Useful for when ``serialize_hdf5()`` was called with ``store_labels=False``. 
@@ -767,7 +765,7 @@ class Rag(object):
         # Edge DFs
         rag.axial_edge_dfs =[]
         axial_df_parent_group = h5py_group['axial_edge_dfs']
-        for _, df_group in sorted(axial_df_parent_group.items()):
+        for _name, df_group in sorted(axial_df_parent_group.items()):
             rag.axial_edge_dfs.append( Rag._dataframe_from_hdf5(df_group) )
 
         # Final lookup DF
@@ -842,7 +840,7 @@ class Rag(object):
 
         columns_group = h5py_group['columns']
         col_values = []
-        for _, col_values_dset in sorted(columns_group.items()):
+        for _name, col_values_dset in sorted(columns_group.items()):
             col_values.append( col_values_dset[:] )
         
         return pd.DataFrame( index=row_index_values,
@@ -881,7 +879,7 @@ class Rag(object):
             except AttributeError:
                 self._raise_NotImplemented()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     import sys
     logger.addHandler( logging.StreamHandler(sys.stdout) )
     logger.setLevel(logging.DEBUG)

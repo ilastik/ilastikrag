@@ -22,9 +22,9 @@ def label_vol_mapping(vol_from, vol_to):
     
     Returns
     -------
-        A 1D index array such that ``mapping[i] = j``, where ``i``
-        is a voxel ID in ``vol_from``, and ``j`` is the corresponding
-        ID in ``vol_to``.
+    A 1D index array such that ``mapping[i] = j``, where ``i``
+    is a voxel ID in ``vol_from``, and ``j`` is the corresponding
+    ID in ``vol_to``.
     """
     table = contingency_table(vol_from, vol_to)
     mapping = np.argmax(table, axis=1)
@@ -52,7 +52,7 @@ def edge_mask_for_axis( label_img, axis ):
 
 def edge_ids_for_axis(label_img, edge_mask, axis):
     """
-    Given an 'left-hand' edge_mask indicating where edges are located along the given axis,
+    Given a 'left-hand' edge_mask indicating where edges are located along the given axis,
     return an array of of edge ids (u,v) corresonding to the voxel ids of every voxel under the mask,
     in the same order as ``edge_mask.nonzero()``.
     
@@ -61,8 +61,8 @@ def edge_ids_for_axis(label_img, edge_mask, axis):
 
     Returns
     -------
-        ``ndarray`` of ``edge_ids``, ``shape=(N,2)``
-        To sort each pair, call ``edge_ids.sort(axis=1)``
+    ``ndarray`` of ``edge_ids``, ``shape=(N,2)``
+    To sort each pair, call ``edge_ids.sort(axis=1)``
     """
     if axis < 0:
         axis += label_img.ndim

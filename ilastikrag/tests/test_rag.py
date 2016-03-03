@@ -74,7 +74,7 @@ class TestRag(object):
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
 
         # sp count features are normalized, consistent with the multicut paper.
-        for index, sp1, sp2, sp_count_sum, sp_count_difference in features_df.itertuples():
+        for _index, sp1, sp2, sp_count_sum, sp_count_difference in features_df.itertuples():
             assert sp_count_sum == np.power(sp_counts[sp1] + sp_counts[sp2], 1./superpixels.ndim)
             assert sp_count_difference == np.power(np.abs(sp_counts[sp1] - sp_counts[sp2]), 1./superpixels.ndim)
 
@@ -85,7 +85,7 @@ class TestRag(object):
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
 
         # sp sum features ought to be normalized, too...
-        for index, sp1, sp2, sp_sum_sum, sp_sum_difference in features_df.itertuples():
+        for _index, sp1, sp2, sp_sum_sum, sp_sum_difference in features_df.itertuples():
             assert sp_sum_sum == np.power(sp1*sp_counts[sp1] + sp2*sp_counts[sp2], 1./superpixels.ndim)
             assert sp_sum_difference == np.power(np.abs(sp1*sp_counts[sp1] - sp2*sp_counts[sp2]), 1./superpixels.ndim)
 
@@ -97,7 +97,7 @@ class TestRag(object):
 
         # No normalization for other features...
         # Should there be?
-        for index, sp1, sp2, sp_mean_sum, sp_mean_difference in features_df.itertuples():
+        for _index, sp1, sp2, sp_mean_sum, sp_mean_difference in features_df.itertuples():
             assert sp_mean_sum == sp1 + sp2
             assert sp_mean_difference == np.abs(np.float32(sp1) - sp2)
 

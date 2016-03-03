@@ -755,8 +755,6 @@ class Rag(object):
     @classmethod
     def deserialize_hdf5(cls, h5py_group, label_img=None):
         """
-        Classmethod.
-        
         Deserialize the Rag from the given ``h5py.Group``,
         which was written via ``Rag.serialize_to_hdf5()``.
 

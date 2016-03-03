@@ -34,6 +34,14 @@ dependencies:
           echo "Using cached Miniconda install";
       fi
 
+## Circle-ci checks out a "shallow" copy of the git repo,
+## but conda-build can't handle that.
+## Make it a full repo first.
+## (The source is cached, so it might not really be shallow. Ignore errors from git in that case.)
+checkout:
+  post:
+    - git fetch --unshallow || true
+
 ## Customize test commands
 test:
   override:

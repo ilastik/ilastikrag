@@ -37,4 +37,5 @@ dependencies:
 ## Customize test commands
 test:
   override:
+    - conda config --add channels ilastik
     - conda build conda-recipe

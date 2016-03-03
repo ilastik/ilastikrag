@@ -1,3 +1,8 @@
+general:
+  branches:
+    ignore:
+      - gh-pages # Don't test the gh-pages branch
+
 ## Customize the test machine
 machine:
   # Add some environment variables

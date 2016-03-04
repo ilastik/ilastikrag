@@ -9,6 +9,40 @@ from .vigra_util import get_vigra_feature_names, append_vigra_features_to_datafr
 logger = logging.getLogger(__name__)
 
 class VigraSpAccumulator(SpAccumulator):
+    """
+    Accumulator for features of the superpixels contents.
+    Uses vigra's RegionFeatureAccumulator library to compute the features.
+    
+    Supported feature names:
+    
+        - sp_vigra_count
+        - sp_vigra_sum
+        - sp_vigra_minimum
+        - sp_vigra_maximum
+        - sp_vigra_mean
+        - sp_vigra_variance
+        - sp_vigra_kurtosis
+        - sp_vigra_skewness
+        - sp_vigra_quantiles_0
+        - sp_vigra_quantiles_10
+        - sp_vigra_quantiles_25
+        - sp_vigra_quantiles_50
+        - sp_vigra_quantiles_75
+        - sp_vigra_quantiles_90
+        - sp_vigra_quantiles_100
+
+    Coordinate-based features (such as RegionAxes) are not supported yet.
+
+    All input feature names result in *two* output columns, for the ``_sum`` and ``_difference``
+    between the two superpixels adjacent to the edge.
+
+    As a special case, the output columns for the ``sp_count`` feature are 
+    reduced via cube-root (or square-root), as specified in the multicut paper.
+    """
+
+    ACCUMULATOR_TYPE = 'sp'
+    ACCUMULATOR_ID = 'vigra'
+
     def __init__(self, label_img, feature_names):
         self.cleanup() # Initialize members
         self._feature_names = feature_names
@@ -40,7 +74,7 @@ class VigraSpAccumulator(SpAccumulator):
         sp_df = pd.DataFrame({ 'sp_id' : np.arange(final_sp_acc.maxRegionLabel()+1, dtype=np.uint32) }, index=index_u32)
 
         # Add the vigra accumulator results to the SP dataframe
-        sp_df = append_vigra_features_to_dataframe(final_sp_acc, sp_df, self._vigra_feature_names, 'sp_')
+        sp_df = append_vigra_features_to_dataframe(final_sp_acc, sp_df, self._feature_names)
         
         # Combine SP features and append to the edge_df
         edge_df = self._append_sp_features_onto_edge_features( edge_df, sp_df )
@@ -48,6 +82,13 @@ class VigraSpAccumulator(SpAccumulator):
 
     def _accumulate_sp_vigra_features(self, label_block, value_block):
         """
+        Pass the given pixel data to vigra.extractRegionFeatures().
+        If this is the first block of data we've seen, store the histogram range
+        so that future blocks can use the same range (and thus the resulting 
+        accumulators can be merged).
+        
+        Returns: vigra.RegionFeatureAccumulator
+        
         Note: Here we flatten the arrays before passing them to vigra,
               so coordinate-based features won't work.
               This could be easiliy fixed by simply not flattening the arrays,
@@ -123,26 +164,26 @@ class VigraSpAccumulator(SpAccumulator):
     
         # Now create sum/difference columns
         for sp_feature in self._feature_names:
-            sp_feature_sum = ( edge_df['sp_' + sp_feature + '_sp1'].values
-                             + edge_df['sp_' + sp_feature + '_sp2'].values )
-            if sp_feature in ('count', 'sum'):
+            sp_feature_sum = ( edge_df[sp_feature + '_sp1'].values
+                             + edge_df[sp_feature + '_sp2'].values )
+            if sp_feature.endswith('_count') or sp_feature.endswith('_sum'):
                 # Special case for count
                 sp_feature_sum = np.power(sp_feature_sum,
                                           np.float32(1./self._ndim),
                                           out=sp_feature_sum)
-            edge_df['sp_' + sp_feature + '_sum'] = sp_feature_sum
+            edge_df[sp_feature + '_sum'] = sp_feature_sum
     
-            sp_feature_difference = ( edge_df['sp_' + sp_feature + '_sp1'].values
-                                    - edge_df['sp_' + sp_feature + '_sp2'].values )
+            sp_feature_difference = ( edge_df[sp_feature + '_sp1'].values
+                                    - edge_df[sp_feature + '_sp2'].values )
             sp_feature_difference = np.abs(sp_feature_difference, out=sp_feature_difference)
-            if sp_feature in ('count', 'sum'):
+            if sp_feature.endswith('_count') or sp_feature.endswith('_sum'):
                 sp_feature_difference = np.power(sp_feature_difference,
                                                  np.float32(1./self._ndim),
                                                  out=sp_feature_difference)
-            edge_df['sp_' + sp_feature + '_difference'] = sp_feature_difference
+            edge_df[sp_feature + '_difference'] = sp_feature_difference
     
             # Don't need these any more
-            del edge_df['sp_' + sp_feature + '_sp1']
-            del edge_df['sp_' + sp_feature + '_sp2']
+            del edge_df[sp_feature + '_sp1']
+            del edge_df[sp_feature + '_sp2']
         
         return edge_df

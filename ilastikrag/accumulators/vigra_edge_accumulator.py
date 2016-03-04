@@ -8,6 +8,32 @@ from .vigra_util import get_vigra_feature_names, append_vigra_features_to_datafr
 logger = logging.getLogger(__name__)
 
 class VigraEdgeAccumulator(EdgeAccumulator):
+    """
+    Accumulator for features of the edge pixels (only) between superpixels.
+    Uses vigra's RegionFeatureAccumulator library to compute the features.
+    
+    Supported feature names:
+    
+        - edge_vigra_count
+        - edge_vigra_sum
+        - edge_vigra_minimum
+        - edge_vigra_maximum
+        - edge_vigra_mean
+        - edge_vigra_variance
+        - edge_vigra_kurtosis
+        - edge_vigra_skewness
+        - edge_vigra_quantiles_0
+        - edge_vigra_quantiles_10
+        - edge_vigra_quantiles_25
+        - edge_vigra_quantiles_50
+        - edge_vigra_quantiles_75
+        - edge_vigra_quantiles_90
+        - edge_vigra_quantiles_100
+        
+    Coordinate-based features (such as RegionAxes) are not supported yet.
+    """
+    ACCUMULATOR_TYPE = 'edge'
+    ACCUMULATOR_ID = 'vigra'
     
     def __init__(self, label_img, feature_names):
         self.cleanup() # Initialize members
@@ -32,7 +58,7 @@ class VigraEdgeAccumulator(EdgeAccumulator):
             final_acc.merge( block_vigra_acc, axis_to_final_index_array )
         
         # Add the vigra accumulator results to the dataframe
-        edge_df = append_vigra_features_to_dataframe(final_acc, edge_df, self._feature_names, 'edge_')
+        edge_df = append_vigra_features_to_dataframe(final_acc, edge_df, self._feature_names)
         return edge_df
     
     def _accumulate_edge_vigra_features(self, axial_edge_dfs):
@@ -41,7 +67,9 @@ class VigraEdgeAccumulator(EdgeAccumulator):
         computed over the edge pixels of the given value_img.
 
         The accumulator's 'region' indexes will correspond to the 'edge_label'
-        column from the given DataFrames.        
+        column from the given DataFrames.
+        
+        If this is the first block of data we've seen, initialize the histogram range.
         """
         for feature_name in self._vigra_feature_names:
             for nonsupported_name in ('coord', 'region'):

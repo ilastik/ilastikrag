@@ -20,4 +20,5 @@ API Reference
    :maxdepth: 2
 
    rag
+   accumulators
    util

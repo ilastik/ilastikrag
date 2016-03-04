@@ -5,10 +5,19 @@
 Rag
 ---
 
+..
+   (The following |br| definition is the only way
+   I can force numpydoc to display explicit newlines...) 
+
+.. |br| raw:: html
+
+   <br />
+
 .. autoclass:: Rag
 
-   .. automethod:: __init__   
-   .. automethod:: compute_highlevel_features
+   .. automethod:: __init__
+   .. automethod:: compute_features
+   .. autoattribute:: axial_edge_dfs
    .. automethod:: edge_decisions_from_groundtruth
    .. automethod:: naive_segmentation_from_edge_decisions
    .. automethod:: serialize_hdf5

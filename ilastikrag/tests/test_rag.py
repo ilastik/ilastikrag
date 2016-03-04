@@ -68,9 +68,9 @@ class TestRag(object):
         sp_counts = np.bincount(superpixels.flat[:])
 
         # COUNT
-        features_df = rag.compute_features(values, ['sp_count'])
+        features_df = rag.compute_features(values, ['sp_vigra_count'])
         assert len(features_df) == len(rag.edge_ids)
-        assert (features_df.columns.values == ['sp1', 'sp2', 'sp_count_sum', 'sp_count_difference']).all()
+        assert (features_df.columns.values == ['sp1', 'sp2', 'sp_vigra_count_sum', 'sp_vigra_count_difference']).all()
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
 
         # sp count features are normalized, consistent with the multicut paper.
@@ -79,9 +79,9 @@ class TestRag(object):
             assert sp_count_difference == np.power(np.abs(sp_counts[sp1] - sp_counts[sp2]), 1./superpixels.ndim)
 
         # SUM
-        features_df = rag.compute_features(values, ['sp_sum'])
+        features_df = rag.compute_features(values, ['sp_vigra_sum'])
         assert len(features_df) == len(rag.edge_ids)
-        assert (features_df.columns.values == ['sp1', 'sp2', 'sp_sum_sum', 'sp_sum_difference']).all()
+        assert (features_df.columns.values == ['sp1', 'sp2', 'sp_vigra_sum_sum', 'sp_vigra_sum_difference']).all()
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
 
         # sp sum features ought to be normalized, too...
@@ -90,9 +90,9 @@ class TestRag(object):
             assert sp_sum_difference == np.power(np.abs(sp1*sp_counts[sp1] - sp2*sp_counts[sp2]), 1./superpixels.ndim)
 
         # MEAN
-        features_df = rag.compute_features(values, ['sp_mean'])
+        features_df = rag.compute_features(values, ['sp_vigra_mean'])
         assert len(features_df) == len(rag.edge_ids)
-        assert (features_df.columns.values == ['sp1', 'sp2', 'sp_mean_sum', 'sp_mean_difference']).all()
+        assert (features_df.columns.values == ['sp1', 'sp2', 'sp_vigra_mean_sum', 'sp_vigra_mean_difference']).all()
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
 
         # No normalization for other features...
@@ -108,9 +108,9 @@ class TestRag(object):
         # For simplicity, just make values identical to superpixels
         values = superpixels.astype(np.float32)
 
-        feature_names = ['edge_mean', 'edge_minimum', 'edge_maximum', 'edge_variance',
-                         'edge_quantiles_25', 'edge_quantiles_50', 'edge_quantiles_75',
-                         'edge_count', 'edge_sum']
+        feature_names = ['edge_vigra_mean', 'edge_vigra_minimum', 'edge_vigra_maximum', 'edge_vigra_variance',
+                         'edge_vigra_quantiles_25', 'edge_vigra_quantiles_50', 'edge_vigra_quantiles_75',
+                         'edge_vigra_count', 'edge_vigra_sum']
 
         features_df = rag.compute_features(values, feature_names)
         assert len(features_df) == len(rag.edge_ids)
@@ -125,14 +125,14 @@ class TestRag(object):
             sp1 = row['sp1']
             sp2 = row['sp2']
             # Values were identical to the superpixels, so this is boring...
-            assert np.isclose(row['edge_mean'],  (sp1+sp2)/2.)
-            assert np.isclose(row['edge_minimum'], (sp1+sp2)/2.)
-            assert np.isclose(row['edge_maximum'], (sp1+sp2)/2.)
-            assert np.isclose(row['edge_variance'], 0.0)
-            assert np.isclose(row['edge_quantiles_25'], (sp1+sp2)/2.)
-            assert np.isclose(row['edge_quantiles_75'], (sp1+sp2)/2.)
-            assert row['edge_count'] > 0
-            assert np.isclose(row['edge_sum'], row['edge_count'] * (sp1+sp2)/2.)
+            assert np.isclose(row['edge_vigra_mean'],  (sp1+sp2)/2.)
+            assert np.isclose(row['edge_vigra_minimum'], (sp1+sp2)/2.)
+            assert np.isclose(row['edge_vigra_maximum'], (sp1+sp2)/2.)
+            assert np.isclose(row['edge_vigra_variance'], 0.0)
+            assert np.isclose(row['edge_vigra_quantiles_25'], (sp1+sp2)/2.)
+            assert np.isclose(row['edge_vigra_quantiles_75'], (sp1+sp2)/2.)
+            assert row['edge_vigra_count'] > 0
+            assert np.isclose(row['edge_vigra_sum'], row['edge_vigra_count'] * (sp1+sp2)/2.)
 
     def test_edge_features_nohistogram(self):
         import nose
@@ -231,7 +231,7 @@ class TestRag(object):
         # Check some features
         # For simplicity, just make values identical to superpixels
         values = superpixels.astype(np.float32)
-        feature_names = ['edge_mean', 'sp_count']
+        feature_names = ['edge_vigra_mean', 'sp_vigra_count']
         features_df_original = original_rag.compute_features(values, feature_names)
         features_df_deserialized = deserialized_rag.compute_features(values, feature_names)
         assert (features_df_original.values == features_df_deserialized.values).all()
@@ -274,13 +274,13 @@ class TestRag(object):
         # Check some features
         # For simplicity, just make values identical to superpixels
         values = superpixels.astype(np.float32)
-        feature_names = ['edge_mean', 'edge_count']
+        feature_names = ['edge_vigra_mean', 'edge_vigra_count']
         features_df_original = original_rag.compute_features(values, feature_names)
         features_df_deserialized = deserialized_rag.compute_features(values, feature_names)
         assert (features_df_original.values == features_df_deserialized.values).all()
 
         try:
-            deserialized_rag.compute_features(values, ['sp_count'])
+            deserialized_rag.compute_features(values, ['sp_vigra_count'])
         except NotImplementedError:
             pass
         except:
@@ -329,7 +329,7 @@ class TestRag(object):
         # Check some features
         # For simplicity, just make values identical to superpixels
         values = superpixels.astype(np.float32)
-        feature_names = ['edge_mean', 'sp_count']
+        feature_names = ['edge_vigra_mean', 'sp_vigra_count']
         features_df_original = original_rag.compute_features(values, feature_names)
         features_df_deserialized = deserialized_rag.compute_features(values, feature_names)
         assert (features_df_original.values == features_df_deserialized.values).all()

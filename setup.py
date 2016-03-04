@@ -8,7 +8,9 @@ setup(name='ilastikrag',
       author='Stuart Berg',
       author_email='bergs@janelia.hhmi.org',
       url='github.com/stuarteberg/ilastikrag',
-      packages=['ilastikrag'],
+      packages=['ilastikrag',
+                'ilastikrag.tests',
+                'ilastikrag.accumulators'],
       ## see conda-recipe/meta.yaml for dependency information
       ##install_requires=['numpy', 'h5py', 'pandas', 'vigra', 'networkx']
      )

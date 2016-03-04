@@ -1,16 +1,16 @@
-class EdgeAccumulator(object):
+class SpAccumulatorBase(object):
     """
-    Base class for all edge accumulators,
-    i.e. accumulators that compute features from the edge values
-    between superpixels (not superpixel contents).
+    Base class for all superpixel accumulators,
+    i.e. accumulators that compute features from the
+    contents of superpixels (not their edges).
     """
-
+    
     #: Accumulator type
-    ACCUMULATOR_TYPE = 'edge'
+    ACCUMULATOR_TYPE = 'sp'
 
     #: An id string for this accumulator.
-    #: Must not conflict with any other accumulators of the same type ('edge').
-    #: All feature names supported by this accumulator must begin with the prefix ``edge_<id>_``
+    #: Must not conflict with any other accumulators of the same type ('sp').
+    #: All feature names supported by this accumulator must begin with the prefix ``sp_<id>_``
     ACCUMULATOR_ID = ''
 
     def __init__(self, label_img, feature_names):
@@ -33,16 +33,17 @@ class EdgeAccumulator(object):
         """
         raise NotImplementedError
 
-    def ingest_edges_for_block(self, axial_edge_dfs, block_start, block_stop):
+    def ingest_values_for_block(self, label_block, value_block, block_start, block_stop):
         """
-        Ingests the edge data from a particular block of labels in the Rag.
-
+        Ingests a particular block of label data and its corresponding (single-channel) pixel values.
+        
         Parameters
         ----------
-        axial_edge_dfs
-            *pandas.DataFrame*.                                                |br|
-            Contains only the edges contained within block_start, block_stop.  |br|
-            See ``Rag.axial_edge_dfs`` for column information.                 |br|
+        label_block
+            *VigraArray*, ``uint32``
+        
+        value_block
+            *VigraArray*
         
         block_start
             The location of the block within the Rag's full label volume.
@@ -52,16 +53,20 @@ class EdgeAccumulator(object):
         """
         raise NotImplementedError
     
-    def append_merged_edge_features_to_df(self, edge_df):
+    def append_merged_sp_features_to_edge_df(self, edge_df):
         """
         Called by the Rag after all blocks have been ingested.
 
         Merges the features of all ingested blocks into a final set of edge
         feature columns, and appends those columns to the given
         ``pandas.DataFrame`` object.
+        
+        This involves converting pairs superpixel features into edge features,
+        typically by taking the sum and/or difference between the features of
+        each superpixel in an adjacent pair.
         """        
         raise NotImplementedError
-    
+
     def __enter__(self):
         return self
     

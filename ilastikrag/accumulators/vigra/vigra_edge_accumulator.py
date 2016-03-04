@@ -2,12 +2,12 @@ import logging
 import numpy as np
 import vigra
 
-from ..edge_accumulator import EdgeAccumulator
+from ilastikrag.accumulators import EdgeAccumulatorBase
 from .vigra_util import get_vigra_feature_names, append_vigra_features_to_dataframe
 
 logger = logging.getLogger(__name__)
 
-class VigraEdgeAccumulator(EdgeAccumulator):
+class VigraEdgeAccumulator(EdgeAccumulatorBase):
     """
     Accumulator for features of the edge pixels (only) between superpixels.
     Uses vigra's RegionFeatureAccumulator library to compute the features.

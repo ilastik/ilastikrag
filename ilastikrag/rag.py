@@ -6,14 +6,13 @@ import pandas as pd
 import vigra
 
 import logging
-from ilastikrag import edge_accumulator
 logger = logging.getLogger(__name__)
 
 from .util import label_vol_mapping, edge_mask_for_axis, edge_ids_for_axis, \
                   unique_edge_labels, extract_edge_values_for_axis, nonzero_coord_array
 
-from .accumulators import VigraEdgeAccumulator
-from .accumulators import VigraSpAccumulator
+from .accumulators.vigra import VigraEdgeAccumulator
+from .accumulators.vigra import VigraSpAccumulator
 
 class Rag(object):
     """

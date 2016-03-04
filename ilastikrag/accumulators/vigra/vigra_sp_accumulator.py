@@ -3,12 +3,12 @@ import numpy as np
 import pandas as pd
 import vigra
 
-from ..sp_accumulator import SpAccumulator
+from ilastikrag.accumulators import SpAccumulatorBase
 from .vigra_util import get_vigra_feature_names, append_vigra_features_to_dataframe
 
 logger = logging.getLogger(__name__)
 
-class VigraSpAccumulator(SpAccumulator):
+class VigraSpAccumulator(SpAccumulatorBase):
     """
     Accumulator for features of the superpixels contents.
     Uses vigra's RegionFeatureAccumulator library to compute the features.

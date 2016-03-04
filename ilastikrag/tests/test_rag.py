@@ -68,7 +68,7 @@ class TestRag(object):
         sp_counts = np.bincount(superpixels.flat[:])
 
         # COUNT
-        features_df = rag.compute_highlevel_features(values, ['sp_count'])
+        features_df = rag.compute_features(values, ['sp_count'])
         assert len(features_df) == len(rag.edge_ids)
         assert (features_df.columns.values == ['sp1', 'sp2', 'sp_count_sum', 'sp_count_difference']).all()
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
@@ -79,7 +79,7 @@ class TestRag(object):
             assert sp_count_difference == np.power(np.abs(sp_counts[sp1] - sp_counts[sp2]), 1./superpixels.ndim)
 
         # SUM
-        features_df = rag.compute_highlevel_features(values, ['sp_sum'])
+        features_df = rag.compute_features(values, ['sp_sum'])
         assert len(features_df) == len(rag.edge_ids)
         assert (features_df.columns.values == ['sp1', 'sp2', 'sp_sum_sum', 'sp_sum_difference']).all()
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
@@ -90,7 +90,7 @@ class TestRag(object):
             assert sp_sum_difference == np.power(np.abs(sp1*sp_counts[sp1] - sp2*sp_counts[sp2]), 1./superpixels.ndim)
 
         # MEAN
-        features_df = rag.compute_highlevel_features(values, ['sp_mean'])
+        features_df = rag.compute_features(values, ['sp_mean'])
         assert len(features_df) == len(rag.edge_ids)
         assert (features_df.columns.values == ['sp1', 'sp2', 'sp_mean_sum', 'sp_mean_difference']).all()
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
@@ -112,7 +112,7 @@ class TestRag(object):
                          'edge_quantiles_25', 'edge_quantiles_50', 'edge_quantiles_75',
                          'edge_count', 'edge_sum']
 
-        features_df = rag.compute_highlevel_features(values, feature_names)
+        features_df = rag.compute_features(values, feature_names)
         assert len(features_df) == len(rag.edge_ids)
         assert list(features_df.columns.values) == ['sp1', 'sp2'] + list(feature_names), \
             "Wrong output feature names: {}".format( features_df.columns.values )
@@ -134,10 +134,18 @@ class TestRag(object):
             assert row['edge_count'] > 0
             assert np.isclose(row['edge_sum'], row['edge_count'] * (sp1+sp2)/2.)
 
+    def test_edge_features_nohistogram(self):
+        import nose
+        raise nose.SkipTest
+
+    def test_sp_features_nohistogram(self):
+        import nose
+        raise nose.SkipTest
+    
     def test_edge_decisions_from_groundtruth(self):
         # 1 2
         # 3 4
-        vol1 = np.zeros((20,20), dtype=np.uint8)
+        vol1 = np.zeros((20,20), dtype=np.uint32)
         vol1[ 0:10,  0:10] = 1
         vol1[ 0:10, 10:20] = 2
         vol1[10:20,  0:10] = 3
@@ -224,8 +232,8 @@ class TestRag(object):
         # For simplicity, just make values identical to superpixels
         values = superpixels.astype(np.float32)
         feature_names = ['edge_mean', 'sp_count']
-        features_df_original = original_rag.compute_highlevel_features(values, feature_names)
-        features_df_deserialized = deserialized_rag.compute_highlevel_features(values, feature_names)
+        features_df_original = original_rag.compute_features(values, feature_names)
+        features_df_deserialized = deserialized_rag.compute_features(values, feature_names)
         assert (features_df_original.values == features_df_deserialized.values).all()
 
     def test_serialization_without_labels(self):
@@ -267,14 +275,16 @@ class TestRag(object):
         # For simplicity, just make values identical to superpixels
         values = superpixels.astype(np.float32)
         feature_names = ['edge_mean', 'edge_count']
-        features_df_original = original_rag.compute_highlevel_features(values, feature_names)
-        features_df_deserialized = deserialized_rag.compute_highlevel_features(values, feature_names)
+        features_df_original = original_rag.compute_features(values, feature_names)
+        features_df_deserialized = deserialized_rag.compute_features(values, feature_names)
         assert (features_df_original.values == features_df_deserialized.values).all()
 
         try:
-            deserialized_rag.compute_highlevel_features(values, ['sp_count'])
+            deserialized_rag.compute_features(values, ['sp_count'])
         except NotImplementedError:
             pass
+        except:
+            raise
         else:
             assert False, "Shouldn't be able to use superpixels if labels weren't serialized/deserialized!"
 
@@ -320,8 +330,8 @@ class TestRag(object):
         # For simplicity, just make values identical to superpixels
         values = superpixels.astype(np.float32)
         feature_names = ['edge_mean', 'sp_count']
-        features_df_original = original_rag.compute_highlevel_features(values, feature_names)
-        features_df_deserialized = deserialized_rag.compute_highlevel_features(values, feature_names)
+        features_df_original = original_rag.compute_features(values, feature_names)
+        features_df_deserialized = deserialized_rag.compute_features(values, feature_names)
         assert (features_df_original.values == features_df_deserialized.values).all()
 
 if __name__ == "__main__":

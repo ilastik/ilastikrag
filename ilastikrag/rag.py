@@ -117,6 +117,8 @@ class Rag(object):
     - Should SP features like 'mean' be weighted by SP size 
       before computing '_sum' and '_difference' columns for each edge?
     
+    - Need to change API to allow custom feature functions.
+    
     - Coordinate-based SP features would be easy to add (using vigra), but they aren't supported yet.
     
     - Coordinate-based edge features could be added without too much trouble, but not using vigra.
@@ -180,6 +182,35 @@ class Rag(object):
         self._init_final_edge_ids()
         self._init_axial_edge_dfs(edge_datas)
         self._init_sp_attributes()
+
+    @property
+    def label_img(self):
+        return self._label_img
+
+    @property
+    def sp_ids(self):
+        return self._sp_ids
+
+    @property
+    def num_sp(self):
+        return self._num_sp
+    
+    @property
+    def max_sp(self):
+        return self._max_sp
+
+    @property
+    def num_edges(self):
+        return len(self._final_edge_label_lookup_df)
+
+    @property
+    def edge_ids(self):
+        return self._edge_ids
+
+    @property
+    def edge_label_lookup_df(self):
+        return self._final_edge_label_lookup_df
+    
     
     def _init_final_edge_label_lookup_df(self, edge_datas):
         """
@@ -253,34 +284,6 @@ class Rag(object):
         self._num_sp = len(self._sp_ids)
         self._max_sp = self._sp_ids.max()
 
-    @property
-    def label_img(self):
-        return self._label_img
-
-    @property
-    def sp_ids(self):
-        return self._sp_ids
-
-    @property
-    def num_sp(self):
-        return self._num_sp
-    
-    @property
-    def max_sp(self):
-        return self._max_sp
-
-    @property
-    def num_edges(self):
-        return len(self._final_edge_label_lookup_df)
-
-    @property
-    def edge_ids(self):
-        return self._edge_ids
-
-    @property
-    def edge_label_lookup_df(self):
-        return self._final_edge_label_lookup_df
-    
     def compute_features(self, value_img, feature_names):
         """
         The primary API function for computing features. |br|

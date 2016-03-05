@@ -170,6 +170,14 @@ class TestStandardAccumulators(object):
             assert row['standard_edge_minimum'] == (sp1+sp2)/2.
             assert row['standard_edge_maximum'] == (sp1+sp2)/2.
 
+    def test_edge_features_blockwise(self):
+        import nose
+        raise nose.SkipTest
+
+    def test_sp_features_blockwise(self):
+        import nose
+        raise nose.SkipTest
+
 if __name__ == "__main__":
     import sys
     import nose

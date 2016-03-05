@@ -242,6 +242,8 @@ class Rag(object):
                 "{} has unknown accumulator-type: {}".format( acc_cls, acc_cls.ACCUMULATOR_TYPE )
             assert acc_cls.ACCUMULATOR_ID, \
                 "{} has empty accumulator-id: {}".format( acc_cls, acc_cls.ACCUMULATOR_ID )
+            assert '_' not in acc_cls.ACCUMULATOR_ID, \
+                "{} has a bad char in its accumulator-id: {}".format( acc_cls, acc_cls.ACCUMULATOR_ID )
             self._accumulator_class_lookup[(acc_cls.ACCUMULATOR_ID, acc_cls.ACCUMULATOR_TYPE)] = acc_cls
 
     def _init_final_edge_label_lookup_df(self, edge_datas):

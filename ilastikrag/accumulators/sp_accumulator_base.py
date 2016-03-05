@@ -9,8 +9,9 @@ class SpAccumulatorBase(object):
     ACCUMULATOR_TYPE = 'sp'
 
     #: An id string for this accumulator.
+    #: Must not contain an underscore (``_``).
     #: Must not conflict with any other accumulators of the same type ('sp').
-    #: All feature names supported by this accumulator must begin with the prefix ``sp_<id>_``
+    #: All feature names supported by this accumulator must begin with the prefix ``<id>_sp_``
     ACCUMULATOR_ID = ''
 
     def __init__(self, label_img, feature_names):

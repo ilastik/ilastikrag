@@ -9,8 +9,9 @@ class EdgeAccumulatorBase(object):
     ACCUMULATOR_TYPE = 'edge'
 
     #: An id string for this accumulator.
+    #: Must not contain an underscore (``_``).
     #: Must not conflict with any other accumulators of the same type ('edge').
-    #: All feature names supported by this accumulator must begin with the prefix ``edge_<id>_``
+    #: All feature names supported by this accumulator must begin with the prefix ``<id>_edge_``
     ACCUMULATOR_ID = ''
 
     def __init__(self, label_img, feature_names):

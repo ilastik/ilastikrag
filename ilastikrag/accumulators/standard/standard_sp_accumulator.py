@@ -23,6 +23,7 @@ class StandardSpAccumulator(BaseSpAccumulator):
         - standard_sp_variance
         - standard_sp_kurtosis
         - standard_sp_skewness
+
         - standard_sp_quantiles_0
         - standard_sp_quantiles_10
         - standard_sp_quantiles_25
@@ -31,7 +32,21 @@ class StandardSpAccumulator(BaseSpAccumulator):
         - standard_sp_quantiles_90
         - standard_sp_quantiles_100
 
-    Coordinate-based features (such as RegionAxes) are not supported yet.
+        - standard_sp_regionradii (all of the below)
+        - standard_sp_regionradii_0
+        - standard_sp_regionradii_1
+        - standard_sp_regionradii_2
+
+        - standard_sp_regionaxes (all of the below)
+        - standard_sp_regionaxes_0x
+        - standard_sp_regionaxes_0y
+        - standard_sp_regionaxes_0z
+        - standard_sp_regionaxes_1x
+        - standard_sp_regionaxes_1y
+        - standard_sp_regionaxes_1z
+        - standard_sp_regionaxes_2x
+        - standard_sp_regionaxes_2y
+        - standard_sp_regionaxes_2z
 
     All input feature names result in *two* output columns, for the ``_sum`` and ``_difference``
     between the two superpixels adjacent to the edge.
@@ -45,12 +60,26 @@ class StandardSpAccumulator(BaseSpAccumulator):
     # - Should SP features like 'mean' be weighted by SP size 
     #   before computing '_sum' and '_difference' columns for each edge?
 
-
     ACCUMULATOR_ID = 'standard'
     ACCUMULATOR_TYPE = 'sp'
 
     def __init__(self, label_img, feature_names):
         self.cleanup() # Initialize members
+        feature_names = list(feature_names)
+
+        # 'standard_sp_regionradii' is shorthand for "all regionradii"
+        if 'standard_sp_regionradii' in feature_names:
+            feature_names.remove('standard_sp_regionradii')
+            for component_index in range(label_img.ndim):
+                feature_names.append( 'standard_sp_regionradii_{}'.format( component_index ) )            
+        
+        # 'standard_sp_regionaxes' is shorthand for "all regionaxes"
+        if 'standard_sp_regionaxes' in feature_names:
+            feature_names.remove('standard_sp_regionaxes')
+            for component_index in range(label_img.ndim):
+                for axisname in map( lambda k: 'xyz'[k], range(label_img.ndim) ):
+                    feature_names.append( 'standard_sp_regionaxes_{}{}'.format( component_index, axisname ) )            
+        
         self._feature_names = feature_names
         self._vigra_feature_names = get_vigra_feature_names(feature_names)
         self._ndim = label_img.ndim
@@ -94,19 +123,14 @@ class StandardSpAccumulator(BaseSpAccumulator):
         accumulators can be merged).
         
         Returns: vigra.RegionFeatureAccumulator
-        
-        Note: Here we flatten the arrays before passing them to vigra,
-              so coordinate-based features won't work.
-              This could be easiliy fixed by simply not flattening the arrays,
-              but you'll also need to define new suffixes for multi=value features
-              (e.g. 'region_axes', etc.), and modify _add_features_to_dataframe() accordingly.
         """
         for feature_name in self._vigra_feature_names:
-            for nonsupported_name in ('coord', 'region'):
+            for nonsupported_name in ('coord',):
                 # This could be fixed easily (just don't flatten the data)
                 # but we should check the performance implications.
                 assert nonsupported_name not in feature_name, \
-                    "Coordinate-based SP features are not currently supported!"
+                    "Arbitrary coordinate-based SP features are not currently supported!\n"\
+                    "Can't compute {}".format( nonsupported_name )
 
         histogram_range = self._histogram_range
         if histogram_range is None:
@@ -114,8 +138,8 @@ class StandardSpAccumulator(BaseSpAccumulator):
         
         # Convert to float32 if necessary
         value_block = value_block.astype(np.float32, copy=False)
-        acc = vigra.analysis.extractRegionFeatures( value_block.reshape((1,-1), order='A'),
-                                                    label_block.reshape((1,-1), order='A'),
+        acc = vigra.analysis.extractRegionFeatures( value_block,
+                                                    label_block,
                                                     features=self._vigra_feature_names,
                                                     histogramRange=histogram_range )
 

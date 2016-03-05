@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import numpy as np
+import vigra
 
 from ilastikrag import Rag
 from ilastikrag.util import generate_random_voronoi
@@ -101,6 +102,89 @@ class TestStandardAccumulators(object):
             assert sp_quantiles_75_sum == float(sp1 + sp2)
             assert sp_quantiles_25_difference == abs(float(sp1) - sp2)
             assert sp_quantiles_75_difference == abs(float(sp1) - sp2)
+
+    def test_sp_region_features(self):
+        # Create a superpixel for each y-column
+        superpixels = np.zeros( (100, 200), dtype=np.uint32 )
+        superpixels[:] = np.arange(200)[None, :]
+        superpixels = vigra.taggedView(superpixels, 'yx')
+        
+        rag = Rag( superpixels )
+
+        # For simplicity, just make values identical to superpixels
+        values = superpixels.astype(np.float32)
+
+        feature_names = ['standard_sp_regionradii_0',
+                         'standard_sp_regionradii_1',
+                         'standard_sp_regionaxes_0x',
+                         'standard_sp_regionaxes_0y',
+                         'standard_sp_regionaxes_1x',
+                         'standard_sp_regionaxes_1y',
+                         ]
+
+        output_columns = ['sp1', 'sp2',
+                          'standard_sp_regionradii_0_sum',
+                          'standard_sp_regionradii_0_difference',
+                          'standard_sp_regionradii_1_sum',
+                          'standard_sp_regionradii_1_difference',
+                        
+                          'standard_sp_regionaxes_0x_sum',
+                          'standard_sp_regionaxes_0x_difference',
+                          'standard_sp_regionaxes_0y_sum',
+                          'standard_sp_regionaxes_0y_difference',
+
+                          'standard_sp_regionaxes_1x_sum',
+                          'standard_sp_regionaxes_1x_difference',
+                          'standard_sp_regionaxes_1y_sum',
+                          'standard_sp_regionaxes_1y_difference' ]
+        
+        features_df = rag.compute_features(values, feature_names)
+        assert len(features_df) == len(rag.edge_ids)
+        assert list(features_df.columns.values) == output_columns, \
+            "Wrong output feature names: {}".format( features_df.columns.values )
+
+        # Using shorthand names should result in the same columns
+        features_df = rag.compute_features(values, ['standard_sp_regionradii', 'standard_sp_regionaxes'])
+        assert len(features_df) == len(rag.edge_ids)
+        assert list(features_df.columns.values) == output_columns, \
+            "Wrong output feature names: {}".format( features_df.columns.values )
+
+        assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
+
+        # Check dtypes (pandas makes it too easy to get this wrong).
+        dtypes = { colname: series.dtype for colname, series in features_df.iterkv() }
+        assert all(dtype != np.float64 for dtype in dtypes.values()), \
+            "An accumulator returned float64 features. That's a waste of ram.\n"\
+            "dtypes were: {}".format(dtypes)
+
+        # Manually compute the 'radius' of each superpixel
+        # This is easy because each superpixel is just 1 column wide.
+        col_coord_mean = np.arange(100).mean()
+        centralized_col_coords = np.arange(100) - col_coord_mean
+        col_coord_variance = centralized_col_coords.dot(centralized_col_coords)/100.
+        col_radius = np.sqrt(col_coord_variance).astype(np.float32)
+
+        for row_tuple in features_df.itertuples():
+            row = OrderedDict( zip(['index'] + list(features_df.columns.values),
+                                   row_tuple) )
+            # The superpixels were just vertical columns
+            assert row['standard_sp_regionradii_0_sum'] == 2*col_radius
+            assert row['standard_sp_regionradii_0_difference'] == 0.0
+            assert row['standard_sp_regionradii_1_sum'] == 0.0
+            assert row['standard_sp_regionradii_1_difference'] == 0.0
+
+            # Axes are just parallel to the coordinate axes, so this is boring.
+            # The x_sum is 0.0 because all superpixels are only 1 pixel wide in that direction.
+            assert row['standard_sp_regionaxes_0x_sum'] == 0.0
+            assert row['standard_sp_regionaxes_0x_difference'] == 0.0
+            assert row['standard_sp_regionaxes_0y_sum'] == 2.0
+            assert row['standard_sp_regionaxes_0y_difference'] == 0.0
+
+            # The second axis is the smaller one, so here the y_sum axes are non-zero
+            assert row['standard_sp_regionaxes_1x_sum'] == 2.0
+            assert row['standard_sp_regionaxes_1x_difference'] == 0.0
+            assert row['standard_sp_regionaxes_1y_sum'] == 0.0
+            assert row['standard_sp_regionaxes_1y_difference'] == 0.0
 
     def test_edge_features_with_histogram(self):
         superpixels = generate_random_voronoi((100,200), 200)

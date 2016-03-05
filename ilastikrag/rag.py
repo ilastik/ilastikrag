@@ -393,6 +393,9 @@ class Rag(object):
             edge_df = self._append_edge_features_for_values(edge_df, feature_groups['edge'], value_img)
 
         if 'sp' in feature_groups:
+            if isinstance(self._label_img, Rag._EmptyLabels):
+                raise NotImplementedError("Can't compute superpixel-based features.\n"
+                                          "You deserialized the Rag without deserializing the labels.")
             edge_df = self._append_sp_features_for_values(edge_df, feature_groups['sp'], value_img)
 
         # Typecheck to help new accumulator authors

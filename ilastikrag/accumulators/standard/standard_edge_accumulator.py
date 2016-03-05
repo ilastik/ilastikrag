@@ -22,6 +22,7 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
         - standard_edge_variance
         - standard_edge_kurtosis
         - standard_edge_skewness
+
         - standard_edge_quantiles_0
         - standard_edge_quantiles_10
         - standard_edge_quantiles_25
@@ -29,8 +30,6 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
         - standard_edge_quantiles_75
         - standard_edge_quantiles_90
         - standard_edge_quantiles_100
-        
-    Coordinate-based features (such as RegionAxes) are not supported yet.
     """
 
 #     TODO

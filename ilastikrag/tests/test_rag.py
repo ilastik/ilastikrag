@@ -68,9 +68,9 @@ class TestRag(object):
         sp_counts = np.bincount(superpixels.flat[:])
 
         # COUNT
-        features_df = rag.compute_features(values, ['sp_vigra_count'])
+        features_df = rag.compute_features(values, ['standard_sp_count'])
         assert len(features_df) == len(rag.edge_ids)
-        assert (features_df.columns.values == ['sp1', 'sp2', 'sp_vigra_count_sum', 'sp_vigra_count_difference']).all()
+        assert (features_df.columns.values == ['sp1', 'sp2', 'standard_sp_count_sum', 'standard_sp_count_difference']).all()
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
         dtypes = { colname: series.dtype for colname, series in features_df.iterkv() }
         assert all(dtype != np.float64 for dtype in dtypes.values()), \
@@ -83,9 +83,9 @@ class TestRag(object):
             assert sp_count_difference == np.power(np.abs(sp_counts[sp1] - sp_counts[sp2]), 1./superpixels.ndim).astype(np.float32)
 
         # SUM
-        features_df = rag.compute_features(values, ['sp_vigra_sum'])
+        features_df = rag.compute_features(values, ['standard_sp_sum'])
         assert len(features_df) == len(rag.edge_ids)
-        assert (features_df.columns.values == ['sp1', 'sp2', 'sp_vigra_sum_sum', 'sp_vigra_sum_difference']).all()
+        assert (features_df.columns.values == ['sp1', 'sp2', 'standard_sp_sum_sum', 'standard_sp_sum_difference']).all()
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
 
         # sp sum features ought to be normalized, too...
@@ -94,9 +94,9 @@ class TestRag(object):
             assert sp_sum_difference == np.power(np.abs(sp1*sp_counts[sp1] - sp2*sp_counts[sp2]), 1./superpixels.ndim).astype(np.float32)
 
         # MEAN
-        features_df = rag.compute_features(values, ['sp_vigra_mean'])
+        features_df = rag.compute_features(values, ['standard_sp_mean'])
         assert len(features_df) == len(rag.edge_ids)
-        assert (features_df.columns.values == ['sp1', 'sp2', 'sp_vigra_mean_sum', 'sp_vigra_mean_difference']).all()
+        assert (features_df.columns.values == ['sp1', 'sp2', 'standard_sp_mean_sum', 'standard_sp_mean_difference']).all()
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
 
         # No normalization for other features...
@@ -116,15 +116,15 @@ class TestRag(object):
         sp_counts = np.bincount(superpixels.flat[:])
 
         # COUNT
-        features_df = rag.compute_features(values, ['sp_vigra_count', 'sp_vigra_quantiles_25', 'sp_vigra_quantiles_75'])
+        features_df = rag.compute_features(values, ['standard_sp_count', 'standard_sp_quantiles_25', 'standard_sp_quantiles_75'])
         assert len(features_df) == len(rag.edge_ids)
         assert (features_df.columns.values == ['sp1', 'sp2',
-                                               'sp_vigra_count_sum',
-                                               'sp_vigra_count_difference',
-                                               'sp_vigra_quantiles_25_sum',
-                                               'sp_vigra_quantiles_25_difference',
-                                               'sp_vigra_quantiles_75_sum',
-                                               'sp_vigra_quantiles_75_difference']).all()
+                                               'standard_sp_count_sum',
+                                               'standard_sp_count_difference',
+                                               'standard_sp_quantiles_25_sum',
+                                               'standard_sp_quantiles_25_difference',
+                                               'standard_sp_quantiles_75_sum',
+                                               'standard_sp_quantiles_75_difference']).all()
 
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
 
@@ -160,9 +160,9 @@ class TestRag(object):
         # For simplicity, just make values identical to superpixels
         values = superpixels.astype(np.float32)
 
-        feature_names = ['edge_vigra_mean', 'edge_vigra_minimum', 'edge_vigra_maximum', 'edge_vigra_variance',
-                         'edge_vigra_quantiles_25', 'edge_vigra_quantiles_50', 'edge_vigra_quantiles_75',
-                         'edge_vigra_count', 'edge_vigra_sum']
+        feature_names = ['standard_edge_mean', 'standard_edge_minimum', 'standard_edge_maximum', 'standard_edge_variance',
+                         'standard_edge_quantiles_25', 'standard_edge_quantiles_50', 'standard_edge_quantiles_75',
+                         'standard_edge_count', 'standard_edge_sum']
 
         features_df = rag.compute_features(values, feature_names)
         assert len(features_df) == len(rag.edge_ids)
@@ -183,14 +183,14 @@ class TestRag(object):
             sp1 = row['sp1']
             sp2 = row['sp2']
             # Values were identical to the superpixels, so this is boring...
-            assert np.isclose(row['edge_vigra_mean'],  (sp1+sp2)/2.)
-            assert np.isclose(row['edge_vigra_minimum'], (sp1+sp2)/2.)
-            assert np.isclose(row['edge_vigra_maximum'], (sp1+sp2)/2.)
-            assert np.isclose(row['edge_vigra_variance'], 0.0)
-            assert np.isclose(row['edge_vigra_quantiles_25'], (sp1+sp2)/2.)
-            assert np.isclose(row['edge_vigra_quantiles_75'], (sp1+sp2)/2.)
-            assert row['edge_vigra_count'] > 0
-            assert np.isclose(row['edge_vigra_sum'], row['edge_vigra_count'] * (sp1+sp2)/2.)
+            assert np.isclose(row['standard_edge_mean'],  (sp1+sp2)/2.)
+            assert np.isclose(row['standard_edge_minimum'], (sp1+sp2)/2.)
+            assert np.isclose(row['standard_edge_maximum'], (sp1+sp2)/2.)
+            assert np.isclose(row['standard_edge_variance'], 0.0)
+            assert np.isclose(row['standard_edge_quantiles_25'], (sp1+sp2)/2.)
+            assert np.isclose(row['standard_edge_quantiles_75'], (sp1+sp2)/2.)
+            assert row['standard_edge_count'] > 0
+            assert np.isclose(row['standard_edge_sum'], row['standard_edge_count'] * (sp1+sp2)/2.)
 
     def test_edge_features_no_histogram(self):
         """
@@ -202,7 +202,7 @@ class TestRag(object):
         # For simplicity, just make values identical to superpixels
         values = superpixels.astype(np.float32)
 
-        feature_names = ['edge_vigra_mean', 'edge_vigra_minimum', 'edge_vigra_maximum']
+        feature_names = ['standard_edge_mean', 'standard_edge_minimum', 'standard_edge_maximum']
 
         features_df = rag.compute_features(values, feature_names)
         assert len(features_df) == len(rag.edge_ids)
@@ -217,9 +217,9 @@ class TestRag(object):
             sp1 = row['sp1']
             sp2 = row['sp2']
             # Values were identical to the superpixels, so this is boring...
-            assert np.isclose(row['edge_vigra_mean'],  (sp1+sp2)/2.)
-            assert np.isclose(row['edge_vigra_minimum'], (sp1+sp2)/2.)
-            assert np.isclose(row['edge_vigra_maximum'], (sp1+sp2)/2.)
+            assert np.isclose(row['standard_edge_mean'],  (sp1+sp2)/2.)
+            assert np.isclose(row['standard_edge_minimum'], (sp1+sp2)/2.)
+            assert np.isclose(row['standard_edge_maximum'], (sp1+sp2)/2.)
 
 
         
@@ -313,7 +313,7 @@ class TestRag(object):
         # Check some features
         # For simplicity, just make values identical to superpixels
         values = superpixels.astype(np.float32)
-        feature_names = ['edge_vigra_mean', 'sp_vigra_count']
+        feature_names = ['standard_edge_mean', 'standard_sp_count']
         features_df_original = original_rag.compute_features(values, feature_names)
         features_df_deserialized = deserialized_rag.compute_features(values, feature_names)
         assert (features_df_original.values == features_df_deserialized.values).all()
@@ -356,13 +356,13 @@ class TestRag(object):
         # Check some features
         # For simplicity, just make values identical to superpixels
         values = superpixels.astype(np.float32)
-        feature_names = ['edge_vigra_mean', 'edge_vigra_count']
+        feature_names = ['standard_edge_mean', 'standard_edge_count']
         features_df_original = original_rag.compute_features(values, feature_names)
         features_df_deserialized = deserialized_rag.compute_features(values, feature_names)
         assert (features_df_original.values == features_df_deserialized.values).all()
 
         try:
-            deserialized_rag.compute_features(values, ['sp_vigra_count'])
+            deserialized_rag.compute_features(values, ['standard_sp_count'])
         except NotImplementedError:
             pass
         except:
@@ -411,10 +411,31 @@ class TestRag(object):
         # Check some features
         # For simplicity, just make values identical to superpixels
         values = superpixels.astype(np.float32)
-        feature_names = ['edge_vigra_mean', 'sp_vigra_count']
+        feature_names = ['standard_edge_mean', 'standard_sp_count']
         features_df_original = original_rag.compute_features(values, feature_names)
         features_df_deserialized = deserialized_rag.compute_features(values, feature_names)
         assert (features_df_original.values == features_df_deserialized.values).all()
+
+    def test_invalid_feature_names(self):
+        """
+        The Rag should refuse to compute features it doesn't support.
+        """
+        superpixels = self.generate_superpixels((100,200), 200)
+        rag = Rag( superpixels )
+
+        # For simplicity, just make values identical to superpixels
+        values = superpixels.astype(np.float32)
+
+        def try_bad_features(feature_names):
+            try:
+                features_df = rag.compute_features(values, feature_names)
+            except:
+                pass
+            else:
+                assert False, "Rag should raise an error if the user gives bad feature names!"
+
+        try_bad_features(['standard_edddddge_count', 'standard_sssp_count'])
+        try_bad_features(['ssssstandard_edge_count', 'ssssstandard_sp_count'])
 
 if __name__ == "__main__":
     import sys

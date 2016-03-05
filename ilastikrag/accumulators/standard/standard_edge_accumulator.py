@@ -7,33 +7,33 @@ from .vigra_util import get_vigra_feature_names, append_vigra_features_to_datafr
 
 logger = logging.getLogger(__name__)
 
-class VigraEdgeAccumulator(EdgeAccumulatorBase):
+class StandardEdgeAccumulator(EdgeAccumulatorBase):
     """
     Accumulator for features of the edge pixels (only) between superpixels.
     Uses vigra's RegionFeatureAccumulator library to compute the features.
     
     Supported feature names:
     
-        - edge_vigra_count
-        - edge_vigra_sum
-        - edge_vigra_minimum
-        - edge_vigra_maximum
-        - edge_vigra_mean
-        - edge_vigra_variance
-        - edge_vigra_kurtosis
-        - edge_vigra_skewness
-        - edge_vigra_quantiles_0
-        - edge_vigra_quantiles_10
-        - edge_vigra_quantiles_25
-        - edge_vigra_quantiles_50
-        - edge_vigra_quantiles_75
-        - edge_vigra_quantiles_90
-        - edge_vigra_quantiles_100
+        - standard_edge_count
+        - standard_edge_sum
+        - standard_edge_minimum
+        - standard_edge_maximum
+        - standard_edge_mean
+        - standard_edge_variance
+        - standard_edge_kurtosis
+        - standard_edge_skewness
+        - standard_edge_quantiles_0
+        - standard_edge_quantiles_10
+        - standard_edge_quantiles_25
+        - standard_edge_quantiles_50
+        - standard_edge_quantiles_75
+        - standard_edge_quantiles_90
+        - standard_edge_quantiles_100
         
     Coordinate-based features (such as RegionAxes) are not supported yet.
     """
+    ACCUMULATOR_ID = 'standard'
     ACCUMULATOR_TYPE = 'edge'
-    ACCUMULATOR_ID = 'vigra'
     
     def __init__(self, label_img, feature_names):
         self.cleanup() # Initialize members
@@ -48,7 +48,7 @@ class VigraEdgeAccumulator(EdgeAccumulatorBase):
         block_vigra_acc = self._accumulate_edge_vigra_features( axial_edge_dfs )
         self._block_vigra_accumulators.append( block_vigra_acc )
 
-    def append_merged_edge_features_to_df(self, edge_df):        
+    def append_merged_edge_features_to_df(self, edge_df):
         # Merge all the accumulators from each block
         final_acc = self._block_vigra_accumulators[0].createAccumulator()
         for block_vigra_acc in self._block_vigra_accumulators:

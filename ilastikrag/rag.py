@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 from .util import label_vol_mapping, edge_mask_for_axis, edge_ids_for_axis, \
                   unique_edge_labels, extract_edge_values_for_axis, nonzero_coord_array
 
-from .accumulators.vigra import VigraEdgeAccumulator
-from .accumulators.vigra import VigraSpAccumulator
+from .accumulators.standard import StandardEdgeAccumulator
+from .accumulators.standard import StandardSpAccumulator
 
 class Rag(object):
     """
@@ -125,7 +125,7 @@ class Rag(object):
     """
 
     # Clients can add their own accumulator classes by appending to this list.
-    ACCUMULATOR_TYPES = [VigraEdgeAccumulator, VigraSpAccumulator]
+    ACCUMULATOR_CLASSES = [StandardEdgeAccumulator, StandardSpAccumulator]
 
     def __init__( self, label_img ):
         """
@@ -139,10 +139,7 @@ class Rag(object):
             within ``RegionFeatureAccumulators``.
         """
         # We do this here instead of above so users
-        # can customize ACCUMULATOR_TYPES at runtime if desired.
-        self._accumulator_class_lookup = { (acc_cls.ACCUMULATOR_TYPE, acc_cls.ACCUMULATOR_ID) : acc_cls
-                                          for acc_cls in self.ACCUMULATOR_TYPES }
-
+        # can customize ACCUMULATOR_CLASSES at runtime if desired.
         if isinstance(label_img, str) and label_img == '__will_deserialize__':
             return
 
@@ -172,6 +169,7 @@ class Rag(object):
                 
             edge_datas.append( (edge_mask_coords, edge_ids, edge_forwardness) )
 
+        self._init_accumulator_classlist()
         self._init_final_edge_label_lookup_df(edge_datas)
         self._init_final_edge_ids()
         self._init_axial_edge_dfs(edge_datas)
@@ -234,6 +232,18 @@ class Rag(object):
         """
         return self._axial_edge_dfs
     
+    def _init_accumulator_classlist(self):
+        """
+        Load Rag.ACCUMULATOR_CLASSES into a dictionary for easy lookup.
+        """
+        self._accumulator_class_lookup = {}
+        for acc_cls in self.ACCUMULATOR_CLASSES:
+            assert acc_cls.ACCUMULATOR_TYPE in ('edge', 'sp'), \
+                "{} has unknown accumulator-type: {}".format( acc_cls, acc_cls.ACCUMULATOR_TYPE )
+            assert acc_cls.ACCUMULATOR_ID, \
+                "{} has empty accumulator-id: {}".format( acc_cls, acc_cls.ACCUMULATOR_ID )
+            self._accumulator_class_lookup[(acc_cls.ACCUMULATOR_ID, acc_cls.ACCUMULATOR_TYPE)] = acc_cls
+
     def _init_final_edge_label_lookup_df(self, edge_datas):
         """
         Initialize the edge_label_lookup_df attribute.
@@ -326,12 +336,12 @@ class Rag(object):
             
             Example feature names:
                 
-                - ``edge_vigra_count``
-                - ``edge_vigra_minimum``
-                - ``edge_vigra_variance``
-                - ``edge_vigra_quantiles_25``
-                - ``sp_vigra_count``
-                - ``sp_vigra_mean``
+                - ``standard_edge_count``
+                - ``standard_edge_minimum``
+                - ``standard_edge_variance``
+                - ``standard_edge_quantiles_25``
+                - ``standard_sp_count``
+                - ``standard_sp_mean``
 
             The feature names are then passed to the appropriate ``EdgeAccumulator`` or ``SpAccumulator``.            
             See accumulator docs for details on supported feature names and their meanings.
@@ -351,46 +361,46 @@ class Rag(object):
         ::
 
            >>> feature_df = compute_features(grayscale_img,
-           ...     ['edge_vigra_minimum', 'edge_vigra_maximum', 'sp_vigra_count', 'sp_vigra_mean'])
+           ...     ['standard_edge_minimum', 'standard_edge_maximum', 'standard_sp_count', 'standard_sp_mean'])
            >>>
            >>> feature_df.columns
-           ['sp1', 'sp2', 'edge_vigra_minimum', 'edge_vigra_maximum', 'sp_vigra_count_sum', 'sp_vigra_count_difference', 'sp_vigra_mean_sum', 'sp_vigra_mean_difference']
+           ['sp1', 'sp2', 'standard_edge_minimum', 'standard_edge_maximum', 'standard_sp_count_sum', 'standard_sp_count_difference', 'standard_sp_mean_sum', 'standard_sp_mean_difference']
 
-        +-------------------------------+-----------------------------------------------------------------------------------+
-        | Column                        | Description                                                                       |
-        +===============================+===================================================================================+
-        | ``sp1``                       | Superpixel ID.                                                                    |
-        +-------------------------------+-----------------------------------------------------------------------------------+
-        | ``sp2``                       | Superpixel ID. *Guarantee:* ``(sp1 < sp2)``                                       |
-        +-------------------------------+-----------------------------------------------------------------------------------+
-        | ``edge_vigra_minimum``        | Minimum value along the edge.                                                     |
-        +-------------------------------+-----------------------------------------------------------------------------------+
-        | ``edge_vigra_maximum``        | Maximum value along the edge.                                                     |
-        +-------------------------------+-----------------------------------------------------------------------------------+
-        | ``sp_vigra_count_sum``        | The sum of the sizes of the two superpixels adjacent to the edge.                 |
-        +-------------------------------+-----------------------------------------------------------------------------------+
-        | ``sp_vigra_count_difference`` | The difference of the sizes of the two superpixels adjacent to the edge.          |
-        +-------------------------------+-----------------------------------------------------------------------------------+
-        | ``sp_vigra_mean_sum``         | The sum of the mean intensity of the two superpixels adjacent to the edge.        |
-        +-------------------------------+-----------------------------------------------------------------------------------+
-        | ``sp_vigra_mean_difference``  | The difference of the mean intensity of the two superpixels adjacent to the edge. |
-        +-------------------------------+-----------------------------------------------------------------------------------+        
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | Column                           | Description                                                                       |
+        +==================================+===================================================================================+
+        | ``sp1``                          | Superpixel ID.                                                                    |
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | ``sp2``                          | Superpixel ID. *Guarantee:* ``(sp1 < sp2)``                                       |
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | ``standard_edge_minimum``        | Minimum value along the edge.                                                     |
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | ``standard_edge_maximum``        | Maximum value along the edge.                                                     |
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | ``standard_sp_count_sum``        | The sum of the sizes of the two superpixels adjacent to the edge.                 |
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | ``standard_sp_count_difference`` | The difference of the sizes of the two superpixels adjacent to the edge.          |
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | ``standard_sp_mean_sum``         | The sum of the mean intensity of the two superpixels adjacent to the edge.        |
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | ``standard_sp_mean_difference``  | The difference of the mean intensity of the two superpixels adjacent to the edge. |
+        +----------------------------------+-----------------------------------------------------------------------------------+        
 
         """
         feature_names = map(str.lower, feature_names)
-        invalid_names = filter( lambda name: not( name.startswith('sp_') or name.startswith('edge_') ),
-                                feature_names )
-        assert not invalid_names, \
-            "All feature names must start with either 'edge_' or 'sp_'. "\
-            "Invalid names are: {}".format( feature_names )
 
         # Group the names by type (edge/sp), then by accumulator ID,
         # but preserve the order of the features in each group (as a convenience to the user)
         sorted_feature_names = sorted(feature_names, key=lambda name: name.split('_')[:2])
         feature_groups = defaultdict(dict)
-        for (acc_type, acc_id), feature_group in groupby(sorted_feature_names,
+        for (acc_id, acc_type), feature_group in groupby(sorted_feature_names,
                                                          key=lambda name: name.split('_')[:2]):
             feature_groups[acc_type][acc_id] = list(feature_group)
+
+        unknown_feature_types = list(set(feature_groups.keys()) - set(['edge', 'sp']))
+        if unknown_feature_types:
+            bad_names = feature_groups[unknown_feature_types[0]].values()[0]
+            assert not unknown_feature_types, "Feature(s) have unknown type: {}".format(bad_names)
 
         # Create a DataFrame for the results
         index_u32 = pd.Index(np.arange(self.num_edges), dtype=np.uint32)
@@ -400,18 +410,14 @@ class Rag(object):
         if 'edge' in feature_groups:
             edge_df = self._append_edge_features_for_values(edge_df, feature_groups['edge'], value_img)
 
-            dtypes = { colname: series.dtype for colname, series in edge_df.iterkv() }
-            assert all(dtype != np.float64 for dtype in dtypes.values()), \
-                "An accumulator returned float64 features. That's a waste of ram.\n"\
-                "dtypes were: {}".format(dtypes)
-
         if 'sp' in feature_groups:
             edge_df = self._append_sp_features_for_values(edge_df, feature_groups['sp'], value_img)
 
-            dtypes = { colname: series.dtype for colname, series in edge_df.iterkv() }
-            assert all(dtype != np.float64 for dtype in dtypes.values()), \
-                "An accumulator returned float64 features. That's a waste of ram.\n"\
-                "dtypes were: {}".format(dtypes)
+        # Typecheck to help new accumulator authors
+        dtypes = { colname: series.dtype for colname, series in edge_df.iterkv() }
+        assert all(dtype != np.float64 for dtype in dtypes.values()), \
+            "An accumulator returned float64 features. That's a waste of ram.\n"\
+            "dtypes were: {}".format(dtypes)
 
         return edge_df
 
@@ -437,7 +443,7 @@ class Rag(object):
             # Create an accumulator for each group
             for acc_id, feature_group_names in edge_feature_groups.items():
                 try:
-                    acc_class = self._accumulator_class_lookup[('edge', acc_id)]
+                    acc_class = self._accumulator_class_lookup[(acc_id, 'edge')]
                 except KeyError:
                     raise RuntimeError("No known accumulator class for features: {}".format( feature_group_names ))
 
@@ -467,7 +473,7 @@ class Rag(object):
         # Create an accumulator for each group
         for acc_id, feature_group_names in sp_feature_groups.items():
             try:
-                acc_class = self._accumulator_class_lookup[('sp', acc_id)]
+                acc_class = self._accumulator_class_lookup[(acc_id, 'sp')]
             except KeyError:
                 raise RuntimeError("No known accumulator class for features: {}".format( feature_group_names ))
 
@@ -630,6 +636,7 @@ class Rag(object):
             rag._label_img = Rag._EmptyLabels(label_dset.shape, label_dset.dtype, axistags)
 
         # Other attributes
+        rag._init_accumulator_classlist() # note: classlist was not serialized
         rag._init_final_edge_ids()
         rag._init_sp_attributes()
 
@@ -751,12 +758,12 @@ if __name__ == '__main__':
     grayscale = grayscale.astype(np.float32, copy=False)
 
     feature_names = []
-    feature_names = ['edge_vigra_mean']
-    #feature_names += ['edge_vigra_count', 'edge_vigra_sum', 'edge_vigra_mean', 'edge_vigra_variance',
-    #                  'edge_vigra_minimum', 'edge_vigra_maximum', 'edge_vigra_quantiles_25', 'edge_vigra_quantiles_50', 'edge_vigra_quantiles_75', 'edge_vigra_quantiles_100']
-    #feature_names += ['sp_vigra_count']
-    #feature_names += ['sp_vigra_count', 'sp_vigra_sum', 'sp_vigra_mean', 'sp_vigra_variance', 'sp_vigra_kurtosis', 'sp_vigra_skewness']
-    #feature_names += ['sp_vigra_count', 'sp_vigra_variance', 'sp_vigra_quantiles_25', ]
+    feature_names = ['standard_edge_mean']
+    #feature_names += ['standard_edge_count', 'standard_edge_sum', 'standard_edge_mean', 'standard_edge_variance',
+    #                  'standard_edge_minimum', 'standard_edge_maximum', 'standard_edge_quantiles_25', 'standard_edge_quantiles_50', 'standard_edge_quantiles_75', 'standard_edge_quantiles_100']
+    #feature_names += ['standard_sp_count']
+    #feature_names += ['standard_sp_count', 'standard_sp_sum', 'standard_sp_mean', 'standard_sp_variance', 'standard_sp_kurtosis', 'standard_sp_skewness']
+    #feature_names += ['standard_sp_count', 'standard_sp_variance', 'standard_sp_quantiles_25', ]
 
     with Timer() as timer:
         logger.info("Creating python Rag...")

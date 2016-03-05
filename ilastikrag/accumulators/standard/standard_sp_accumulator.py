@@ -8,28 +8,28 @@ from .vigra_util import get_vigra_feature_names, append_vigra_features_to_datafr
 
 logger = logging.getLogger(__name__)
 
-class VigraSpAccumulator(SpAccumulatorBase):
+class StandardSpAccumulator(SpAccumulatorBase):
     """
     Accumulator for features of the superpixels contents.
     Uses vigra's RegionFeatureAccumulator library to compute the features.
     
     Supported feature names:
     
-        - sp_vigra_count
-        - sp_vigra_sum
-        - sp_vigra_minimum
-        - sp_vigra_maximum
-        - sp_vigra_mean
-        - sp_vigra_variance
-        - sp_vigra_kurtosis
-        - sp_vigra_skewness
-        - sp_vigra_quantiles_0
-        - sp_vigra_quantiles_10
-        - sp_vigra_quantiles_25
-        - sp_vigra_quantiles_50
-        - sp_vigra_quantiles_75
-        - sp_vigra_quantiles_90
-        - sp_vigra_quantiles_100
+        - standard_sp_count
+        - standard_sp_sum
+        - standard_sp_minimum
+        - standard_sp_maximum
+        - standard_sp_mean
+        - standard_sp_variance
+        - standard_sp_kurtosis
+        - standard_sp_skewness
+        - standard_sp_quantiles_0
+        - standard_sp_quantiles_10
+        - standard_sp_quantiles_25
+        - standard_sp_quantiles_50
+        - standard_sp_quantiles_75
+        - standard_sp_quantiles_90
+        - standard_sp_quantiles_100
 
     Coordinate-based features (such as RegionAxes) are not supported yet.
 
@@ -40,8 +40,8 @@ class VigraSpAccumulator(SpAccumulatorBase):
     reduced via cube-root (or square-root), as specified in the multicut paper.
     """
 
+    ACCUMULATOR_ID = 'standard'
     ACCUMULATOR_TYPE = 'sp'
-    ACCUMULATOR_ID = 'vigra'
 
     def __init__(self, label_img, feature_names):
         self.cleanup() # Initialize members

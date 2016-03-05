@@ -21,11 +21,14 @@ class Rag(object):
     Initialized with an ND label image of superpixels, and stores
     the edges between superpixels.
     
-    By default, ``compute_features()`` uses only the
-    feature ``standard`` accumulator module.
-    To add your own accumulator classes, append to
-    ``Rag.ACCUMULATOR_CLASSES`` before constructing the ``Rag``.
+    **Limitations:**
 
+    - This representation does not check for edge contiguity, so if two 
+      superpixels are connected via multiple 'faces', those faces will both
+      be lumped into one 'edge'.
+
+    - No support for parallelization yet.
+    
     Attributes
     ----------
 
@@ -48,7 +51,7 @@ class Rag(object):
     edge_ids
         *ndarray, shape=(N,2)*                                                 |br|
         List of adjacent superpixel IDs, sorted.                               |br|
-        *Guarantee:* For all edge_ids (u,v), u < v.                            |br|
+        *Guarantee:* For all edge_ids (sp1,sp2): sp1 < sp2.                    |br|
         (No duplicates.)                                                       |br|
     
     edge_label_lookup_df
@@ -63,10 +66,9 @@ class Rag(object):
         edge pairs in the volume *along a particular axis.*                    |br|
         See detailed description below.                                        |br|        
     """
-    
-    ##
-    ## ADDITIONAL DEVELOPER DOCUMENTATION
-    ##
+
+    # Maintenance docs
+    #
     """
     Implementation notes
     --------------------
@@ -90,37 +92,11 @@ class Rag(object):
     
     Obviously, a volume with smaller superpixels will require more storage.
     
-    Limitations
-    -----------
-    - This representation does not check for edge contiguity, so if two 
-      superpixels are connected via multiple 'faces', those faces will both
-      be lumped into one 'edge'.
-
-    - Coordinate-based features (e.g. RegionRadii) are not supported yet,
-      for superpixels or edges.
-
-    - No special treatment for anisotropic data yet.
-
-    - No support for parallelization yet.
-    
     TODO
     ----
-    - Should SP features like 'mean' be weighted by SP size 
-      before computing '_sum' and '_difference' columns for each edge?
-    
-    - Need to change API to allow custom feature functions.
-    
-    - Coordinate-based SP features would be easy to add (using vigra), but they aren't supported yet.
-    
-    - Coordinate-based edge features could be added without too much trouble, but not using vigra.
-    
-    - edge_count is computed 'manhattan' style, meaning that it
-      is sensitive to the edge orientation (and so is edge_sum).
-      Should we try to compensate for that somehow?
-      Hmm... probably not. If we implement a RegionRadii edge feature,
-      that's more informative than edge_count anyway, as long as it is
-      implemented correctly (e.g. be sure to de-duplicate the edge coords
-      after concatenating the edge points from each axis)
+    - The accumulator API supports block-wise computation of features,
+      but Rag.compute_features() doesn't take advantage of it yet.
+      (The entire volume is passed in one big block.)
     
     - Basic support for anisotropic features will be easy, but perhaps not RAM efficient.
       Need to add 'axes' parameter to compute_highlevel_features().
@@ -136,15 +112,12 @@ class Rag(object):
         """
         Parameters
         ----------
-        
         label_img
             *VigraArray*  |br|
             Label values do not need to be consecutive, but *excessively* high label values
             will require extra RAM when computing features, due to zeros stored
             within ``RegionFeatureAccumulators``.
         """
-        # We do this here instead of above so users
-        # can customize ACCUMULATOR_CLASSES at runtime if desired.
         if isinstance(label_img, str) and label_img == '__will_deserialize__':
             return
 
@@ -240,6 +213,8 @@ class Rag(object):
     def _init_accumulator_classlist(self):
         """
         Load Rag.ACCUMULATOR_CLASSES into a dictionary for easy lookup.
+        We call this during __init__ instead of at class loading time, in
+        case the user wants to add extra accumulators to Rag.ACCUMULATOR_CLASSES. 
         """
         self._accumulator_class_lookup = {}
         for acc_cls in self.ACCUMULATOR_CLASSES:
@@ -327,6 +302,10 @@ class Rag(object):
         """
         The primary API function for computing features. |br|
         Returns a pandas DataFrame with columns ``['sp1', 'sp2', ...output feature names...]``
+
+        By default, :meth:`compute_features()` uses only the :ref:`standard_accumulators`.
+        To add your own accumulator classes, append them to
+        ``Rag.ACCUMULATOR_CLASSES`` before constructing the :class:`Rag`.
         
         Parameters
         ----------

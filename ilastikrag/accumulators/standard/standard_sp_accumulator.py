@@ -40,6 +40,12 @@ class StandardSpAccumulator(SpAccumulatorBase):
     reduced via cube-root (or square-root), as specified in the multicut paper.
     """
 
+    # TODO
+    # ----
+    # - Should SP features like 'mean' be weighted by SP size 
+    #   before computing '_sum' and '_difference' columns for each edge?
+
+
     ACCUMULATOR_ID = 'standard'
     ACCUMULATOR_TYPE = 'sp'
 

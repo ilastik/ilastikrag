@@ -3,7 +3,7 @@
 .. _accumulators:
 
 Feature Accumulators
---------------------
+====================
 
 ..
    (The following |br| definition is the only way
@@ -13,12 +13,19 @@ Feature Accumulators
 
    <br />
 
-The features produced by :class:`Rag.compute_features()` are computed using "accumulator" classes.
+The features produced by :py:meth:`.Rag.compute_features()` are computed using "accumulator" classes.
 There are two types of acccumulators: ``edge`` and ``sp``.  ``edge`` accumulators perform their
 computation using only information about the edge pixels (and corresponding values) of every pair of 
 adjacent superpixels, whereas ``sp`` features process the dense volume of labels and values.
 
-All accumulators inherit from one of the two accumulator base classes: ``EdgeAccumulator`` and ``SpAccumulator``.
+All accumulators inherit from one of the two accumulator base classes:
+:class:`~EdgeAccumulatorBase` and :class:`~SpAccumulatorBase`.
+
+
+.. _base_accumulators:
+
+Base Accumulators
+-----------------
 
 .. autoclass:: ilastikrag.EdgeAccumulatorBase
 
@@ -40,16 +47,22 @@ All accumulators inherit from one of the two accumulator base classes: ``EdgeAcc
 
 .. currentmodule:: ilastikrag.accumulators.standard
 
+
+.. _standard_accumulators:
+
+Standard Accumulators
+---------------------
+
 .. autoclass:: ilastikrag.accumulators.standard.StandardEdgeAccumulator
 
    .. autoattribute:: ACCUMULATOR_TYPE
    .. autoattribute:: ACCUMULATOR_ID
 
-   See ``ilastikrag.EdgeAccumulatorBase`` for method details.
+   See :class:`~ilastikrag.EdgeAccumulatorBase` for method details.
 
 .. autoclass:: ilastikrag.accumulators.standard.StandardSpAccumulator
 
    .. autoattribute:: ACCUMULATOR_TYPE
    .. autoattribute:: ACCUMULATOR_ID
 
-   See ``ilastikrag.SpAccumulatorBase`` for method details.
+   See :class:`~ilastikrag.SpAccumulatorBase` for method details.

@@ -32,6 +32,18 @@ class StandardEdgeAccumulator(EdgeAccumulatorBase):
         
     Coordinate-based features (such as RegionAxes) are not supported yet.
     """
+
+#     TODO
+#     ----    
+#     - edge_count is computed 'manhattan' style, meaning that it
+#       is sensitive to the edge orientation (and so is edge_sum).
+#       Should we try to compensate for that somehow?
+#       Hmm... probably not. If we implement a RegionRadii edge feature,
+#       that's more informative than edge_count anyway, as long as it is
+#       implemented correctly (e.g. be sure to de-duplicate the edge coords
+#       after concatenating the edge points from each axis)
+
+    
     ACCUMULATOR_ID = 'standard'
     ACCUMULATOR_TYPE = 'edge'
     

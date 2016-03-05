@@ -751,12 +751,12 @@ if __name__ == '__main__':
     grayscale = grayscale.astype(np.float32, copy=False)
 
     feature_names = []
-    feature_names = ['edge_mean']
-    #feature_names += ['edge_count', 'edge_sum', 'edge_mean', 'edge_variance',
-    #                  'edge_minimum', 'edge_maximum', 'edge_quantiles_25', 'edge_quantiles_50', 'edge_quantiles_75', 'edge_quantiles_100']
-    #feature_names += ['sp_count']
-    #feature_names += ['sp_count', 'sp_sum', 'sp_mean', 'sp_variance', 'sp_kurtosis', 'sp_skewness']
-    #feature_names += ['sp_count', 'sp_variance', 'sp_quantiles_25', ]
+    feature_names = ['edge_vigra_mean']
+    #feature_names += ['edge_vigra_count', 'edge_vigra_sum', 'edge_vigra_mean', 'edge_vigra_variance',
+    #                  'edge_vigra_minimum', 'edge_vigra_maximum', 'edge_vigra_quantiles_25', 'edge_vigra_quantiles_50', 'edge_vigra_quantiles_75', 'edge_vigra_quantiles_100']
+    #feature_names += ['sp_vigra_count']
+    #feature_names += ['sp_vigra_count', 'sp_vigra_sum', 'sp_vigra_mean', 'sp_vigra_variance', 'sp_vigra_kurtosis', 'sp_vigra_skewness']
+    #feature_names += ['sp_vigra_count', 'sp_vigra_variance', 'sp_vigra_quantiles_25', ]
 
     with Timer() as timer:
         logger.info("Creating python Rag...")

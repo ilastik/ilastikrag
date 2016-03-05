@@ -24,6 +24,9 @@ class StandardSpAccumulator(BaseSpAccumulator):
         - standard_sp_kurtosis
         - standard_sp_skewness
 
+    ..
+
+        - standard_sp_quantiles (short for "all sp quantiles")
         - standard_sp_quantiles_0
         - standard_sp_quantiles_10
         - standard_sp_quantiles_25
@@ -32,10 +35,14 @@ class StandardSpAccumulator(BaseSpAccumulator):
         - standard_sp_quantiles_90
         - standard_sp_quantiles_100
 
+    ..
+
         - standard_sp_regionradii (all of the below)
         - standard_sp_regionradii_0
         - standard_sp_regionradii_1
         - standard_sp_regionradii_2
+
+    ..
 
         - standard_sp_regionaxes (all of the below)
         - standard_sp_regionaxes_0x
@@ -66,6 +73,20 @@ class StandardSpAccumulator(BaseSpAccumulator):
     def __init__(self, label_img, feature_names):
         self.cleanup() # Initialize members
         feature_names = list(feature_names)
+
+        # 'standard_sp_quantiles' is shorthand for "all quantiles"
+        if 'standard_sp_quantiles' in feature_names:
+            feature_names.remove('standard_sp_quantiles')
+            # We use 'minimum' and 'maximum' here because those are consistent 
+            # even in the blockwise case, whereas 'quantiles_0' and 'quantiles_100'
+            # are initialized from the first block only.
+            feature_names += ['standard_sp_minimum',
+                              'standard_sp_quantiles_10',
+                              'standard_sp_quantiles_25',
+                              'standard_sp_quantiles_50',
+                              'standard_sp_quantiles_75',
+                              'standard_sp_quantiles_90',
+                              'standard_sp_maximum']
 
         # 'standard_sp_regionradii' is shorthand for "all regionradii"
         if 'standard_sp_regionradii' in feature_names:

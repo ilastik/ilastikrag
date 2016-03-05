@@ -254,6 +254,29 @@ class TestStandardAccumulators(object):
             assert row['standard_edge_minimum'] == (sp1+sp2)/2.
             assert row['standard_edge_maximum'] == (sp1+sp2)/2.
 
+
+    def test_shorthand_names(self):
+        superpixels = generate_random_voronoi((100,200), 200)
+        rag = Rag( superpixels )
+
+        # For simplicity, just make values identical to superpixels
+        values = superpixels.astype(np.float32)
+
+        features_df = rag.compute_features(values, ['standard_edge_quantiles', 'standard_sp_quantiles'])
+        
+        # The accumulator uses 'minimum' and 'maximum' here instead of 'quantiles_0'
+        # and 'quantiles_100' because those are consistent in the blockwise case.
+        quantile_names = ['minimum', 'quantiles_10', 'quantiles_25', 'quantiles_50', 'quantiles_75', 'quantiles_90', 'maximum']
+        edge_feature_names = map( lambda name: 'standard_edge_' + name, quantile_names )
+        sp_features_names = map( lambda name: 'standard_sp_' + name, quantile_names )
+        
+        sp_output_columns = []
+        for name in sp_features_names:
+            sp_output_columns.append( name + '_sum' )
+            sp_output_columns.append( name + '_difference' )
+
+        assert list(features_df.columns.values) == ['sp1', 'sp2'] + edge_feature_names + sp_output_columns
+
     def test_edge_features_blockwise(self):
         import nose
         raise nose.SkipTest

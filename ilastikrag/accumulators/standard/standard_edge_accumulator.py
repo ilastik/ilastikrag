@@ -23,6 +23,9 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
         - standard_edge_kurtosis
         - standard_edge_skewness
 
+    ..
+
+        - standard_edge_quantiles (short for "all edge quantiles")
         - standard_edge_quantiles_0
         - standard_edge_quantiles_10
         - standard_edge_quantiles_25
@@ -48,6 +51,22 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
     
     def __init__(self, label_img, feature_names):
         self.cleanup() # Initialize members
+        feature_names = list(feature_names)
+
+        # 'standard_edge_quantiles' is shorthand for "all quantiles"
+        if 'standard_edge_quantiles' in feature_names:
+            feature_names.remove('standard_edge_quantiles')
+            # We use 'minimum' and 'maximum' here because those are consistent 
+            # even in the blockwise case, whereas 'quantiles_0' and 'quantiles_100'
+            # are initialized from the first block only.
+            feature_names += ['standard_edge_minimum',
+                              'standard_edge_quantiles_10',
+                              'standard_edge_quantiles_25',
+                              'standard_edge_quantiles_50',
+                              'standard_edge_quantiles_75',
+                              'standard_edge_quantiles_90',
+                              'standard_edge_maximum']
+
         self._feature_names = feature_names
         self._vigra_feature_names = get_vigra_feature_names(feature_names)
 

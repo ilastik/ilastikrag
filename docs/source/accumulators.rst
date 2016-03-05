@@ -20,7 +20,7 @@ adjacent superpixels, whereas ``sp`` features process the dense volume of labels
 
 All accumulators inherit from one of the two accumulator base classes: ``EdgeAccumulator`` and ``SpAccumulator``.
 
-.. autoclass:: ilastikrag.EdgeAccumulator
+.. autoclass:: ilastikrag.EdgeAccumulatorBase
 
    .. autoattribute: ACCUMULATOR_TYPE
    .. autoattribute: ACCUMULATOR_ID
@@ -29,7 +29,7 @@ All accumulators inherit from one of the two accumulator base classes: ``EdgeAcc
    .. automethod:: ingest_edges_for_block   
    .. automethod:: append_merged_edge_features_to_df   
 
-.. autoclass:: ilastikrag.SpAccumulator
+.. autoclass:: ilastikrag.SpAccumulatorBase
 
    .. autoattribute: ACCUMULATOR_TYPE
    .. autoattribute: ACCUMULATOR_ID
@@ -39,6 +39,6 @@ All accumulators inherit from one of the two accumulator base classes: ``EdgeAcc
    .. automethod:: append_merged_sp_features_to_edge_df   
 
 
-.. autoclass:: ilastikrag.accumulators.VigraEdgeAccumulator
+.. autoclass:: ilastikrag.accumulators.standard.StandardEdgeAccumulator
 
-.. autoclass:: ilastikrag.accumulators.VigraSpAccumulator
+.. autoclass:: ilastikrag.accumulators.standard.StandardSpAccumulator

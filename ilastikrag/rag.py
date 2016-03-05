@@ -20,6 +20,11 @@ class Rag(object):
     
     Initialized with an ND label image of superpixels, and stores
     the edges between superpixels.
+    
+    By default, ``compute_features()`` uses only the
+    feature ``standard`` accumulator module.
+    To add your own accumulator classes, append to
+    ``Rag.ACCUMULATOR_CLASSES`` before constructing the ``Rag``.
 
     Attributes
     ----------
@@ -334,7 +339,7 @@ class Rag(object):
             
             Feature names must have the following structure:
             
-                ``<type>_<accumulator_id>_<feature>``.              |br|
+                ``<accumulator_id>_<type>_<feature>``.              |br|
             
             Example feature names:
                 

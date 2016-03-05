@@ -1,4 +1,5 @@
-from itertools import izip, imap
+from collections import defaultdict
+from itertools import izip, imap, groupby
 
 import numpy as np
 import pandas as pd
@@ -10,70 +11,61 @@ logger = logging.getLogger(__name__)
 from .util import label_vol_mapping, edge_mask_for_axis, edge_ids_for_axis, \
                   unique_edge_labels, extract_edge_values_for_axis, nonzero_coord_array
 
+from .accumulators.standard import StandardEdgeAccumulator
+from .accumulators.standard import StandardSpAccumulator
+
 class Rag(object):
     """
     Region Adjacency Graph
     
     Initialized with an ND label image of superpixels, and stores
     the edges between superpixels.
-
-    ..
-       (The following |br| definition is the only way
-       I can force numpydoc to display explicit newlines...) 
     
-    .. |br| raw:: html
-    
-       <br />
+    +----------------------+------------------------------------------------------------------------------+
+    | Attribute            | Description                                                                  |
+    +======================+==============================================================================+
+    | label_img            | The label volume you passed in.                                              |
+    +----------------------+------------------------------------------------------------------------------+
+    | sp_ids               | 1D ndarray of superpixel ID values, sorted.                                  |
+    +----------------------+------------------------------------------------------------------------------+
+    | max_sp               | The maximum superpixel ID in the label volume                                |
+    +----------------------+------------------------------------------------------------------------------+
+    | num_sp               | The number of superpixels in ``label_img``.                            |br|  |
+    |                      | Not necessarily the same as ``max_sp``.                                |br|  |
+    +----------------------+------------------------------------------------------------------------------+
+    | num_edges            | The number of edges in the label volume.                                     |
+    +----------------------+------------------------------------------------------------------------------+
+    | edge_ids             | *ndarray, shape=(N,2)*                                                 |br|  |
+    |                      | List of adjacent superpixel IDs, sorted.                               |br|  |
+    |                      | *Guarantee:* For all edge_ids (sp1,sp2): sp1 < sp2.                    |br|  |
+    |                      | (No duplicates.)                                                       |br|  |
+    +----------------------+------------------------------------------------------------------------------+
+    | edge_label_lookup_df | *pandas.DataFrame*                                                     |br|  |
+    |                      | Columns: ``[sp1, sp2, edge_label]``, where ``edge_label``              |br|  |
+    |                      | uniquely identifies each edge ``(sp1, sp2)``.                          |br|  |
+    +----------------------+------------------------------------------------------------------------------+
+    | axial_edge_dfs       | *List* of *pandas.DataFrame* objects (one per axis).                   |br|  |
+    |                      | Each DataFrame stores the id and location of all pixel                 |br|  |
+    |                      | edge pairs in the volume *along a particular axis.*                    |br|  |
+    |                      | See :py:attr:`axial_edge_dfs` for details.                             |br|  |
+    +----------------------+------------------------------------------------------------------------------+
 
-    Attributes
-    ----------
+    **Limitations:**
 
-    label_img
-        The label volume you passed in.
+    - This representation does not check for edge contiguity, so if two 
+      superpixels are connected via multiple 'faces', those faces will both
+      be lumped into one 'edge'.
 
-    sp_ids
-        1D ndarray of superpixel ID values, sorted.
+    - The :ref:`accumulators` API supports iterative block-wise accumulation of features,
+      but the :class:`Rag` class doesn't yet exploit it.
+      (The entire volume is always processed as a whole.)
 
-    max_sp
-        The maximum superpixel ID in the label volume
-
-    num_sp
-        The number of superpixels in ``label_img``.                    |br|
-        Not necessarily the same as max_sp.
-    
-    num_edges
-        The number of edges in the label volume.
-
-    edge_ids
-        *ndarray, shape=(N,2)*                                         |br|
-        List of adjacent superpixel IDs, sorted.                       |br|
-        Guarantee: For all edge_ids (u,v), u < v.                      |br|
-        (No duplicates.)
-    
-    edge_label_lookup_df
-        *pandas.DataFrame*                                             |br|
-        Columns: ``[sp1, sp2, edge_label]``, where ``edge_label``      |br|
-        uniquely identifies each edge ``(sp1, sp2)``.
+    - No support for parallelization yet.
     """
-    
-    ##
-    ## ADDITIONAL DEVELOPER DOCUMENTATION
-    ##
-    """
-    Internal Attributes
-    -------------------
-    axial_edge_dfs
-        (Mostly for internal use.)
-        A list of pandas DataFrames (one per axis).
-        Each DataFrame stores the list of all pixel edge pairs
-        in the volume along a particular axis.
-        Columns: ['sp1', 'sp2', 'forwardness', 'edge_label', 'mask_coord']
-                  'forwardness': True if sp1 < sp2, otherwise False.
-                  'edge_label': A uint32 that uniquely identifies this (sp1,sp2) pair, regardless of axis.
-                  'mask_coord': N columns (e.g. 'z', 'y', 'x') using a multi-level index.
-                                Stores coordinates of pixel just to the 'left' of
-                                each pixel edge (or 'before', 'above', etc. depending on the axis).
 
+    # Maintenance docs
+    #
+    """
     Implementation notes
     --------------------
     Internally, the edges along each axis are found independently and stored
@@ -96,37 +88,11 @@ class Rag(object):
     
     Obviously, a volume with smaller superpixels will require more storage.
     
-    Limitations
-    -----------
-    - This representation does not check for edge contiguity, so if two 
-      superpixels are connected via multiple 'faces', those faces will both
-      be lumped into one 'edge'.
-
-    - Coordinate-based features (e.g. RegionRadii) are not supported yet,
-      for superpixels or edges.
-
-    - No special treatment for anisotropic data yet.
-
-    - No support for parallelization yet.
-    
     TODO
     ----
-    - Should SP features like 'mean' be weighted by SP size 
-      before computing '_sum' and '_difference' columns for each edge?
-    
-    - Need to change API to allow custom feature functions.
-    
-    - Coordinate-based SP features would be easy to add (using vigra), but they aren't supported yet.
-    
-    - Coordinate-based edge features could be added without too much trouble, but not using vigra.
-    
-    - edge_count is computed 'manhattan' style, meaning that it
-      is sensitive to the edge orientation (and so is edge_sum).
-      Should we try to compensate for that somehow?
-      Hmm... probably not. If we implement a RegionRadii edge feature,
-      that's more informative than edge_count anyway, as long as it is
-      implemented correctly (e.g. be sure to de-duplicate the edge coords
-      after concatenating the edge points from each axis)
+    - The accumulator API supports block-wise computation of features,
+      but Rag.compute_features() doesn't take advantage of it yet.
+      (The entire volume is passed in one big block.)
     
     - Basic support for anisotropic features will be easy, but perhaps not RAM efficient.
       Need to add 'axes' parameter to compute_highlevel_features().
@@ -135,11 +101,13 @@ class Rag(object):
       (say, for parallelizing construction.)
     """
 
+    # Clients can add their own accumulator classes by appending to this list.
+    ACCUMULATOR_CLASSES = [StandardEdgeAccumulator, StandardSpAccumulator]
+
     def __init__( self, label_img ):
         """
         Parameters
         ----------
-        
         label_img
             *VigraArray*  |br|
             Label values do not need to be consecutive, but *excessively* high label values
@@ -153,9 +121,11 @@ class Rag(object):
             "For optimal performance, make sure label_img is a VigraArray with accurate axistags"
         assert set(label_img.axistags.keys()).issubset('zyx'), \
             "Only axes z,y,x are permitted, not {}".format( label_img.axistags.keys() )
+        assert label_img.dtype == np.uint32, \
+            "label_img must have dtype uint32"
         
         self._label_img = label_img
-
+        
         edge_datas = []
         for axis in range(label_img.ndim):
             edge_mask = edge_mask_for_axis(label_img, axis)
@@ -173,11 +143,85 @@ class Rag(object):
                 
             edge_datas.append( (edge_mask_coords, edge_ids, edge_forwardness) )
 
+        self._init_accumulator_classlist()
         self._init_final_edge_label_lookup_df(edge_datas)
         self._init_final_edge_ids()
         self._init_axial_edge_dfs(edge_datas)
         self._init_sp_attributes()
+
+    @property
+    def label_img(self):
+        return self._label_img
+
+    @property
+    def sp_ids(self):
+        return self._sp_ids
+
+    @property
+    def num_sp(self):
+        return self._num_sp
     
+    @property
+    def max_sp(self):
+        return self._max_sp
+
+    @property
+    def num_edges(self):
+        return len(self._final_edge_label_lookup_df)
+
+    @property
+    def edge_ids(self):
+        return self._edge_ids
+
+    @property
+    def edge_label_lookup_df(self):
+        return self._final_edge_label_lookup_df
+    
+    @property
+    def axial_edge_dfs(self):
+        """
+        Read-only property.                                                    |br|
+        A list of ``pandas.DataFrame`` objects (one per image axis).           |br|
+        Each DataFrame stores the location and superpixel ids of all pixelwise |br|
+        edge pairs in the volume *along a particular axis.*                    |br|
+
+        These DataFrames are passed verbatim to ``EdgeAccumulator`` objects via their 
+        ``ingest_edges_for_block()`` function, but with an extra column for the ``edge_value``.
+
+        +-----------------+----------------------------------------------------------------------------------------+
+        | Column          | Description                                                                            |
+        +=================+========================================================================================+
+        | ``sp1``         | Superpixel ID                                                                          |
+        +-----------------+----------------------------------------------------------------------------------------+
+        | ``sp2``         | Superpixel ID. *Guarantee:* ``(sp1 < sp2)``                                            |
+        +-----------------+----------------------------------------------------------------------------------------+
+        | ``forwardness`` | ``True`` if ``sp1 < sp2``, otherwise ``False``.                                        |
+        +-----------------+----------------------------------------------------------------------------------------+
+        | ``edge_label``  | A ``uint32`` that uniquely identifies this ``(sp1,sp2)`` pair, regardless of axis.     |
+        +-----------------+----------------------------------------------------------------------------------------+
+        | ``mask_coord``  | N columns (e.g. ``z``, ``y``, ``x``) using a pandas multi-level index. |br|            |
+        |                 | Stores coordinates of pixel just prior to (e.g. left of, above, etc.) each pixel edge. |
+        +-----------------+----------------------------------------------------------------------------------------+
+        
+        """
+        return self._axial_edge_dfs
+    
+    def _init_accumulator_classlist(self):
+        """
+        Load Rag.ACCUMULATOR_CLASSES into a dictionary for easy lookup.
+        We call this during __init__ instead of at class loading time, in
+        case the user wants to add extra accumulators to Rag.ACCUMULATOR_CLASSES. 
+        """
+        self._accumulator_class_lookup = {}
+        for acc_cls in self.ACCUMULATOR_CLASSES:
+            assert acc_cls.ACCUMULATOR_TYPE in ('edge', 'sp'), \
+                "{} has unknown accumulator-type: {}".format( acc_cls, acc_cls.ACCUMULATOR_TYPE )
+            assert acc_cls.ACCUMULATOR_ID, \
+                "{} has empty accumulator-id: {}".format( acc_cls, acc_cls.ACCUMULATOR_ID )
+            assert '_' not in acc_cls.ACCUMULATOR_ID, \
+                "{} has a bad char in its accumulator-id: {}".format( acc_cls, acc_cls.ACCUMULATOR_ID )
+            self._accumulator_class_lookup[(acc_cls.ACCUMULATOR_ID, acc_cls.ACCUMULATOR_TYPE)] = acc_cls
+
     def _init_final_edge_label_lookup_df(self, edge_datas):
         """
         Initialize the edge_label_lookup_df attribute.
@@ -207,7 +251,7 @@ class Rag(object):
         Construct the N axial_edge_df DataFrames (for each axis)
         """
         # Now create an axial_edge_df for each axis
-        self.axial_edge_dfs = []
+        self._axial_edge_dfs = []
         for edge_data in edge_datas:
             edge_mask, edge_ids, edge_forwardness = edge_data
 
@@ -233,7 +277,7 @@ class Rag(object):
                                 [  '',     '',            '',           ''] + self._label_img.axistags.keys() ]
             axial_edge_df.columns = pd.MultiIndex.from_tuples(list(zip(*combined_columns)))
 
-            self.axial_edge_dfs.append( axial_edge_df )
+            self._axial_edge_dfs.append( axial_edge_df )
 
     def _init_sp_attributes(self):
         """
@@ -250,38 +294,14 @@ class Rag(object):
         self._num_sp = len(self._sp_ids)
         self._max_sp = self._sp_ids.max()
 
-    @property
-    def label_img(self):
-        return self._label_img
-
-    @property
-    def sp_ids(self):
-        return self._sp_ids
-
-    @property
-    def num_sp(self):
-        return self._num_sp
-    
-    @property
-    def max_sp(self):
-        return self._max_sp
-
-    @property
-    def num_edges(self):
-        return len(self._final_edge_label_lookup_df)
-
-    @property
-    def edge_ids(self):
-        return self._edge_ids
-
-    @property
-    def edge_label_lookup_df(self):
-        return self._final_edge_label_lookup_df
-
-    def compute_highlevel_features(self, value_img, highlevel_feature_names):
+    def compute_features(self, value_img, feature_names):
         """
         The primary API function for computing features. |br|
         Returns a pandas DataFrame with columns ``['sp1', 'sp2', ...output feature names...]``
+
+        By default, :meth:`compute_features()` uses only the :ref:`standard_accumulators`.
+        To add your own accumulator classes, append them to
+        ``Rag.ACCUMULATOR_CLASSES`` before constructing the :class:`Rag`.
         
         Parameters
         ----------
@@ -289,51 +309,160 @@ class Rag(object):
             *VigraArray*, same shape as ``self.label_img``.         |br|
             Pixel values are converted to ``float32`` internally.
         
-        highlevel_feature_names:
-            A list of feaature names to compute.
-            All features are computed with the vigra RegionFeatureAccumulators library.
+        feature_names
+            *list of str*
             
-            Names must begin with a prefix of either ``edge_`` or ``sp_`` indicating whether
-            the feature is to be computed on the edge-adjacent pixels themselves, or over
-            the entire superpixels adjacent to the edges.
+            Feature names must have the following structure:
             
-            Additionally, quantile features must have a suffix to indicate which quantile
-            value to extract, e.g. ``_25``.
+                ``<accumulator_id>_<type>_<feature>``.              |br|
             
-            Coordinate-based features (such as RegionAxes) are not supported.
-            With minor changes, we could support them for superpixels.
-            Supporting them for edge features would require significant changes,
-            but would be possible (at a cost).
+            Example feature names:
+                
+                - ``standard_edge_count``
+                - ``standard_edge_minimum``
+                - ``standard_edge_variance``
+                - ``standard_edge_quantiles_25``
+                - ``standard_sp_count``
+                - ``standard_sp_mean``
 
-            SUPPORTED FEATURE NAMES::
-           
-               (edge_ | sp_) + ( count|sum|minimum|maximum|mean|variance|kurtosis|skewness
-                                 |quantiles_10|quantiles_25|quantiles_50|quantiles_75|quantiles_90 )
+            The feature names are then passed to the appropriate ``EdgeAccumulator`` or ``SpAccumulator``.            
+            See accumulator docs for details on supported feature names and their meanings.
             
-            For example: highlevel_features = ``['edge_count', 'edge_mean', 'sp_quantiles_75']``
-           
-           All ``sp`` feature names result in *two* output columns, for the ``_sum`` and ``_difference``
-           between the two superpixels adjacent to the edge.
-           
-           As a special case, the ``sp_count`` feature is reduced via cube-root (or square-root)
-           (as done in the multicut paper).
+            Features of type ``edge`` are computed only on the edge-adjacent pixels themselves.
+            Features of type ``sp`` are computed over all values in the superpixels adjacent to
+            an edge, and then converted into an edge feature, typically via sum or difference
+            between the two superpixels.
+
+        Returns
+        -------
+        A ``pandas.DataFrame`` for all unique superpixel edges in
+        the volume, with computed features stored in the columns.
+
+        Examples
+        --------
+        ::
+
+           >>> feature_df = compute_features(grayscale_img,
+           ...     ['standard_edge_minimum', 'standard_edge_maximum', 'standard_sp_count', 'standard_sp_mean'])
+           >>>
+           >>> feature_df.columns
+           ['sp1', 'sp2', 'standard_edge_minimum', 'standard_edge_maximum', 'standard_sp_count_sum', 'standard_sp_count_difference', 'standard_sp_mean_sum', 'standard_sp_mean_difference']
+
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | Column                           | Description                                                                       |
+        +==================================+===================================================================================+
+        | ``sp1``                          | Superpixel ID.                                                                    |
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | ``sp2``                          | Superpixel ID. *Guarantee:* ``(sp1 < sp2)``                                       |
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | ``standard_edge_minimum``        | Minimum value along the edge.                                                     |
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | ``standard_edge_maximum``        | Maximum value along the edge.                                                     |
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | ``standard_sp_count_sum``        | The sum of the sizes of the two superpixels adjacent to the edge.                 |
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | ``standard_sp_count_difference`` | The difference of the sizes of the two superpixels adjacent to the edge.          |
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | ``standard_sp_mean_sum``         | The sum of the mean intensity of the two superpixels adjacent to the edge.        |
+        +----------------------------------+-----------------------------------------------------------------------------------+
+        | ``standard_sp_mean_difference``  | The difference of the mean intensity of the two superpixels adjacent to the edge. |
+        +----------------------------------+-----------------------------------------------------------------------------------+        
+
         """
-        assert hasattr(value_img, 'axistags'), \
-            "For optimal performance, make sure value_img is a VigraArray with accurate axistags"
-        assert self._label_img.axistags.keys() == value_img.axistags.keys(), \
-            "value_img must have same axistags as label_img (in the same order)"
+        feature_names = map(str.lower, feature_names)
+
+        # Group the names by type (edge/sp), then by accumulator ID,
+        # but preserve the order of the features in each group (as a convenience to the user)
+        sorted_feature_names = sorted(feature_names, key=lambda name: name.split('_')[:2])
+        feature_groups = defaultdict(dict)
+        for (acc_id, acc_type), feature_group in groupby(sorted_feature_names,
+                                                         key=lambda name: name.split('_')[:2]):
+            feature_groups[acc_type][acc_id] = list(feature_group)
+
+        unknown_feature_types = list(set(feature_groups.keys()) - set(['edge', 'sp']))
+        if unknown_feature_types:
+            bad_names = feature_groups[unknown_feature_types[0]].values()[0]
+            assert not unknown_feature_types, "Feature(s) have unknown type: {}".format(bad_names)
+
+        # Create a DataFrame for the results
+        index_u32 = pd.Index(np.arange(self.num_edges), dtype=np.uint32)
+        edge_df = pd.DataFrame(self.edge_ids, columns=['sp1', 'sp2'], index=index_u32)
+
+        # Compute and append columns
+        if 'edge' in feature_groups:
+            edge_df = self._append_edge_features_for_values(edge_df, feature_groups['edge'], value_img)
+
+        if 'sp' in feature_groups:
+            edge_df = self._append_sp_features_for_values(edge_df, feature_groups['sp'], value_img)
+
+        # Typecheck to help new accumulator authors
+        dtypes = { colname: series.dtype for colname, series in edge_df.iterkv() }
+        assert all(dtype != np.float64 for dtype in dtypes.values()), \
+            "An accumulator returned float64 features. That's a waste of ram.\n"\
+            "dtypes were: {}".format(dtypes)
+
+        return edge_df
+
+    def _append_edge_features_for_values(self, edge_df, edge_feature_groups, value_img):
+        """
+        Compute edge features and append them as columns to the given DataFrame.
         
-        # Get generic names for each category (edge/sp)
-        _, edge_generic_vigra_feature_names, _ = Rag._process_highlevel_feature_names(highlevel_feature_names, 'edge_')
-        _, sp_generic_vigra_feature_names, _ = Rag._process_highlevel_feature_names(highlevel_feature_names, 'sp_')
+        edge_df: DataFrame with columns (sp1, sp2) at least.
+        edge_feature_groups: Dict of { accumulator_id : [feature_name, feature_name...] }
+        value_img: ndarray of pixel values
+        """
+        # For now, everything is with one big block
+        block_start = value_img.ndim*(0,)
+        block_stop = value_img.shape
 
-        # Compute
-        edge_df = self._compute_highlevel_edge_features(value_img, edge_generic_vigra_feature_names)        
-        sp_df = self._compute_generic_sp_features(value_img, sp_generic_vigra_feature_names)
+        try:
+            # Extract values at the edge pixels
+            for axis, axial_edge_df in enumerate(self.axial_edge_dfs):
+                logger.debug("Axis {}: Extracting values...".format( axis ))
+                mask_coords = tuple(series.values for _colname, series in axial_edge_df['mask_coord'].iteritems())
+                axial_edge_df['edge_value'] = extract_edge_values_for_axis(axis, mask_coords, value_img, aspandas=True)
 
-        # Merge
-        if sp_df is not None:
-            edge_df = Rag._append_sp_features_onto_edge_features( edge_df, sp_df, sp_generic_vigra_feature_names, self._label_img.ndim )
+            # Create an accumulator for each group
+            for acc_id, feature_group_names in edge_feature_groups.items():
+                try:
+                    acc_class = self._accumulator_class_lookup[(acc_id, 'edge')]
+                except KeyError:
+                    raise RuntimeError("No known accumulator class for features: {}".format( feature_group_names ))
+
+                with acc_class(self._label_img, feature_group_names) as edge_accumulator:
+                    edge_accumulator.ingest_edges_for_block( self.axial_edge_dfs, block_start, block_stop )
+                    edge_df = edge_accumulator.append_merged_edge_features_to_df(edge_df)
+        finally:
+            # Cleanup: Drop value columns
+            for axial_edge_df in self.axial_edge_dfs:
+                if 'edge_value' in axial_edge_df:
+                    del axial_edge_df['edge_value']
+
+        return edge_df
+
+    def _append_sp_features_for_values(self, edge_df, sp_feature_groups, value_img):
+        """
+        Compute superpixel-based features and append them as columns to the given DataFrame.
+        
+        edge_df: DataFrame with columns (sp1, sp2) at least.
+        sp_feature_groups: Dict of { accumulator_id : [feature_name, feature_name...] }
+        value_img: ndarray of pixel values
+        """
+        # For now, everything is with one big block
+        block_start = value_img.ndim*(0,)
+        block_stop = value_img.shape
+
+        # Create an accumulator for each group
+        for acc_id, feature_group_names in sp_feature_groups.items():
+            try:
+                acc_class = self._accumulator_class_lookup[(acc_id, 'sp')]
+            except KeyError:
+                raise RuntimeError("No known accumulator class for features: {}".format( feature_group_names ))
+
+            with acc_class(self._label_img, feature_group_names) as sp_accumulator:
+                sp_accumulator.ingest_values_for_block(self._label_img, value_img, block_start, block_stop)
+                edge_df = sp_accumulator.append_merged_sp_features_to_edge_df(edge_df)
+
         return edge_df
 
     def edge_decisions_from_groundtruth(self, groundtruth_vol, asdict=False):
@@ -371,7 +500,12 @@ class Rag(object):
             ``0`` means "inactive", i.e. the SP will be joined in the final result.     |br|
     
         out
-            Optional. Same shape as ``self.label_img``, but may have different ``dtype``.
+            *VigraArray* (Optional).                                                    |br|
+            Same shape as ``self.label_img``, but may have different ``dtype``.         |br|
+        
+        Returns
+        -------
+        *VigraArray*
         """
         import networkx as nx
         assert out is None or hasattr(out, 'axistags'), \
@@ -395,311 +529,6 @@ class Rag(object):
         del g
     
         return vigra.analysis.applyMapping( self._label_img, sp_mapping, out=out )
-
-    ##
-    ## FEATURE NAMING CONVENTIONS:
-    ##
-    ##    The user passes in 'highlevel' feature names, but internal functions 
-    ##    require slightly different variations of the names, as described here.
-    ##
-    ##    So-called 'highlevel' feature names include a prefix ('edge_' or 'sp_'),
-    ##    and possibly a suffix (e.g. '_25'), while internal functions deal with 
-    ##    lower-level variations referred to as:
-    ##      - 'generic_feature_names', i.e. no prefix, but might have a quantile suffix such as '_25'
-    ##      - 'vigra_feature_names', i.e. no prefix or suffix. These names are directly passed to extractRegionFeatures()
-    ## 
-    ##    So, the transformations go from 'highlevel' -> 'generic' -> 'vigra'.
-    ##
-    ##    Example highlevel_feature_names:
-    ##        ['sp_count', 'edge_count', 'edge_mean', 'edge_quantiles_25']
-    ##    Example generic_vigra_feature_names:
-    ##        ['count', 'mean', 'quantiles_25']
-    ##    Example vigra_feature_names: 
-    ##        ['count', mean', 'quantiles']
-    ##
-    ##    The final results are returned in a pandas.DataFrame, with columns named with 'output' feature names.
-    ##    For edge-based features, the output names are identical to the 'highlevel' names.
-    ##    For superpixel-based features, the output names have an additional suffix for 'sum' and 'difference'.
-    ##
-    ##    Example output_feature_names:
-    ##        ['edge_count', 'edge_quantiles_25',
-    ##         'sp_count_sum', 'sp_count_difference', 'sp_quantiles_25_sum', 'sp_quantiles_25_difference' ]
-
-    def _compute_highlevel_edge_features(self, value_img, generic_vigra_feature_names):
-        """
-        Computes features over the edge pixels.
-        Returns a pandas dataframe with length == self.num_edges
-        The first two columns are 'sp1' and 'sp2', and the other columns are the computed features.
-        
-        Parameters
-        ----------
-        value_img
-            VigraArray, same shape as self.label_img.
-            Pixel values are converted to float32 internally.
-        
-        generic_vigra_feature_names
-            See feature naming convention notes in source comments above.
-        """
-        vigra_feature_names = Rag._process_generic_vigra_feature_names(generic_vigra_feature_names)
-
-        index_u32 = pd.Index(np.arange(self.num_edges), dtype=np.uint32)
-        edge_df = pd.DataFrame(self.edge_ids, columns=['sp1', 'sp2'], index=index_u32)
-
-        if vigra_feature_names:
-            final_edge_acc = self._accumulate_edge_vigra_features( value_img, vigra_feature_names )
-            Rag._add_features_to_dataframe(generic_vigra_feature_names, final_edge_acc, edge_df, 'edge_')
-        
-        return edge_df
-
-    def _accumulate_edge_vigra_features(self, value_img, vigra_feature_names):
-        """
-        Return a vigra RegionFeaturesAccumulator with the results of all features,
-        computed over the edge pixels of the given value_img.
-        The accumulator's 'region' indexes will correspond to self.edge_label_lookup_df['edge_label']
-        
-        Parameters
-        ----------
-        value_img
-            ND array, same shape as self.label_img.
-            Pixel values are converted to float32 internally.
-        
-        vigra_feature_names
-            Feature names exactly as passed to vigra.analysis.extractRegionFeatures()
-        """
-        for feature_name in vigra_feature_names:
-            for nonsupported_name in ('coord', 'region'):
-                # We can't use vigra to compute coordinate-based features because 
-                # we've already flattened the edge pixels into a 1D array.
-                # However, the coordinates are already recorded in the axial_edge_df,
-                # so it would be easy to compute RegionRadii directly, without vigra.
-                assert nonsupported_name not in feature_name.lower(), \
-                    "Coordinate-based edge features are not currently supported!"
-
-        # Must extract all edge values first,
-        # so we can compute a global histogram_range
-        all_edge_values = []
-        for axis, axial_edge_df in enumerate(self.axial_edge_dfs):
-            logger.debug("Axis {}: Extracting values...".format( axis ))
-            mask_coords = tuple(series.values for _colname, series in axial_edge_df['mask_coord'].iteritems())
-            all_edge_values.append( extract_edge_values_for_axis(axis, mask_coords, value_img) )
-
-        # Now pre-compute histogram_range
-        histogram_range = "globalminmax"
-        if set(['quantiles', 'histogram']) & set(vigra_feature_names):
-            logger.debug("Computing global histogram range...")
-            histogram_range = [min(map(lambda values: values.min(), all_edge_values)),
-                               max(map(lambda values: values.max(), all_edge_values))]
-        
-        axial_accumulators = []
-        for axis, (axial_edge_df, edge_values) in enumerate( zip(self.axial_edge_dfs, all_edge_values) ):
-            edge_labels = axial_edge_df['edge_label'].values
-            assert edge_values.shape == edge_labels.shape
-        
-            logger.debug("Axis {}: Computing region features...".format( axis ))
-            # Must add singleton y-axis here because vigra doesn't support 1D data
-            acc = vigra.analysis.extractRegionFeatures( edge_values.reshape((1,-1), order='A'),
-                                                        edge_labels.reshape((1,-1), order='A'),
-                                                        #ignoreLabel=0, # Would be necessary if we were working with the dense edge mask image instead of extracted labels.
-                                                        features=vigra_feature_names,
-                                                        histogramRange=histogram_range )
-            axial_accumulators.append(acc)
-
-        final_acc = axial_accumulators[0].createAccumulator()
-        for acc in axial_accumulators:
-            # This is an identity lookup, but it's necessary since vigra will complain 
-            # about different maxIds if we call merge() without a lookup 
-            axis_to_final_index_array = np.arange( acc.maxRegionLabel()+1, dtype=np.uint32 )
-            final_acc.merge( acc, axis_to_final_index_array )
-        return final_acc
-
-    def _compute_generic_sp_features(self, value_img, generic_vigra_feature_names):
-        """
-        Computes features over all voxels in each superpixel.
-        Returns a pandas dataframe with length == self.num_sp
-        The first two columns is 'sp_id', and the other columns are the computed features.
-        
-        Parameters
-        ----------
-        value_img
-            *VigraArray*, same shape as ``self.label_img``.     |br|
-            Pixel values are converted to float32 internally.
-        
-        generic_vigra_feature_names
-            See feature naming convention notes in source comments above.
-        """
-        if not generic_vigra_feature_names:
-            # No superpixel features requested. We're done.
-            return None
-
-        vigra_feature_names = Rag._process_generic_vigra_feature_names(generic_vigra_feature_names)
-        
-        logger.debug("Computing SP features...")
-        sp_acc = self._accumulate_sp_vigra_features( value_img, vigra_feature_names )
-    
-        # Create an almost-empty dataframe to store the sp features
-        logger.debug("Saving SP features to DataFrame...")
-        index_u32 = pd.Index(np.arange(sp_acc.maxRegionLabel()+1), dtype=np.uint32)
-        sp_df = pd.DataFrame({ 'sp_id' : np.arange(sp_acc.maxRegionLabel()+1, dtype=np.uint32) }, index=index_u32)
-        Rag._add_features_to_dataframe(generic_vigra_feature_names, sp_acc, sp_df, 'sp_')            
-        return sp_df
-
-    def _accumulate_sp_vigra_features(self, value_img, vigra_feature_names):
-        """
-        Note: Here we flatten the arrays before passing them to vigra,
-              so coordinate-based features won't work.
-              This could be easiliy fixed by simply not flattening the arrays,
-              but you'll also need to define new suffixes for multi=value features
-              (e.g. 'region_axes', etc.), and modify _add_features_to_dataframe() accordingly.
-        """
-        for feature_name in vigra_feature_names:
-            for nonsupported_name in ('coord', 'region'):
-                # This could be fixed easily (just don't flatten the data)
-                # but we should check the performance implications.
-                assert nonsupported_name not in feature_name, \
-                    "Coordinate-based SP features are not currently supported!"
-        
-        value_img = value_img.astype(np.float32, copy=False)
-        acc = vigra.analysis.extractRegionFeatures( value_img.reshape((1,-1), order='A'),
-                                                    self._label_img.reshape((1,-1), order='A'),
-                                                    features=vigra_feature_names )
-        return acc
-
-    @classmethod
-    def _add_features_to_dataframe(cls, generic_vigra_feature_names, acc, df, output_prefix):
-        """
-        Extract the specified features from the given RegionFeaturesAccumulator
-        and append them as columns to the given DataFrame.
-        Here we implement the logic for handling feature names that have 
-        a suffix (e.g. 'quantiles_25').
-        
-        Parameters
-        ----------
-        generic_vigra_feature_names
-            See feature naming convention notes in source comments above.
-
-        acc
-            A RegionFeatureAccumulator from which to extract the specified features.
-
-        df
-            A pandas.DataFrame to append the features to
-
-        output_prefix
-            Prefix column names with the given string.  Must be either 'edge_' or 'sp_'.
-        """
-        assert output_prefix in ('edge_', 'sp_')
-        # Add a column for each feature we'll need
-        for generic_name in generic_vigra_feature_names:
-            output_name = output_prefix + generic_name
-            if generic_name.startswith('quantiles'):
-                quantile_suffix = generic_name.split('_')[1]
-                q_index = ['0', '10', '25', '50', '75', '90', '100'].index(quantile_suffix)
-                df[output_name] = acc['quantiles'][:, q_index]
-            else:
-                df[output_name] = acc[generic_name]
-
-    @classmethod
-    def _append_sp_features_onto_edge_features(cls, edge_df, sp_df, generic_vigra_features, ndim):
-        """
-        Given a DataFrame with edge features and another DataFrame with superpixel features,
-        add columns to the edge_df for each of the specified (superpixel) feature names.
-        
-        For each sp feature, two columns are added to the output, for the sum and (absolute) difference
-        between the feature values for the two superpixels adjacent to the edge.
-        (See 'output' feature naming convention notes above for column names.)
-
-        As a special case, the 'count' and 'sum' sp features are normalized first by taking
-        their cube roots (or square roots), as indicated in the Multicut paper.
-        
-        Returns the augmented edge_df.
-
-        Parameters
-        ----------
-        edge_df
-            The dataframe with edge features.
-            First columns must be 'sp1', 'sp2'.
-            len(edge_df) == self.num_edges
-                 
-        sp_df
-            The dataframe with raw superpixel features.
-            First column must be 'sp_id'.
-            len(sp_df) == self.num_sp
-
-        generic_vigra_features
-            Superpixel feature names without 'sp_' prefix or '_sp1' suffix,
-            but possibly with quantile suffix, e.g. '_25'.
-            See feature naming convention notes above for details.
-        
-        ndim
-            The dimensionality of the original label volume (an integer).
-            Used to normalize the 'count' and 'sum' features.
-        """
-        # Add two columns to the edge_df for every sp_df column (for sp1 and sp2)
-        # note: pd.merge() is like a SQL 'join' operation.
-        edge_df = pd.merge( edge_df, sp_df, left_on=['sp1'], right_on=['sp_id'], how='left', copy=False)
-        edge_df = pd.merge( edge_df, sp_df, left_on=['sp2'], right_on=['sp_id'], how='left', copy=False, suffixes=('_sp1', '_sp2'))
-        del edge_df['sp_id_sp1']
-        del edge_df['sp_id_sp2']
-    
-        # Now create sum/difference columns
-        for sp_feature in generic_vigra_features:
-            sp_feature_sum = ( edge_df['sp_' + sp_feature + '_sp1'].values
-                             + edge_df['sp_' + sp_feature + '_sp2'].values )
-            if sp_feature in ('count', 'sum'):
-                # Special case for count
-                sp_feature_sum = np.power(sp_feature_sum,
-                                          np.float32(1./ndim),
-                                          out=sp_feature_sum)
-            edge_df['sp_' + sp_feature + '_sum'] = sp_feature_sum
-    
-            sp_feature_difference = ( edge_df['sp_' + sp_feature + '_sp1'].values
-                                    - edge_df['sp_' + sp_feature + '_sp2'].values )
-            sp_feature_difference = np.abs(sp_feature_difference, out=sp_feature_difference)
-            if sp_feature in ('count', 'sum'):
-                sp_feature_difference = np.power(sp_feature_difference,
-                                                 np.float32(1./ndim),
-                                                 out=sp_feature_difference)
-            edge_df['sp_' + sp_feature + '_difference'] = sp_feature_difference
-    
-            # Don't need these any more
-            del edge_df['sp_' + sp_feature + '_sp1']
-            del edge_df['sp_' + sp_feature + '_sp2']
-        
-        return edge_df
-
-    @classmethod
-    def _process_highlevel_feature_names(cls, highlevel_feature_names, prefix):
-        """
-        A little utility function for converting so-called 'highlevel'
-        feature names into their 'low-level' counterparts.
-        See feature naming convention explanation above for more details.
-        """
-        highlevel_feature_names = map(str.lower, highlevel_feature_names)
-        assert prefix in ('edge_', 'sp_')
-
-        # Get only the edge|sp features
-        highlevel_feature_names = filter(lambda name: name.startswith(prefix), highlevel_feature_names)
-        
-        # drop 'edge_' prefix
-        generic_vigra_feature_names = map(lambda name: name[len(prefix):], highlevel_feature_names)
-
-        vigra_feature_names = cls._process_generic_vigra_feature_names(generic_vigra_feature_names)
-        
-        return highlevel_feature_names, generic_vigra_feature_names, vigra_feature_names
-
-    @classmethod
-    def _process_generic_vigra_feature_names(cls, generic_vigra_feature_names):
-        """
-        A little utility function for converting so-called 'generic' vigra feature names
-        into the `low-level` name required by vigra's extractRegionFeatures().
-        See feature naming convention explanation above for more details.
-        """
-        generic_vigra_feature_names = map(str.lower, generic_vigra_feature_names)
-
-        # drop quantile suffixes like '_25'
-        vigra_feature_names = map(lambda name: name.split('_')[0], generic_vigra_feature_names )
-        
-        # drop duplicates (from multiple quantile selections)
-        return list(set(vigra_feature_names))
 
     def serialize_hdf5(self, h5py_group, store_labels=False, compression='lzf', compression_opts=None):
         """
@@ -763,10 +592,10 @@ class Rag(object):
         rag = Rag('__will_deserialize__')
         
         # Edge DFs
-        rag.axial_edge_dfs =[]
+        rag._axial_edge_dfs =[]
         axial_df_parent_group = h5py_group['axial_edge_dfs']
         for _name, df_group in sorted(axial_df_parent_group.items()):
-            rag.axial_edge_dfs.append( Rag._dataframe_from_hdf5(df_group) )
+            rag._axial_edge_dfs.append( Rag._dataframe_from_hdf5(df_group) )
 
         # Final lookup DF
         rag._final_edge_label_lookup_df = Rag._dataframe_from_hdf5( h5py_group['final_edge_label_lookup_df'] )
@@ -789,6 +618,7 @@ class Rag(object):
             rag._label_img = Rag._EmptyLabels(label_dset.shape, label_dset.dtype, axistags)
 
         # Other attributes
+        rag._init_accumulator_classlist() # note: classlist was not serialized
         rag._init_final_edge_ids()
         rag._init_sp_attributes()
 
@@ -887,11 +717,11 @@ if __name__ == '__main__':
     from lazyflow.utility import Timer
     
     import h5py
-    watershed_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/256/watershed-256.h5'
-    grayscale_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/256/grayscale-256.h5'
+    #watershed_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/256/watershed-256.h5'
+    #grayscale_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/256/grayscale-256.h5'
 
-    #watershed_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/512/watershed-512.h5'
-    #grayscale_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/512/grayscale-512.h5'
+    watershed_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/512/watershed-512.h5'
+    grayscale_path = '/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/512/grayscale-512.h5'
     
     logger.info("Loading watershed...")
     with h5py.File(watershed_path, 'r') as f:
@@ -910,12 +740,12 @@ if __name__ == '__main__':
     grayscale = grayscale.astype(np.float32, copy=False)
 
     feature_names = []
-    #feature_names = ['edge_mean']
-    feature_names += ['edge_count', 'edge_sum', 'edge_mean', 'edge_variance',
-                      'edge_minimum', 'edge_maximum', 'edge_quantiles_25', 'edge_quantiles_50', 'edge_quantiles_75', 'edge_quantiles_100']
-    feature_names += ['sp_count']
-    #feature_names += ['sp_count', 'sp_sum', 'sp_mean', 'sp_variance', 'sp_kurtosis', 'sp_skewness']
-    #feature_names += ['sp_count', 'sp_variance', 'sp_quantiles_25', ]
+    feature_names = ['standard_edge_mean']
+    #feature_names += ['standard_edge_count', 'standard_edge_sum', 'standard_edge_mean', 'standard_edge_variance',
+    #                  'standard_edge_minimum', 'standard_edge_maximum', 'standard_edge_quantiles_25', 'standard_edge_quantiles_50', 'standard_edge_quantiles_75', 'standard_edge_quantiles_100']
+    #feature_names += ['standard_sp_count']
+    #feature_names += ['standard_sp_count', 'standard_sp_sum', 'standard_sp_mean', 'standard_sp_variance', 'standard_sp_kurtosis', 'standard_sp_skewness']
+    #feature_names += ['standard_sp_count', 'standard_sp_variance', 'standard_sp_quantiles_25', ]
 
     with Timer() as timer:
         logger.info("Creating python Rag...")
@@ -926,7 +756,9 @@ if __name__ == '__main__':
     print "Total pixel edges: {}".format( sum(len(df) for df in rag.axial_edge_dfs ) )
 
     with Timer() as timer:
-        edge_features_df = rag.compute_highlevel_features(grayscale, feature_names)
+        #edge_features_df = rag.compute_highlevel_features(grayscale, feature_names)
+        edge_features_df = rag.compute_features(grayscale, feature_names)
+        
     print "Computing features with python Rag took: {}".format( timer.seconds() )
     #print edge_features_df[0:10]
     

@@ -302,7 +302,7 @@ class Rag(object):
         By default, :meth:`compute_features()` uses only the :ref:`standard_accumulators`.
         To add your own accumulator classes, append them to
         ``Rag.ACCUMULATOR_CLASSES`` before constructing the :class:`Rag`.
-        
+
         Parameters
         ----------
         value_img
@@ -335,38 +335,28 @@ class Rag(object):
 
         Returns
         -------
-        A ``pandas.DataFrame`` for all unique superpixel edges in
-        the volume, with computed features stored in the columns.
+        *pandas.DataFrame*
+            All unique superpixel edges in the volume,
+            with computed features stored in the columns.
 
-        Examples
-        --------
+        Example
+        -------
         ::
 
-           >>> feature_df = compute_features(grayscale_img,
-           ...     ['standard_edge_minimum', 'standard_edge_maximum', 'standard_sp_count', 'standard_sp_mean'])
+           >>> feature_df = compute_features(grayscale_img, ['standard_edge_mean', 'standard_sp_count'])
            >>>
            >>> feature_df.columns
-           ['sp1', 'sp2', 'standard_edge_minimum', 'standard_edge_maximum', 'standard_sp_count_sum', 'standard_sp_count_difference', 'standard_sp_mean_sum', 'standard_sp_mean_difference']
-
-        +----------------------------------+-----------------------------------------------------------------------------------+
-        | Column                           | Description                                                                       |
-        +==================================+===================================================================================+
-        | ``sp1``                          | Superpixel ID.                                                                    |
-        +----------------------------------+-----------------------------------------------------------------------------------+
-        | ``sp2``                          | Superpixel ID. *Guarantee:* ``(sp1 < sp2)``                                       |
-        +----------------------------------+-----------------------------------------------------------------------------------+
-        | ``standard_edge_minimum``        | Minimum value along the edge.                                                     |
-        +----------------------------------+-----------------------------------------------------------------------------------+
-        | ``standard_edge_maximum``        | Maximum value along the edge.                                                     |
-        +----------------------------------+-----------------------------------------------------------------------------------+
-        | ``standard_sp_count_sum``        | The sum of the sizes of the two superpixels adjacent to the edge.                 |
-        +----------------------------------+-----------------------------------------------------------------------------------+
-        | ``standard_sp_count_difference`` | The difference of the sizes of the two superpixels adjacent to the edge.          |
-        +----------------------------------+-----------------------------------------------------------------------------------+
-        | ``standard_sp_mean_sum``         | The sum of the mean intensity of the two superpixels adjacent to the edge.        |
-        +----------------------------------+-----------------------------------------------------------------------------------+
-        | ``standard_sp_mean_difference``  | The difference of the mean intensity of the two superpixels adjacent to the edge. |
-        +----------------------------------+-----------------------------------------------------------------------------------+        
+           ['sp1', 'sp2', 'standard_edge_mean', 'standard_sp_count_sum', 'standard_sp_count_difference']
+        
+        +---------+---------+------------------------+---------------------------+----------------------------------+
+        | ``sp1`` | ``sp2`` | ``standard_edge_mean`` | ``standard_sp_count_sum`` | ``standard_sp_count_difference`` |
+        +=========+=========+========================+===========================+==================================+
+        | 1       | 2       | 123.45                 | 1000                      | 42                               |
+        +---------+---------+------------------------+---------------------------+----------------------------------+
+        | 1       | 3       | 234.56                 | 876                       | 83                               |
+        +---------+---------+------------------------+---------------------------+----------------------------------+
+        | ...     | ...     | ...                    | ...                       | ...                              |
+        +---------+---------+------------------------+---------------------------+----------------------------------+
 
         """
         feature_names = map(str.lower, feature_names)

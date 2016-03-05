@@ -132,14 +132,14 @@ class TestStandardAccumulators(object):
             sp1 = row['sp1']
             sp2 = row['sp2']
             # Values were identical to the superpixels, so this is boring...
-            assert np.isclose(row['standard_edge_mean'],  (sp1+sp2)/2.)
-            assert np.isclose(row['standard_edge_minimum'], (sp1+sp2)/2.)
-            assert np.isclose(row['standard_edge_maximum'], (sp1+sp2)/2.)
-            assert np.isclose(row['standard_edge_variance'], 0.0)
-            assert np.isclose(row['standard_edge_quantiles_25'], (sp1+sp2)/2.)
-            assert np.isclose(row['standard_edge_quantiles_75'], (sp1+sp2)/2.)
+            assert row['standard_edge_mean'] == (sp1+sp2)/2.
+            assert row['standard_edge_minimum'] == (sp1+sp2)/2.
+            assert row['standard_edge_maximum'] == (sp1+sp2)/2.
+            assert row['standard_edge_variance'] == 0.0
+            assert row['standard_edge_quantiles_25'] == (sp1+sp2)/2.
+            assert row['standard_edge_quantiles_75'] == (sp1+sp2)/2.
             assert row['standard_edge_count'] > 0
-            assert np.isclose(row['standard_edge_sum'], row['standard_edge_count'] * (sp1+sp2)/2.)
+            assert row['standard_edge_sum'] == row['standard_edge_count'] * (sp1+sp2)/2.
 
     def test_edge_features_no_histogram(self):
         """
@@ -166,9 +166,9 @@ class TestStandardAccumulators(object):
             sp1 = row['sp1']
             sp2 = row['sp2']
             # Values were identical to the superpixels, so this is boring...
-            assert np.isclose(row['standard_edge_mean'],  (sp1+sp2)/2.)
-            assert np.isclose(row['standard_edge_minimum'], (sp1+sp2)/2.)
-            assert np.isclose(row['standard_edge_maximum'], (sp1+sp2)/2.)
+            assert row['standard_edge_mean'] == (sp1+sp2)/2.
+            assert row['standard_edge_minimum'] == (sp1+sp2)/2.
+            assert row['standard_edge_maximum'] == (sp1+sp2)/2.
 
 if __name__ == "__main__":
     import sys

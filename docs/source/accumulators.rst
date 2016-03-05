@@ -22,8 +22,8 @@ All accumulators inherit from one of the two accumulator base classes: ``EdgeAcc
 
 .. autoclass:: ilastikrag.EdgeAccumulatorBase
 
-   .. autoattribute: ACCUMULATOR_TYPE
-   .. autoattribute: ACCUMULATOR_ID
+   .. autoattribute:: ACCUMULATOR_TYPE
+   .. autoattribute:: ACCUMULATOR_ID
    .. automethod:: __init__   
    .. automethod:: cleanup   
    .. automethod:: ingest_edges_for_block   
@@ -31,14 +31,25 @@ All accumulators inherit from one of the two accumulator base classes: ``EdgeAcc
 
 .. autoclass:: ilastikrag.SpAccumulatorBase
 
-   .. autoattribute: ACCUMULATOR_TYPE
-   .. autoattribute: ACCUMULATOR_ID
+   .. autoattribute:: ACCUMULATOR_TYPE
+   .. autoattribute:: ACCUMULATOR_ID
    .. automethod:: __init__   
    .. automethod:: cleanup   
    .. automethod:: ingest_values_for_block   
    .. automethod:: append_merged_sp_features_to_edge_df   
 
+.. currentmodule:: ilastikrag.accumulators.standard
 
 .. autoclass:: ilastikrag.accumulators.standard.StandardEdgeAccumulator
 
+   .. autoattribute:: ACCUMULATOR_TYPE
+   .. autoattribute:: ACCUMULATOR_ID
+
+   See ``ilastikrag.EdgeAccumulatorBase`` for method details.
+
 .. autoclass:: ilastikrag.accumulators.standard.StandardSpAccumulator
+
+   .. autoattribute:: ACCUMULATOR_TYPE
+   .. autoattribute:: ACCUMULATOR_ID
+
+   See ``ilastikrag.SpAccumulatorBase`` for method details.

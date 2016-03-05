@@ -41,9 +41,10 @@ class EdgeAccumulatorBase(object):
         Parameters
         ----------
         axial_edge_dfs
-            *pandas.DataFrame*.                                                |br|
+            *list* of *pandas.DataFrame* objects, one per image axis.          |br|
             Contains only the edges contained within block_start, block_stop.  |br|
-            See ``Rag.axial_edge_dfs`` for column information.                 |br|
+            Each DataFrame has the same columns as ``Rag.axial_edge_dfs``,     |br|
+            plus an extra column for ``edge_value``                            |br|
         
         block_start
             The location of the block within the Rag's full label volume.

@@ -56,6 +56,10 @@ class Rag(object):
       superpixels are connected via multiple 'faces', those faces will both
       be lumped into one 'edge'.
 
+    - The :ref:`accumulators` API supports iterative block-wise accumulation of features,
+      but the :class:`Rag` class doesn't yet exploit it.
+      (The entire volume is always processed as a whole.)
+
     - No support for parallelization yet.
     """
 
@@ -305,8 +309,8 @@ class Rag(object):
             *VigraArray*, same shape as ``self.label_img``.         |br|
             Pixel values are converted to ``float32`` internally.
         
-        feature_names:
-            A list of feature names to compute.
+        feature_names
+            *list of str*
             
             Feature names must have the following structure:
             

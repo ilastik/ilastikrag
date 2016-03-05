@@ -1,4 +1,4 @@
-.. currentmodule:: ilastikrag
+.. currentmodule:: ilastikrag.accumulators
 
 .. _accumulators:
 
@@ -13,7 +13,7 @@ Feature Accumulators
 
    <br />
 
-The features produced by :py:meth:`.Rag.compute_features()` are computed using "accumulator" classes.
+The features produced by :py:meth:`ilastikrag.Rag.compute_features()` are computed using "accumulator" classes.
 
 There are two types of acccumulators: ``edge`` and ``sp``:
 
@@ -22,8 +22,8 @@ There are two types of acccumulators: ``edge`` and ``sp``:
 
 All accumulators inherit from one of the two accumulator base classes:
 
- - :class:`~ilastikrag.accumulators.edge_accumulator_base.EdgeAccumulatorBase`
- - :class:`~ilastikrag.accumulators.sp_accumulator_base.SpAccumulatorBase`
+ - :class:`~ilastikrag.accumulators.BaseEdgeAccumulator`
+ - :class:`~ilastikrag.accumulators.BaseSpAccumulator`
 
 You can implement your own accumulators, but ``ilastikrag`` comes with the
 following built-in accumulators, already activated by default:
@@ -36,9 +36,7 @@ following built-in accumulators, already activated by default:
 Base Accumulators
 -----------------
 
-.. currentmodule:: ilastikrag.accumulators.edge_accumulator_base
-
-.. autoclass:: EdgeAccumulatorBase
+.. autoclass:: BaseEdgeAccumulator
 
    .. autoattribute:: ACCUMULATOR_TYPE
    .. autoattribute:: ACCUMULATOR_ID
@@ -47,9 +45,7 @@ Base Accumulators
    .. automethod:: ingest_edges_for_block   
    .. automethod:: append_merged_edge_features_to_df   
 
-.. currentmodule:: ilastikrag.accumulators.sp_accumulator_base
-
-.. autoclass:: SpAccumulatorBase
+.. autoclass:: BaseSpAccumulator
 
    .. autoattribute:: ACCUMULATOR_TYPE
    .. autoattribute:: ACCUMULATOR_ID
@@ -71,11 +67,11 @@ Standard Accumulators
    .. autoattribute:: ACCUMULATOR_TYPE
    .. autoattribute:: ACCUMULATOR_ID
 
-   **Methods:** See :class:`~ilastikrag.EdgeAccumulatorBase`
+   **Methods:** See :class:`~ilastikrag.BaseEdgeAccumulator`
 
 .. autoclass:: ilastikrag.accumulators.standard.StandardSpAccumulator
 
    .. autoattribute:: ACCUMULATOR_TYPE
    .. autoattribute:: ACCUMULATOR_ID
 
-   **Methods:** See :class:`~ilastikrag.SpAccumulatorBase`
+   **Methods:** See :class:`~ilastikrag.BaseSpAccumulator`

@@ -17,8 +17,9 @@ Rag
 
    .. automethod:: __init__
    .. automethod:: compute_features
-   .. autoattribute:: axial_edge_dfs
    .. automethod:: edge_decisions_from_groundtruth
    .. automethod:: naive_segmentation_from_edge_decisions
    .. automethod:: serialize_hdf5
    .. automethod:: deserialize_hdf5
+   .. autoattribute:: axial_edge_dfs
+   

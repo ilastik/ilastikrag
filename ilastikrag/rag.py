@@ -21,6 +21,35 @@ class Rag(object):
     Initialized with an ND label image of superpixels, and stores
     the edges between superpixels.
     
+    +----------------------+------------------------------------------------------------------------------+
+    | Attribute            | Description                                                                  |
+    +======================+==============================================================================+
+    | label_img            | The label volume you passed in.                                              |
+    +----------------------+------------------------------------------------------------------------------+
+    | sp_ids               | 1D ndarray of superpixel ID values, sorted.                                  |
+    +----------------------+------------------------------------------------------------------------------+
+    | max_sp               | The maximum superpixel ID in the label volume                                |
+    +----------------------+------------------------------------------------------------------------------+
+    | num_sp               | The number of superpixels in ``label_img``.                            |br|  |
+    |                      | Not necessarily the same as ``max_sp``.                                |br|  |
+    +----------------------+------------------------------------------------------------------------------+
+    | num_edges            | The number of edges in the label volume.                                     |
+    +----------------------+------------------------------------------------------------------------------+
+    | edge_ids             | *ndarray, shape=(N,2)*                                                 |br|  |
+    |                      | List of adjacent superpixel IDs, sorted.                               |br|  |
+    |                      | *Guarantee:* For all edge_ids (sp1,sp2): sp1 < sp2.                    |br|  |
+    |                      | (No duplicates.)                                                       |br|  |
+    +----------------------+------------------------------------------------------------------------------+
+    | edge_label_lookup_df | *pandas.DataFrame*                                                     |br|  |
+    |                      | Columns: ``[sp1, sp2, edge_label]``, where ``edge_label``              |br|  |
+    |                      | uniquely identifies each edge ``(sp1, sp2)``.                          |br|  |
+    +----------------------+------------------------------------------------------------------------------+
+    | axial_edge_dfs       | *List* of *pandas.DataFrame* objects (one per axis).                   |br|  |
+    |                      | Each DataFrame stores the id and location of all pixel                 |br|  |
+    |                      | edge pairs in the volume *along a particular axis.*                    |br|  |
+    |                      | See :py:attr:`axial_edge_dfs` for details.                             |br|  |
+    +----------------------+------------------------------------------------------------------------------+
+
     **Limitations:**
 
     - This representation does not check for edge contiguity, so if two 
@@ -28,43 +57,6 @@ class Rag(object):
       be lumped into one 'edge'.
 
     - No support for parallelization yet.
-    
-    Attributes
-    ----------
-
-    label_img
-        The label volume you passed in.
-
-    sp_ids
-        1D ndarray of superpixel ID values, sorted.
-
-    max_sp
-        The maximum superpixel ID in the label volume
-
-    num_sp
-        The number of superpixels in ``label_img``.                            |br|
-        Not necessarily the same as ``max_sp``.                                |br|
-    
-    num_edges
-        The number of edges in the label volume.
-
-    edge_ids
-        *ndarray, shape=(N,2)*                                                 |br|
-        List of adjacent superpixel IDs, sorted.                               |br|
-        *Guarantee:* For all edge_ids (sp1,sp2): sp1 < sp2.                    |br|
-        (No duplicates.)                                                       |br|
-    
-    edge_label_lookup_df
-        *pandas.DataFrame*                                                     |br|
-        Columns: ``[sp1, sp2, edge_label]``, where ``edge_label``              |br|
-        uniquely identifies each edge ``(sp1, sp2)``.                          |br|
-
-    axial_edge_dfs
-        A list of ``pandas.DataFrame`` (one per axis).                         |br|
-        Columns: ``['sp1', 'sp2', 'forwardness', 'edge_label', 'mask_coord']`` |br|
-        Each DataFrame stores the id and location of all pixel                 |br|
-        edge pairs in the volume *along a particular axis.*                    |br|
-        See detailed description below.                                        |br|        
     """
 
     # Maintenance docs

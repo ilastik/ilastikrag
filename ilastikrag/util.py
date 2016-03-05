@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import vigra
 
 def contingency_table(vol1, vol2, maxlabels=None):
     """
@@ -179,3 +180,31 @@ def nonzero_coord_array(a):
         base_array = base_array.base
     return base_array
     
+def generate_random_voronoi(shape, num_sp):
+    """
+    Generate a superpixel image for testing.
+    A set of N seed points (N=``num_sp``) will be chosen randomly, and the superpixels
+    will just be a voronoi diagram for those seeds.
+    Note: The first superpixel ID is 1.
+    """
+    assert len(shape) in (2,3), "Only 2D and 3D supported."
+    
+    seed_coords = []
+    for dim in shape:
+        # Generate more than we need, so we can toss duplicates
+        seed_coords.append( np.random.randint( dim, size=(2*num_sp,) ) )
+
+    seed_coords = np.transpose(seed_coords)
+    seed_coords = list(set(map(tuple, seed_coords))) # toss duplicates
+    seed_coords = seed_coords[:num_sp]
+    seed_coords = tuple(np.transpose(seed_coords))
+
+    superpixels = np.zeros( shape, dtype=np.uint32 )
+    superpixels[seed_coords] = np.arange( num_sp )+1
+    
+    vigra.analysis.watersheds( np.zeros(shape, dtype=np.float32),
+                               seeds=superpixels,
+                               out=superpixels )
+    superpixels = vigra.taggedView(superpixels, 'zyx'[3-len(shape):])        
+    return superpixels
+

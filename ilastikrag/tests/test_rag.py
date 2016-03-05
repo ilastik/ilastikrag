@@ -57,7 +57,7 @@ class TestRag(object):
         edge_df.sort(columns=['sp1', 'sp2'], inplace=True)
         assert (rag.edge_ids == edge_df.values).all()
 
-    def test_sp_features(self):
+    def test_sp_features_no_histogram(self):
         superpixels = self.generate_superpixels((100,200), 200)
         rag = Rag( superpixels )
 
@@ -105,7 +105,55 @@ class TestRag(object):
             assert sp_mean_sum == sp1 + sp2
             assert sp_mean_difference == np.abs(np.float32(sp1) - sp2)
 
-    def test_edge_features(self):
+    def test_sp_features_with_histogram(self):
+        superpixels = self.generate_superpixels((100,200), 200)
+        rag = Rag( superpixels )
+
+        # For simplicity, just make values identical to superpixels
+        values = superpixels.astype(np.float32)
+
+        # Manually compute the sp counts
+        sp_counts = np.bincount(superpixels.flat[:])
+
+        # COUNT
+        features_df = rag.compute_features(values, ['sp_vigra_count', 'sp_vigra_quantiles_25', 'sp_vigra_quantiles_75'])
+        assert len(features_df) == len(rag.edge_ids)
+        assert (features_df.columns.values == ['sp1', 'sp2',
+                                               'sp_vigra_count_sum',
+                                               'sp_vigra_count_difference',
+                                               'sp_vigra_quantiles_25_sum',
+                                               'sp_vigra_quantiles_25_difference',
+                                               'sp_vigra_quantiles_75_sum',
+                                               'sp_vigra_quantiles_75_difference']).all()
+
+        assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
+
+        # Check dtypes (pandas makes it too easy to get this wrong).
+        dtypes = { colname: series.dtype for colname, series in features_df.iterkv() }
+        assert all(dtype != np.float64 for dtype in dtypes.values()), \
+            "An accumulator returned float64 features. That's a waste of ram.\n"\
+            "dtypes were: {}".format(dtypes)
+
+        # sp count features are normalized, consistent with the multicut paper.
+        for _index, sp1, sp2, \
+            sp_count_sum, sp_count_difference, \
+            sp_quantiles_25_sum, sp_quantiles_25_difference, \
+            sp_quantiles_75_sum, sp_quantiles_75_difference in features_df.itertuples():
+            
+            assert type(sp_quantiles_25_sum) == np.float32
+            assert type(sp_quantiles_75_sum) == np.float32
+            assert type(sp_quantiles_25_difference) == np.float32
+            assert type(sp_quantiles_75_difference) == np.float32
+            
+            assert sp_count_sum == np.power(sp_counts[sp1] + sp_counts[sp2], 1./superpixels.ndim).astype(np.float32)
+            assert sp_count_difference == np.power(np.abs(sp_counts[sp1] - sp_counts[sp2]), 1./superpixels.ndim).astype(np.float32)
+            assert sp_quantiles_25_sum == float(sp1 + sp2), \
+                "{} != {}".format( sp_quantiles_25_sum, float(sp1 + sp2) )
+            assert sp_quantiles_75_sum == float(sp1 + sp2)
+            assert sp_quantiles_25_difference == abs(float(sp1) - sp2)
+            assert sp_quantiles_75_difference == abs(float(sp1) - sp2)
+
+    def test_edge_features_with_histogram(self):
         superpixels = self.generate_superpixels((100,200), 200)
         rag = Rag( superpixels )
 
@@ -144,13 +192,37 @@ class TestRag(object):
             assert row['edge_vigra_count'] > 0
             assert np.isclose(row['edge_vigra_sum'], row['edge_vigra_count'] * (sp1+sp2)/2.)
 
-    def test_edge_features_nohistogram(self):
-        import nose
-        raise nose.SkipTest
+    def test_edge_features_no_histogram(self):
+        """
+        Make sure vigra edge filters still work even if no histogram features are selected.
+        """
+        superpixels = self.generate_superpixels((100,200), 200)
+        rag = Rag( superpixels )
 
-    def test_sp_features_nohistogram(self):
-        import nose
-        raise nose.SkipTest
+        # For simplicity, just make values identical to superpixels
+        values = superpixels.astype(np.float32)
+
+        feature_names = ['edge_vigra_mean', 'edge_vigra_minimum', 'edge_vigra_maximum']
+
+        features_df = rag.compute_features(values, feature_names)
+        assert len(features_df) == len(rag.edge_ids)
+        assert list(features_df.columns.values) == ['sp1', 'sp2'] + list(feature_names), \
+            "Wrong output feature names: {}".format( features_df.columns.values )
+
+        assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
+
+        for row_tuple in features_df.itertuples():
+            row = OrderedDict( zip(['index', 'sp1', 'sp2'] + list(feature_names),
+                                   row_tuple) )
+            sp1 = row['sp1']
+            sp2 = row['sp2']
+            # Values were identical to the superpixels, so this is boring...
+            assert np.isclose(row['edge_vigra_mean'],  (sp1+sp2)/2.)
+            assert np.isclose(row['edge_vigra_minimum'], (sp1+sp2)/2.)
+            assert np.isclose(row['edge_vigra_maximum'], (sp1+sp2)/2.)
+
+
+        
     
     def test_edge_decisions_from_groundtruth(self):
         # 1 2

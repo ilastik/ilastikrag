@@ -116,7 +116,7 @@ def unique_edge_labels( all_edge_ids ):
     combined_df['edge_label'] = np.arange(0, len(combined_df), dtype=np.uint32)
     return combined_df
 
-def extract_edge_values_for_axis( axis, edge_mask, value_img ):
+def extract_edge_values_for_axis( axis, edge_mask, value_img, aspandas=False ):
     """
     Returns 1D ``ndarray``, in the same order as ``edge_mask.nonzero()``.
     Result is ``float32``, regardless of ``value_img.dtype``.
@@ -140,6 +140,11 @@ def extract_edge_values_for_axis( axis, edge_mask, value_img ):
     edge_values = edge_values_left
     edge_values += edge_values_right
     edge_values /= 2
+    
+    if aspandas:
+        # If you add a float32 array to a pd.DataFrame, it is automatically casted to float64!
+        # But if you add it as a Series, the dtype is untouched.
+        return pd.Series( edge_values, dtype=np.float32 )
     return edge_values
 
 def get_edge_ids( label_img ):

@@ -72,11 +72,15 @@ class TestRag(object):
         assert len(features_df) == len(rag.edge_ids)
         assert (features_df.columns.values == ['sp1', 'sp2', 'sp_vigra_count_sum', 'sp_vigra_count_difference']).all()
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
+        dtypes = { colname: series.dtype for colname, series in features_df.iterkv() }
+        assert all(dtype != np.float64 for dtype in dtypes.values()), \
+            "An accumulator returned float64 features. That's a waste of ram.\n"\
+            "dtypes were: {}".format(dtypes)
 
         # sp count features are normalized, consistent with the multicut paper.
         for _index, sp1, sp2, sp_count_sum, sp_count_difference in features_df.itertuples():
-            assert sp_count_sum == np.power(sp_counts[sp1] + sp_counts[sp2], 1./superpixels.ndim)
-            assert sp_count_difference == np.power(np.abs(sp_counts[sp1] - sp_counts[sp2]), 1./superpixels.ndim)
+            assert sp_count_sum == np.power(sp_counts[sp1] + sp_counts[sp2], 1./superpixels.ndim).astype(np.float32)
+            assert sp_count_difference == np.power(np.abs(sp_counts[sp1] - sp_counts[sp2]), 1./superpixels.ndim).astype(np.float32)
 
         # SUM
         features_df = rag.compute_features(values, ['sp_vigra_sum'])
@@ -86,8 +90,8 @@ class TestRag(object):
 
         # sp sum features ought to be normalized, too...
         for _index, sp1, sp2, sp_sum_sum, sp_sum_difference in features_df.itertuples():
-            assert sp_sum_sum == np.power(sp1*sp_counts[sp1] + sp2*sp_counts[sp2], 1./superpixels.ndim)
-            assert sp_sum_difference == np.power(np.abs(sp1*sp_counts[sp1] - sp2*sp_counts[sp2]), 1./superpixels.ndim)
+            assert sp_sum_sum == np.power(sp1*sp_counts[sp1] + sp2*sp_counts[sp2], 1./superpixels.ndim).astype(np.float32)
+            assert sp_sum_difference == np.power(np.abs(sp1*sp_counts[sp1] - sp2*sp_counts[sp2]), 1./superpixels.ndim).astype(np.float32)
 
         # MEAN
         features_df = rag.compute_features(values, ['sp_vigra_mean'])
@@ -118,6 +122,12 @@ class TestRag(object):
             "Wrong output feature names: {}".format( features_df.columns.values )
 
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
+
+        # Check dtypes (pandas makes it too easy to get this wrong).
+        dtypes = { colname: series.dtype for colname, series in features_df.iterkv() }
+        assert all(dtype != np.float64 for dtype in dtypes.values()), \
+            "An accumulator returned float64 features. That's a waste of ram.\n"\
+            "dtypes were: {}".format(dtypes)
 
         for row_tuple in features_df.itertuples():
             row = OrderedDict( zip(['index', 'sp1', 'sp2'] + list(feature_names),

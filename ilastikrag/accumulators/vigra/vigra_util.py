@@ -1,3 +1,6 @@
+import numpy as np
+import pandas as pd
+
 def append_vigra_features_to_dataframe( acc, df, feature_names):
     """
     Extract the specified features from the given RegionFeaturesAccumulator
@@ -26,9 +29,9 @@ def append_vigra_features_to_dataframe( acc, df, feature_names):
         if 'quantiles' in feature_name:
             quantile_suffix = feature_name.split('_')[-1]
             q_index = ['0', '10', '25', '50', '75', '90', '100'].index(quantile_suffix)
-            df[feature_name] = acc['quantiles'][:, q_index]
+            df[feature_name] = pd.Series(acc['quantiles'][:, q_index], dtype=np.float32)
         else:
-            df[feature_name] = acc[vigra_feature_name]
+            df[feature_name] = pd.Series(acc[vigra_feature_name], dtype=np.float32)
     
     return df
 

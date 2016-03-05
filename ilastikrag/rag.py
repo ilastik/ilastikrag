@@ -400,8 +400,18 @@ class Rag(object):
         if 'edge' in feature_groups:
             edge_df = self._append_edge_features_for_values(edge_df, feature_groups['edge'], value_img)
 
+            dtypes = { colname: series.dtype for colname, series in edge_df.iterkv() }
+            assert all(dtype != np.float64 for dtype in dtypes.values()), \
+                "An accumulator returned float64 features. That's a waste of ram.\n"\
+                "dtypes were: {}".format(dtypes)
+
         if 'sp' in feature_groups:
             edge_df = self._append_sp_features_for_values(edge_df, feature_groups['sp'], value_img)
+
+            dtypes = { colname: series.dtype for colname, series in edge_df.iterkv() }
+            assert all(dtype != np.float64 for dtype in dtypes.values()), \
+                "An accumulator returned float64 features. That's a waste of ram.\n"\
+                "dtypes were: {}".format(dtypes)
 
         return edge_df
 
@@ -422,7 +432,7 @@ class Rag(object):
             for axis, axial_edge_df in enumerate(self.axial_edge_dfs):
                 logger.debug("Axis {}: Extracting values...".format( axis ))
                 mask_coords = tuple(series.values for _colname, series in axial_edge_df['mask_coord'].iteritems())
-                axial_edge_df['edge_value'] = extract_edge_values_for_axis(axis, mask_coords, value_img)
+                axial_edge_df['edge_value'] = extract_edge_values_for_axis(axis, mask_coords, value_img, aspandas=True)
 
             # Create an accumulator for each group
             for acc_id, feature_group_names in edge_feature_groups.items():

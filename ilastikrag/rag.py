@@ -124,7 +124,8 @@ class Rag(object):
         assert label_img.dtype == np.uint32, \
             "label_img must have dtype uint32"
         
-        self._label_img = label_img
+        axes = 'zyx'[-label_img.ndim:]
+        self._label_img = label_img.withAxes(axes)
         
         edge_datas = []
         for axis in range(label_img.ndim):
@@ -188,6 +189,28 @@ class Rag(object):
         These DataFrames are passed verbatim to ``EdgeAccumulator`` objects via their 
         ``ingest_edges_for_block()`` function, but with an extra column for the ``edge_value``.
 
+        **Example:**
+        
+        +---------+---------+-----------------+----------------+--------+--------+--------+
+        | ``sp1`` | ``sp2`` | ``forwardness`` | ``edge_label`` | ``z``  | ``y``  | ``x``  |  
+        +=========+=========+=================+================+========+========+========+
+        | ``1``   | ``2``   | ``True``        | ``10``         | ``0``  | ``10`` | ``13`` |
+        +---------+---------+-----------------+----------------+--------+--------+--------+
+        | ``1``   | ``2``   | ``False``       | ``10``         | ``0``  | ``10`` | ``14`` |
+        +---------+---------+-----------------+----------------+--------+--------+--------+
+        | ``1``   | ``2``   | ``False``       | ``10``         | ``0``  | ``10`` | ``15`` |
+        +---------+---------+-----------------+----------------+--------+--------+--------+
+        | ``1``   | ``3``   | ``True``        | ``11``         | ``1``  | ``20`` | ``42`` |
+        +---------+---------+-----------------+----------------+--------+--------+--------+
+        | ``1``   | ``3``   | ``True``        | ``11``         | ``1``  | ``20`` | ``43`` |
+        +---------+---------+-----------------+----------------+--------+--------+--------+
+        | ``1``   | ``3``   | ``False``       | ``11``         | ``1``  | ``20`` | ``44`` |
+        +---------+---------+-----------------+----------------+--------+--------+--------+
+        | ...     | ...     | ...             | ...            | ...    | ...    | ...    |
+        +---------+---------+-----------------+----------------+--------+--------+--------+
+        
+        **Column definitions:**
+        
         +-----------------+----------------------------------------------------------------------------------------+
         | Column          | Description                                                                            |
         +=================+========================================================================================+
@@ -199,8 +222,11 @@ class Rag(object):
         +-----------------+----------------------------------------------------------------------------------------+
         | ``edge_label``  | A ``uint32`` that uniquely identifies this ``(sp1,sp2)`` pair, regardless of axis.     |
         +-----------------+----------------------------------------------------------------------------------------+
-        | ``mask_coord``  | N columns (e.g. ``z``, ``y``, ``x``) using a pandas multi-level index. |br|            |
-        |                 | Stores coordinates of pixel just prior to (e.g. left of, above, etc.) each pixel edge. |
+        | ``z``           | Z-coordinate of this pixel edge                                                        |
+        +-----------------+----------------------------------------------------------------------------------------+
+        | ``y``           | Y-coordinate of this pixel edge                                                        |
+        +-----------------+----------------------------------------------------------------------------------------+
+        | ``x``           | X-coordinate of this pixel edge                                                        |
         +-----------------+----------------------------------------------------------------------------------------+
         
         """
@@ -272,10 +298,9 @@ class Rag(object):
             for key, coords, in zip(self._label_img.axistags.keys(), edge_mask):
                 axial_edge_df[key] = coords
 
-            # For easier manipulation of the 'mask_coord' columns, set multi-level index for column names.
-            combined_columns = [['sp1', 'sp2', 'forwardness', 'edge_label'] + len(self._label_img.axistags)*['mask_coord'],
-                                [  '',     '',            '',           ''] + self._label_img.axistags.keys() ]
-            axial_edge_df.columns = pd.MultiIndex.from_tuples(list(zip(*combined_columns)))
+            # Set column names
+            coord_cols = self._label_img.axistags.keys()
+            axial_edge_df.columns = ['sp1', 'sp2', 'forwardness', 'edge_label'] + coord_cols
 
             self._axial_edge_dfs.append( axial_edge_df )
 
@@ -412,7 +437,8 @@ class Rag(object):
             # Extract values at the edge pixels
             for axis, axial_edge_df in enumerate(self.axial_edge_dfs):
                 logger.debug("Axis {}: Extracting values...".format( axis ))
-                mask_coords = tuple(series.values for _colname, series in axial_edge_df['mask_coord'].iteritems())
+                coord_cols = self._label_img.axistags.keys()
+                mask_coords = tuple(series.values for _colname, series in axial_edge_df[coord_cols].iteritems())
                 axial_edge_df['edge_value'] = extract_edge_values_for_axis(axis, mask_coords, value_img, aspandas=True)
 
             # Create an accumulator for each group

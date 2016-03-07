@@ -37,8 +37,10 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
     """
     ACCUMULATOR_ID = 'edgeregion'
 
-    def __init__(self, label_img, feature_names):
+    def __init__(self, rag, feature_names):
         self.cleanup() # Initialize members
+        
+        label_img = rag.label_img
         self._axisnames = label_img.axistags.keys()
         feature_names = list(feature_names)
 
@@ -56,6 +58,7 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
                     feature_names.append( 'edgeregion_edge_regionaxes_{}{}'.format( component_index, axisname ) )            
         
         self._feature_names = feature_names
+        self._rag = rag
     
     def cleanup(self):
         self._final_df = None
@@ -65,8 +68,11 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
             "This accumulator doesn't support block-wise merging (yet).\n"\
             "You can only process a volume as a single block"
 
+        # Concatenate edges from all axes into one big DataFrame
         coords_df = pd.concat(axial_edge_dfs)[['sp1', 'sp2'] + self._axisnames]
-        final_df = coords_df[['sp1', 'sp2']].drop_duplicates()
+        
+        # Create a new DataFrame to store the results
+        final_df = pd.DataFrame(self._rag.edge_ids, columns=['sp1', 'sp2'])
         
         num_edges = len(final_df)
         ndim = len(self._axisnames)

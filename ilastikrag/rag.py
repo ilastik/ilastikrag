@@ -747,7 +747,7 @@ class Rag(object):
             acc_class = Rag.DEFAULT_ACCUMULATOR_CLASSES[(acc_id, acc_type)]
         except KeyError:
             raise RuntimeError("No known accumulator class for features: {}".format( feature_group_names ))        
-        return acc_class(self._label_img, feature_group_names)
+        return acc_class(self, feature_group_names)
 
     @classmethod
     def _check_accumulator_conflicts(cls, accumulator_set):

@@ -15,7 +15,7 @@ class TestEdgeRegionEdgeAccumulator(object):
         feature_names = ['edgeregion_edge_regionradii']
 
         rag = Rag( superpixels )
-        acc = EdgeRegionEdgeAccumulator(rag.label_img, feature_names)
+        acc = EdgeRegionEdgeAccumulator(rag, feature_names)
         features_df = rag.compute_features(None, feature_names, accumulator_set=[acc])
         radii = features_df[features_df.columns.values[2:]].values
  
@@ -23,7 +23,7 @@ class TestEdgeRegionEdgeAccumulator(object):
         # Should match (radii are sorted by magnitude).
         superpixels.axistags = vigra.defaultAxistags('xy')
         rag = Rag( superpixels )
-        acc = EdgeRegionEdgeAccumulator(rag.label_img, feature_names)
+        acc = EdgeRegionEdgeAccumulator(rag, feature_names)
         
         transposed_features_df = rag.compute_features(None, feature_names, accumulator_set=[acc])
         transposed_radii = transposed_features_df[transposed_features_df.columns.values[2:]].values
@@ -38,7 +38,7 @@ class TestEdgeRegionEdgeAccumulator(object):
         rag = Rag( superpixels )
 
         feature_names = ['edgeregion_edge_regionradii', 'edgeregion_edge_regionaxes']
-        acc = EdgeRegionEdgeAccumulator(rag.label_img, feature_names)
+        acc = EdgeRegionEdgeAccumulator(rag, feature_names)
 
         features_df = rag.compute_features(None, feature_names, accumulator_set=[acc])
          

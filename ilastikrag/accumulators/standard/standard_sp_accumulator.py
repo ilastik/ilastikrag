@@ -70,9 +70,10 @@ class StandardSpAccumulator(BaseSpAccumulator):
     ACCUMULATOR_ID = 'standard'
     ACCUMULATOR_TYPE = 'sp'
 
-    def __init__(self, label_img, feature_names):
+    def __init__(self, rag, feature_names):
         self.cleanup() # Initialize members
         feature_names = list(feature_names)
+        label_img = rag.label_img
 
         # 'standard_sp_quantiles' is shorthand for "all quantiles"
         if 'standard_sp_quantiles' in feature_names:

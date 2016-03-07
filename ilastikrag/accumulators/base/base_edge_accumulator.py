@@ -14,12 +14,12 @@ class BaseEdgeAccumulator(object):
     #: All feature names supported by this accumulator must begin with the prefix ``<id>_edge_``
     ACCUMULATOR_ID = ''
 
-    def __init__(self, label_img, feature_names):
+    def __init__(self, rag, feature_names):
         """
         Parameters
         ----------
-        label_img
-            The Rag's full label volume.
+        rag:
+            The rag.
         
         feature_names
             A list of feature names to compute with this accumulator.

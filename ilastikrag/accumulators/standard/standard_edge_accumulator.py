@@ -49,7 +49,7 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
     ACCUMULATOR_ID = 'standard'
     ACCUMULATOR_TYPE = 'edge'
     
-    def __init__(self, label_img, feature_names):
+    def __init__(self, rag, feature_names):
         self.cleanup() # Initialize members
         feature_names = list(feature_names)
 

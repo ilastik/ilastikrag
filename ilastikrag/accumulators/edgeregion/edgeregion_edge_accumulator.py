@@ -8,7 +8,9 @@ logger = logging.getLogger(__name__)
 
 class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
     """
-    Accumulator for computing region axes and regionradii of edge pixels.
+    Accumulator for computing region axes and region radii over edge coordinates.
+    (The :py:class:`~ilastikrag.accumulators.standard.StandardEdgeAccumulator`
+    class does not provide region features.)
     
     We don't use vigra's RegionFeatureAccumulators because we only have
     access to the sparse lists of edge pixels (along each axis).

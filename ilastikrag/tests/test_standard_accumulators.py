@@ -264,9 +264,7 @@ class TestStandardAccumulators(object):
 
         features_df = rag.compute_features(values, ['standard_edge_quantiles', 'standard_sp_quantiles'])
         
-        # The accumulator uses 'minimum' and 'maximum' here instead of 'quantiles_0'
-        # and 'quantiles_100' because those are consistent in the blockwise case.
-        quantile_names = ['minimum', 'quantiles_10', 'quantiles_25', 'quantiles_50', 'quantiles_75', 'quantiles_90', 'maximum']
+        quantile_names = ['quantiles_0', 'quantiles_10', 'quantiles_25', 'quantiles_50', 'quantiles_75', 'quantiles_90', 'quantiles_100']
         edge_feature_names = map( lambda name: 'standard_edge_' + name, quantile_names )
         sp_features_names = map( lambda name: 'standard_sp_' + name, quantile_names )
         

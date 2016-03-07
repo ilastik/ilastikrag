@@ -77,16 +77,18 @@ class StandardSpAccumulator(BaseSpAccumulator):
         # 'standard_sp_quantiles' is shorthand for "all quantiles"
         if 'standard_sp_quantiles' in feature_names:
             feature_names.remove('standard_sp_quantiles')
-            # We use 'minimum' and 'maximum' here because those are consistent 
-            # even in the blockwise case, whereas 'quantiles_0' and 'quantiles_100'
-            # are initialized from the first block only.
-            feature_names += ['standard_sp_minimum',
+            
+            # Quantile histogram_range is based on the first block only,
+            # so the '0' and '100' values would be misleading if we used them as-is.
+            # Instead, we silently replace the '0' and '100' quantiles with 'minimum' and 'maximum'.
+            # See vigra_util.append_vigra_features_to_dataframe()
+            feature_names += ['standard_sp_quantiles_0',  # Will be automatically replaced with 'minimum'
                               'standard_sp_quantiles_10',
                               'standard_sp_quantiles_25',
                               'standard_sp_quantiles_50',
                               'standard_sp_quantiles_75',
                               'standard_sp_quantiles_90',
-                              'standard_sp_maximum']
+                              'standard_sp_quantiles_100'] # Will be automatically replaced with 'maximum'
 
         # 'standard_sp_regionradii' is shorthand for "all regionradii"
         if 'standard_sp_regionradii' in feature_names:
@@ -130,7 +132,7 @@ class StandardSpAccumulator(BaseSpAccumulator):
         sp_df = pd.DataFrame({ 'sp_id' : np.arange(final_sp_acc.maxRegionLabel()+1, dtype=np.uint32) }, index=index_u32)
 
         # Add the vigra accumulator results to the SP dataframe
-        sp_df = append_vigra_features_to_dataframe(final_sp_acc, sp_df, self._feature_names)
+        sp_df = append_vigra_features_to_dataframe(final_sp_acc, sp_df, self._feature_names, overwrite_quantile_minmax=True)
         
         # Combine SP features and append to the edge_df
         edge_df = self._append_sp_features_onto_edge_features( edge_df, sp_df )

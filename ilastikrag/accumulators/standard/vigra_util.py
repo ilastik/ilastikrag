@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-def append_vigra_features_to_dataframe( acc, df, feature_names):
+def append_vigra_features_to_dataframe( acc, df, feature_names, overwrite_quantile_minmax=False):
     """
     Extract the specified features from the given RegionFeaturesAccumulator
     and append them as columns to the given DataFrame.
@@ -28,18 +28,30 @@ def append_vigra_features_to_dataframe( acc, df, feature_names):
     for feature_name, vigra_feature_name in zip(feature_names, vigra_feature_names):
         if 'quantiles' in feature_name:
             quantile_suffix = feature_name.split('_')[-1]
-            q_index = ['0', '10', '25', '50', '75', '90', '100'].index(quantile_suffix)
-            df[feature_name] = pd.Series(acc['quantiles'][:, q_index], dtype=np.float32)
+
+            # Special treatment for 'minimum' and 'maximum',
+            # because 'quantile_0' and 'quantile_100' are the min/max for the first block only,
+            # whereas 'minimum' and 'maximum' are global to all blocks.
+            if overwrite_quantile_minmax and quantile_suffix == '0':
+                df[feature_name] = pd.Series(acc['minimum'], dtype=np.float32)
+            if overwrite_quantile_minmax and quantile_suffix == '100':
+                df[feature_name] = pd.Series(acc['maximum'], dtype=np.float32)
+            else:
+                q_index = ['0', '10', '25', '50', '75', '90', '100'].index(quantile_suffix)
+                df[feature_name] = pd.Series(acc['quantiles'][:, q_index], dtype=np.float32)
+
         elif 'regionradii' in feature_name:
             radii_suffix = feature_name.split('_')[-1]
             r_index = int(radii_suffix)
             df[feature_name] = pd.Series(acc['regionradii'][:, r_index], dtype=np.float32)
+
         elif 'regionaxes' in feature_name:
             suffix = feature_name.split('_')[-1]
             assert len(suffix) == 2
             r_index, axis = suffix
             axis_index = 'xyz'.index(axis) # vigra puts results in xyz order, regardless of array order.
             df[feature_name] = pd.Series(acc['regionaxes'][:, r_index, axis_index], dtype=np.float32)
+
         else:
             df[feature_name] = pd.Series(acc[vigra_feature_name], dtype=np.float32)
     

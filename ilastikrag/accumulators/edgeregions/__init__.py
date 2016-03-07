@@ -1,0 +1,1 @@
+from .edgeregion_edge_accumulator import EdgeRegionEdgeAccumulator

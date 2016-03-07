@@ -759,13 +759,16 @@ if __name__ == '__main__':
     grayscale = grayscale.astype(np.float32, copy=False)
 
     feature_names = []
-    feature_names = ['standard_edge_mean']
+    feature_names = ['standard_edge_mean', ]
     #feature_names += ['standard_edge_count', 'standard_edge_sum', 'standard_edge_mean', 'standard_edge_variance',
     #                  'standard_edge_minimum', 'standard_edge_maximum', 'standard_edge_quantiles_25', 'standard_edge_quantiles_50', 'standard_edge_quantiles_75', 'standard_edge_quantiles_100']
     #feature_names += ['standard_sp_count']
     #feature_names += ['standard_sp_count', 'standard_sp_sum', 'standard_sp_mean', 'standard_sp_variance', 'standard_sp_kurtosis', 'standard_sp_skewness']
     #feature_names += ['standard_sp_count', 'standard_sp_variance', 'standard_sp_quantiles_25', ]
 
+    from .accumulators import EdgeRegionEdgeAccumulator
+    Rag.ACCUMULATOR_CLASSES += [EdgeRegionEdgeAccumulator]
+    
     with Timer() as timer:
         logger.info("Creating python Rag...")
         rag = Rag( watershed )

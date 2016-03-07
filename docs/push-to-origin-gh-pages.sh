@@ -1,5 +1,14 @@
 #!/bin/bash
 
+##
+## Build the docs and push them to the gh-pages branch so github displays them.
+## Notes:
+##   - The new gh-pages branch is pushed to 'origin'
+##   - The old gh-pages branch is DELETED.
+##   - Files .nojeykll and circle.yml are automatically added to the gh-pages branch.
+##   - The work is done in a temporary clone of this repo (in /tmp), to avoid
+##     accidentally messing up your working directory.
+
 set -e
 
 repo_dir=$(git rev-parse --show-toplevel)

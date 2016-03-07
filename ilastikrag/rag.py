@@ -13,6 +13,7 @@ from .util import label_vol_mapping, edge_mask_for_axis, edge_ids_for_axis, \
 
 from .accumulators.standard import StandardEdgeAccumulator
 from .accumulators.standard import StandardSpAccumulator
+from .accumulators.edgeregion import EdgeRegionEdgeAccumulator
 
 class Rag(object):
     """
@@ -300,8 +301,9 @@ class Rag(object):
         self._max_sp = self._sp_ids.max()
 
 
+    # Initialize Rag.DEFAULT_ACCUMULATOR_CLASSES
     DEFAULT_ACCUMULATOR_CLASSES = {}
-    for acc_cls in [StandardEdgeAccumulator, StandardSpAccumulator]:
+    for acc_cls in [StandardEdgeAccumulator, StandardSpAccumulator, EdgeRegionEdgeAccumulator]:
         DEFAULT_ACCUMULATOR_CLASSES[(acc_cls.ACCUMULATOR_ID, acc_cls.ACCUMULATOR_TYPE)] = acc_cls
 
     def compute_features(self, value_img, feature_names, accumulator_set="default"):

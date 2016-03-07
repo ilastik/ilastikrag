@@ -97,7 +97,8 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
                 group_index[0] += 1
                 return None
             
-            # Compute covariance
+            # Compute covariance.
+            # Apparently computing it manually is much faster than group_df.cov()
             group_vals = group_df.values.astype(np.float32, copy=False)
             group_vals -= group_vals.mean(axis=0)
             matrix = group_vals.transpose().dot(group_vals)
@@ -108,13 +109,13 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
             group_index[0] += 1
             
             # We don't need to return anything;
-            # we're using this function only for it's side effects.
+            # we're using this function only for its side effects.
             return None
 
         # Compute/store covariance matrices
         grouper = coords_df.groupby(['sp1', 'sp2'], sort=True, group_keys=False)
         grouper = grouper[self._axisnames]
-        grouper.apply(write_covariance_matrix) # Used for it's side-effects only
+        grouper.apply(write_covariance_matrix) # Used for its side-effects only
 
         # Eigensystems
         eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrices_array)

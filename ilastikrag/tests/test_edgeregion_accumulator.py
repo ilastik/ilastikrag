@@ -8,7 +8,6 @@ from ilastikrag.accumulators.edgeregion import EdgeRegionEdgeAccumulator
 class TestEdgeRegionEdgeAccumulator(object):
 
     def test1(self):
-         
         superpixels = generate_random_voronoi((100,200), 200)
         superpixels.axistags = vigra.defaultAxistags('yx')
 
@@ -62,6 +61,17 @@ class TestEdgeRegionEdgeAccumulator(object):
         assert features_df['edgeregion_edge_regionaxes_1x'].values[0] == 0.0
         assert features_df['edgeregion_edge_regionaxes_1y'].values[0] == 1.0
 
+    def test_area(self):
+        superpixels = generate_random_voronoi((100,200), 200)
+        feature_names = ['edgeregion_edge_regionradii', 'edgeregion_edge_area']
+
+        rag = Rag( superpixels )
+        features_df = rag.compute_features(None, feature_names)
+        
+        radii = features_df[['edgeregion_edge_regionradii_0', 'edgeregion_edge_regionradii_1']].values
+        areas = features_df[['edgeregion_edge_area']].values
+        
+        assert ((radii[:,0] * radii[:,1]) == areas[:,0]).all()
 
 if __name__ == "__main__":
     import sys

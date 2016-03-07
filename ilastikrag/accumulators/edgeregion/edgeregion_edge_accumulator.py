@@ -25,6 +25,10 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
         - edgeregion_edge_regionradii_2
 
     ..
+    
+        - edgeregion_edge_area (radii_0 * radii_1)
+        - edgeregion_edge_volume (radii_0 * radii_1 * radii_2)
+    ..
 
         - edgeregion_edge_regionaxes (all of the below)
         - edgeregion_edge_regionaxes_0x
@@ -137,6 +141,13 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
                 region_axis_index = int(feature_name[-2])
                 coord_index = self._axisnames.index(feature_name[-1])
                 final_df[feature_name] = eigenvectors[:, region_axis_index, coord_index]
+            elif feature_name == 'edgeregion_edge_area':
+                final_df[feature_name] = np.prod(radii[:, :2], axis=1)
+            elif feature_name == 'edgeregion_edge_volume':
+                assert radii.shape[-1] == 3, "Can't ask for edge volume with 2D images."
+                final_df[feature_name] = np.prod(radii, axis=1)
+            else:
+                assert False, "Unknown feature: ".format( feature_name )
 
         self._final_df = final_df
     

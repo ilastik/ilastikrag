@@ -341,6 +341,10 @@ class Rag(object):
             an edge, and then converted into an edge feature, typically via sum or difference
             between the two superpixels.
 
+        accumulator_set:
+            A list of acumulators to use in addition to the built-in accumulators.
+            If ``accumulator_set="default"``, then only the built-in accumulators can be used.
+
         Returns
         -------
         *pandas.DataFrame*
@@ -410,6 +414,7 @@ class Rag(object):
         edge_df: DataFrame with columns (sp1, sp2) at least.
         edge_feature_groups: Dict of { accumulator_id : [feature_name, feature_name...] }
         value_img: ndarray of pixel values, or None
+        accumulator_set: A list of additional accumulators to consider, or "default" to just use built-in.
         """
         # For now, everything is with one big block
         block_start = self._label_img.ndim*(0,)
@@ -451,6 +456,7 @@ class Rag(object):
         edge_df: DataFrame with columns (sp1, sp2) at least.
         sp_feature_groups: Dict of { accumulator_id : [feature_name, feature_name...] }
         value_img: ndarray of pixel values, or None
+        accumulator_set: A list of additional accumulators to consider, or "default" to just use built-in.
         """
         if isinstance(self._label_img, Rag._EmptyLabels):
             raise NotImplementedError("Can't compute superpixel-based features.\n"
@@ -751,6 +757,10 @@ class Rag(object):
 
     @classmethod
     def _check_accumulator_conflicts(cls, accumulator_set):
+        """
+        Check the given accumulator set for possible conflicts,
+        i.e. if two of them have matching types/ids, then we can't choose between them.
+        """
         if accumulator_set == "default":
             return
 

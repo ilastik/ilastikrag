@@ -101,9 +101,6 @@ class Rag(object):
       (say, for parallelizing construction.)
     """
 
-    # Clients can add their own accumulator classes by appending to this list.
-    ACCUMULATOR_CLASSES = [StandardEdgeAccumulator, StandardSpAccumulator]
-
     def __init__( self, label_img ):
         """
         Parameters
@@ -144,7 +141,6 @@ class Rag(object):
                 
             edge_datas.append( (edge_mask_coords, edge_ids, edge_forwardness) )
 
-        self._init_accumulator_classlist()
         self._init_final_edge_label_lookup_df(edge_datas)
         self._init_final_edge_ids()
         self._init_axial_edge_dfs(edge_datas)
@@ -231,22 +227,6 @@ class Rag(object):
         
         """
         return self._axial_edge_dfs
-    
-    def _init_accumulator_classlist(self):
-        """
-        Load Rag.ACCUMULATOR_CLASSES into a dictionary for easy lookup.
-        We call this during __init__ instead of at class loading time, in
-        case the user wants to add extra accumulators to Rag.ACCUMULATOR_CLASSES. 
-        """
-        self._accumulator_class_lookup = {}
-        for acc_cls in self.ACCUMULATOR_CLASSES:
-            assert acc_cls.ACCUMULATOR_TYPE in ('edge', 'sp'), \
-                "{} has unknown accumulator-type: {}".format( acc_cls, acc_cls.ACCUMULATOR_TYPE )
-            assert acc_cls.ACCUMULATOR_ID, \
-                "{} has empty accumulator-id: {}".format( acc_cls, acc_cls.ACCUMULATOR_ID )
-            assert '_' not in acc_cls.ACCUMULATOR_ID, \
-                "{} has a bad char in its accumulator-id: {}".format( acc_cls, acc_cls.ACCUMULATOR_ID )
-            self._accumulator_class_lookup[(acc_cls.ACCUMULATOR_ID, acc_cls.ACCUMULATOR_TYPE)] = acc_cls
 
     def _init_final_edge_label_lookup_df(self, edge_datas):
         """
@@ -319,20 +299,23 @@ class Rag(object):
         self._num_sp = len(self._sp_ids)
         self._max_sp = self._sp_ids.max()
 
-    def compute_features(self, value_img, feature_names):
+
+    DEFAULT_ACCUMULATOR_CLASSES = {}
+    for acc_cls in [StandardEdgeAccumulator, StandardSpAccumulator]:
+        DEFAULT_ACCUMULATOR_CLASSES[(acc_cls.ACCUMULATOR_ID, acc_cls.ACCUMULATOR_TYPE)] = acc_cls
+
+    def compute_features(self, value_img, feature_names, accumulator_set="default"):
         """
         The primary API function for computing features. |br|
         Returns a pandas DataFrame with columns ``['sp1', 'sp2', ...output feature names...]``
-
-        By default, :meth:`compute_features()` uses only the :ref:`standard_accumulators`.
-        To add your own accumulator classes, append them to
-        ``Rag.ACCUMULATOR_CLASSES`` before constructing the :class:`Rag`.
 
         Parameters
         ----------
         value_img
             *VigraArray*, same shape as ``self.label_img``.         |br|
-            Pixel values are converted to ``float32`` internally.
+            Pixel values are converted to ``float32`` internally.   |br|
+            If your features are computed over the labels only,     |br|
+            (not pixel values), you may pass ``value_img=None``     |br|
         
         feature_names
             *list of str*
@@ -385,6 +368,7 @@ class Rag(object):
 
         """
         feature_names = map(str.lower, feature_names)
+        Rag._check_accumulator_conflicts(accumulator_set)
 
         # Group the names by type (edge/sp), then by accumulator ID,
         # but preserve the order of the features in each group (as a convenience to the user)
@@ -394,6 +378,7 @@ class Rag(object):
                                                          key=lambda name: name.split('_')[:2]):
             feature_groups[acc_type][acc_id] = list(feature_group)
 
+        # We only know about 'edge' and 'sp' features.
         unknown_feature_types = list(set(feature_groups.keys()) - set(['edge', 'sp']))
         if unknown_feature_types:
             bad_names = feature_groups[unknown_feature_types[0]].values()[0]
@@ -405,15 +390,12 @@ class Rag(object):
 
         # Compute and append columns
         if 'edge' in feature_groups:
-            edge_df = self._append_edge_features_for_values(edge_df, feature_groups['edge'], value_img)
+            edge_df = self._append_edge_features_for_values(edge_df, feature_groups['edge'], value_img, accumulator_set)
 
         if 'sp' in feature_groups:
-            if isinstance(self._label_img, Rag._EmptyLabels):
-                raise NotImplementedError("Can't compute superpixel-based features.\n"
-                                          "You deserialized the Rag without deserializing the labels.")
-            edge_df = self._append_sp_features_for_values(edge_df, feature_groups['sp'], value_img)
+            edge_df = self._append_sp_features_for_values(edge_df, feature_groups['sp'], value_img, accumulator_set)
 
-        # Typecheck to help new accumulator authors
+        # Typecheck the columns to help new accumulator authors spot problems in their code.
         dtypes = { colname: series.dtype for colname, series in edge_df.iterkv() }
         assert all(dtype != np.float64 for dtype in dtypes.values()), \
             "An accumulator returned float64 features. That's a waste of ram.\n"\
@@ -421,34 +403,31 @@ class Rag(object):
 
         return edge_df
 
-    def _append_edge_features_for_values(self, edge_df, edge_feature_groups, value_img):
+    def _append_edge_features_for_values(self, edge_df, edge_feature_groups, value_img, accumulator_set="default"):
         """
         Compute edge features and append them as columns to the given DataFrame.
         
         edge_df: DataFrame with columns (sp1, sp2) at least.
         edge_feature_groups: Dict of { accumulator_id : [feature_name, feature_name...] }
-        value_img: ndarray of pixel values
+        value_img: ndarray of pixel values, or None
         """
         # For now, everything is with one big block
-        block_start = value_img.ndim*(0,)
-        block_stop = value_img.shape
+        block_start = self._label_img.ndim*(0,)
+        block_stop = self._label_img.shape
 
         try:
             # Extract values at the edge pixels
-            for axis, axial_edge_df in enumerate(self.axial_edge_dfs):
-                logger.debug("Axis {}: Extracting values...".format( axis ))
-                coord_cols = self._label_img.axistags.keys()
-                mask_coords = tuple(series.values for _colname, series in axial_edge_df[coord_cols].iteritems())
-                axial_edge_df['edge_value'] = extract_edge_values_for_axis(axis, mask_coords, value_img, aspandas=True)
+            if value_img is not None:
+                for axis, axial_edge_df in enumerate(self.axial_edge_dfs):
+                    logger.debug("Axis {}: Extracting values...".format( axis ))
+                    coord_cols = self._label_img.axistags.keys()
+                    mask_coords = tuple(series.values for _colname, series in axial_edge_df[coord_cols].iteritems())
+                    axial_edge_df['edge_value'] = extract_edge_values_for_axis(axis, mask_coords, value_img, aspandas=True)
 
             # Create an accumulator for each group
             for acc_id, feature_group_names in edge_feature_groups.items():
-                try:
-                    acc_class = self._accumulator_class_lookup[(acc_id, 'edge')]
-                except KeyError:
-                    raise RuntimeError("No known accumulator class for features: {}".format( feature_group_names ))
-
-                with acc_class(self._label_img, feature_group_names) as edge_accumulator:
+                edge_accumulator = self._select_accumulator_for_group(acc_id, 'edge', feature_group_names, accumulator_set)
+                with edge_accumulator:
                     edge_accumulator.ingest_edges_for_block( self.axial_edge_dfs, block_start, block_stop )
                     edge_df = edge_accumulator.append_merged_edge_features_to_df(edge_df)
         finally:
@@ -459,26 +438,26 @@ class Rag(object):
 
         return edge_df
 
-    def _append_sp_features_for_values(self, edge_df, sp_feature_groups, value_img):
+    def _append_sp_features_for_values(self, edge_df, sp_feature_groups, value_img, accumulator_set="default"):
         """
         Compute superpixel-based features and append them as columns to the given DataFrame.
         
         edge_df: DataFrame with columns (sp1, sp2) at least.
         sp_feature_groups: Dict of { accumulator_id : [feature_name, feature_name...] }
-        value_img: ndarray of pixel values
+        value_img: ndarray of pixel values, or None
         """
+        if isinstance(self._label_img, Rag._EmptyLabels):
+            raise NotImplementedError("Can't compute superpixel-based features.\n"
+                                      "You deserialized the Rag without deserializing the labels.")
+
         # For now, everything is with one big block
-        block_start = value_img.ndim*(0,)
-        block_stop = value_img.shape
+        block_start = self._label_img.ndim*(0,)
+        block_stop = self._label_img.shape
 
         # Create an accumulator for each group
         for acc_id, feature_group_names in sp_feature_groups.items():
-            try:
-                acc_class = self._accumulator_class_lookup[(acc_id, 'sp')]
-            except KeyError:
-                raise RuntimeError("No known accumulator class for features: {}".format( feature_group_names ))
-
-            with acc_class(self._label_img, feature_group_names) as sp_accumulator:
+            sp_accumulator = self._select_accumulator_for_group(acc_id, 'sp', feature_group_names, accumulator_set)
+            with sp_accumulator:
                 sp_accumulator.ingest_values_for_block(self._label_img, value_img, block_start, block_stop)
                 edge_df = sp_accumulator.append_merged_sp_features_to_edge_df(edge_df)
 
@@ -637,7 +616,6 @@ class Rag(object):
             rag._label_img = Rag._EmptyLabels(label_dset.shape, label_dset.dtype, axistags)
 
         # Other attributes
-        rag._init_accumulator_classlist() # note: classlist was not serialized
         rag._init_final_edge_ids()
         rag._init_sp_attributes()
 
@@ -728,6 +706,51 @@ class Rag(object):
             except AttributeError:
                 self._raise_NotImplemented()
 
+    def _select_accumulator_for_group(self, acc_id, acc_type, feature_group_names, accumulator_set="default"):
+        """
+        Select an accumulator from the given accumulator_set for the given id/type and feature names.
+        """
+        if accumulator_set == "default":
+            accumulator_set = []
+
+        for acc in accumulator_set:
+            assert acc.ACCUMULATOR_TYPE in ('edge', 'sp'), \
+                "{} has unknown accumulator-type: {}".format( acc, acc.ACCUMULATOR_TYPE )
+            assert acc.ACCUMULATOR_ID, \
+                "{} has empty accumulator-id: {}".format( acc, acc.ACCUMULATOR_ID )
+            assert '_' not in acc.ACCUMULATOR_ID, \
+                "{} has a bad char in its accumulator-id: {}".format( acc, acc.ACCUMULATOR_ID )
+
+            if acc.ACCUMULATOR_ID == acc_id and acc.ACCUMULATOR_TYPE == acc_type:
+                return acc
+
+        # Try default
+        return self._create_default_accumulator(acc_id, acc_type, feature_group_names)
+
+    def _create_default_accumulator(self, acc_id, acc_type, feature_group_names):
+        """
+        Select the default accumulator class with the given id/type, and construct
+        a new instance with the given feature names.
+        """
+        try:
+            acc_class = Rag.DEFAULT_ACCUMULATOR_CLASSES[(acc_id, acc_type)]
+        except KeyError:
+            raise RuntimeError("No known accumulator class for features: {}".format( feature_group_names ))        
+        return acc_class(self._label_img, feature_group_names)
+
+    @classmethod
+    def _check_accumulator_conflicts(cls, accumulator_set):
+        if accumulator_set == "default":
+            return
+
+        counts = defaultdict(lambda: 0)
+        for acc in accumulator_set:
+            counts[(acc.ACCUMULATOR_ID, acc.ACCUMULATOR_TYPE)] += 1
+            if counts[(acc.ACCUMULATOR_ID, acc.ACCUMULATOR_TYPE)] > 1:
+                raise RuntimeError("Conflicting accumulator selections.\n"
+                                   "Multiple accumulators found to process features of type: {}_{}"
+                                   .format(acc.ACCUMULATOR_ID, acc.ACCUMULATOR_TYPE))
+
 if __name__ == '__main__':
     import sys
     logger.addHandler( logging.StreamHandler(sys.stdout) )
@@ -767,9 +790,6 @@ if __name__ == '__main__':
     #feature_names += ['standard_sp_count', 'standard_sp_sum', 'standard_sp_mean', 'standard_sp_variance', 'standard_sp_kurtosis', 'standard_sp_skewness']
     #feature_names += ['standard_sp_count', 'standard_sp_variance', 'standard_sp_quantiles_25', ]
 
-    from .accumulators import EdgeRegionEdgeAccumulator
-    Rag.ACCUMULATOR_CLASSES += [EdgeRegionEdgeAccumulator]
-    
     with Timer() as timer:
         logger.info("Creating python Rag...")
         rag = Rag( watershed )

@@ -7,24 +7,25 @@ from ilastikrag.accumulators.edgeregion import EdgeRegionEdgeAccumulator
 
 class TestEdgeRegionEdgeAccumulator(object):
 
-    if EdgeRegionEdgeAccumulator not in Rag.ACCUMULATOR_CLASSES:
-        Rag.ACCUMULATOR_CLASSES += [EdgeRegionEdgeAccumulator]
-    
     def test1(self):
          
         superpixels = generate_random_voronoi((100,200), 200)
         superpixels.axistags = vigra.defaultAxistags('yx')
-        values = np.zeros_like(superpixels, dtype=np.float32)
+
+        feature_names = ['edgeregion_edge_regionradii']
 
         rag = Rag( superpixels )
-        features_df = rag.compute_features(values, ['edgeregion_edge_regionradii'])
+        acc = EdgeRegionEdgeAccumulator(rag.label_img, feature_names)
+        features_df = rag.compute_features(None, feature_names, accumulator_set=[acc])
         radii = features_df[features_df.columns.values[2:]].values
  
         # Transpose superpixels and check again
         # Should match (radii are sorted by magnitude).
         superpixels.axistags = vigra.defaultAxistags('xy')
-        rag = Rag( superpixels ) 
-        transposed_features_df = rag.compute_features(values, ['edgeregion_edge_regionradii'])        
+        rag = Rag( superpixels )
+        acc = EdgeRegionEdgeAccumulator(rag.label_img, feature_names)
+        
+        transposed_features_df = rag.compute_features(None, feature_names, accumulator_set=[acc])
         transposed_radii = transposed_features_df[transposed_features_df.columns.values[2:]].values
         
         assert np.isclose(radii, transposed_radii).all()
@@ -33,10 +34,13 @@ class TestEdgeRegionEdgeAccumulator(object):
         superpixels = np.zeros((10, 10), dtype=np.uint32)
         superpixels[1:2] = 1
         superpixels = vigra.taggedView(superpixels, 'yx')
+
         rag = Rag( superpixels )
-         
-        values = np.zeros_like(superpixels, dtype=np.float32)        
-        features_df = rag.compute_features(values, ['edgeregion_edge_regionradii', 'edgeregion_edge_regionaxes'])
+
+        feature_names = ['edgeregion_edge_regionradii', 'edgeregion_edge_regionaxes']
+        acc = EdgeRegionEdgeAccumulator(rag.label_img, feature_names)
+
+        features_df = rag.compute_features(None, feature_names, accumulator_set=[acc])
          
         # Just 1 edge in this rag (0 -> 1)
         assert len(features_df) == 1

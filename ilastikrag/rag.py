@@ -759,7 +759,8 @@ if __name__ == '__main__':
     grayscale = grayscale.astype(np.float32, copy=False)
 
     feature_names = []
-    feature_names = ['standard_edge_mean', ]
+    feature_names = ['edgeregion_edge_regionradii', ]
+    #feature_names = ['standard_edge_mean', ]
     #feature_names += ['standard_edge_count', 'standard_edge_sum', 'standard_edge_mean', 'standard_edge_variance',
     #                  'standard_edge_minimum', 'standard_edge_maximum', 'standard_edge_quantiles_25', 'standard_edge_quantiles_50', 'standard_edge_quantiles_75', 'standard_edge_quantiles_100']
     #feature_names += ['standard_sp_count']

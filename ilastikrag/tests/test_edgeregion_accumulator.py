@@ -18,7 +18,7 @@ class TestEdgeRegionEdgeAccumulator(object):
 
         rag = Rag( superpixels )
         features_df = rag.compute_features(values, ['edgeregion_edge_regionradii'])
-        radii = features_df[features_df.columns.values[2:]].values        
+        radii = features_df[features_df.columns.values[2:]].values
  
         # Transpose superpixels and check again
         # Should match (radii are sorted by magnitude).

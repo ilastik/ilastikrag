@@ -10,6 +10,11 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
     """
     Accumulator for computing region axes and regionradii of edge pixels.
     
+    We don't use vigra's RegionFeatureAccumulators because we only have
+    access to the sparse lists of edge pixels (along each axis).
+    Instead, we manually compute the region axes/radii directly from the
+    edge coordinate columns.
+    
     Supported feature names:
 
         - edgeregion_edge_regionradii (all of the below)
@@ -35,7 +40,6 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
     def __init__(self, label_img, feature_names):
         self.cleanup() # Initialize members
         self._axisnames = label_img.axistags.keys()
-
         feature_names = list(feature_names)
 
         # 'edgeregion_edge_regionradii' is shorthand for "all edge region radii"
@@ -54,71 +58,69 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
         self._feature_names = feature_names
     
     def cleanup(self):
-        self._num_blocks = 0
         self._final_df = None
 
     def ingest_edges_for_block(self, axial_edge_dfs, block_start, block_stop):
-        assert self._num_blocks == 0, \
+        assert self._final_df is None, \
             "This accumulator doesn't support block-wise merging (yet).\n"\
             "You can only process a volume as a single block"
-        self._num_blocks += 1
-        
-        # Compute edge_centroids
-        coords_df = pd.concat(axial_edge_dfs)[['sp1', 'sp2'] + self._axisnames]
-        centroids_df = coords_df.groupby(['sp1', 'sp2'], as_index=False)[self._axisnames].mean()
 
-        # Rename z,y,x columns        
-        centroid_colnames = map( lambda name: name + '_centroid', self._axisnames )
-        centroids_df.columns = ['sp1', 'sp2'] + centroid_colnames
+        coords_df = pd.concat(axial_edge_dfs)[['sp1', 'sp2'] + self._axisnames]
+        final_df = coords_df[['sp1', 'sp2']].drop_duplicates()
         
-        # Add centroid columns. Columns are:
-        # ['sp1', 'sp2', 'z', 'y', 'x', 'z_centroid', 'y_centroid', 'x_centroid']
-        coords_df = pd.merge(coords_df, centroids_df, on=['sp1', 'sp2'], how='left', copy=False)
-        
-        # Centralize: (x - x_centroid), etc.
-        centralized_coords = coords_df[self._axisnames].values - coords_df[centroid_colnames].values.astype(np.float32)
-        centralized_coords_df = pd.DataFrame(centralized_coords, columns=self._axisnames)
-        centralized_coords_df = coords_df[['sp1', 'sp2']].join(centralized_coords_df)        
-        
-        def column_covariance(group_df):
-            # Compute the covariance matrix of the columns in group_df,
-            # and then add the matrix to a DataFrame as a single element (dtype=object)
-            # Note: The columns of group_df should already be centralized; i.e. they have mean=0.0 
-            group_vals = group_df.values.astype(np.float32)
+        num_edges = len(final_df)
+        ndim = len(self._axisnames)
+        covariance_matrices_array = np.zeros( (num_edges, ndim, ndim), dtype=np.float32 )
+
+        group_index = [-1]
+        def write_covariance_matrix(group_df):
+            """
+            Computes the covariance matrix of the given group,
+            and writes it into the pre-existing covariance_matrices_array.
+            """
+            # There's one 'gotcha' to watch out for here:
+            # GroupBy.apply() calls this function *twice* for the first group.
+            # http://pandas.pydata.org/pandas-docs/stable/generated/pandas.core.groupby.GroupBy.apply.html
+            if group_index[0] < 0:
+                group_index[0] += 1
+                return None
+            
+            # Compute covariance
+            group_vals = group_df.values.astype(np.float32, copy=False)
+            group_vals -= group_vals.mean(axis=0)
             matrix = group_vals.transpose().dot(group_vals)
             matrix[:] /= len(group_df)
-            df = pd.DataFrame({ 'covariance_matrix': [[matrix]] })
-            assert df.shape == (1,1)
-            return df
+            
+            # Store.
+            covariance_matrices_array[group_index[0]] = matrix
+            group_index[0] += 1
+            
+            # We don't need to return anything;
+            # we're using this function only for it's side effects.
+            return None
 
-        # Compute covariance matrices
-        # The 'groupdot' column contains a matrix in each element (dtype=object).
-        covariance_matrices_df = centralized_coords_df.groupby(['sp1', 'sp2'], as_index=False)[self._axisnames].apply(column_covariance)        
-        covariance_matrices_array = np.concatenate(covariance_matrices_df.values[:,0])
-        
-        num_edges = len(centroids_df)
-        ndim = len(self._axisnames)
-        assert covariance_matrices_array.ndim == 3
-        assert covariance_matrices_array.shape == (num_edges, ndim, ndim)
-        
+        # Compute/store covariance matrices
+        grouper = coords_df.groupby(['sp1', 'sp2'], sort=True, group_keys=False)
+        grouper = grouper[self._axisnames]
+        grouper.apply(write_covariance_matrix) # Used for it's side-effects only
+
+        # Eigensystems
         eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrices_array)
         assert eigenvalues.shape == (num_edges, ndim)
         assert eigenvectors.shape == (num_edges, ndim, ndim)
 
-        # Apparently eigh can return small negative eigenvalues sometimes
-        eigenvalues[eigenvalues < 0.0] = 0.0
-        
-        # np.eigh() returns in *ascending* order, but we want descending
+        # eigh() returns in *ascending* order, but we want descending
         eigenvalues = eigenvalues[:, ::-1]
         eigenvectors = eigenvectors[:, ::-1]
         
-        # np.eigh() returns eigenvectors in *columns*, but we want rows
+        # eigh() returns eigenvectors in *columns*, but we want rows
         eigenvectors = eigenvectors.transpose(0,2,1)        
 
+        # Apparently eigh() can return tiny negative eigenvalues sometimes
+        eigenvalues[eigenvalues < 0.0] = 0.0
         radii = np.sqrt(eigenvalues, out=eigenvalues)
 
         # Copy axes into final_df, in the same order the user asked for.
-        final_df = pd.DataFrame(centroids_df[['sp1', 'sp2']])
         for feature_name in self._feature_names:
             if feature_name.startswith('edgeregion_edge_regionradii'):
                 region_axis_index = int(feature_name[-1])
@@ -131,4 +133,6 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
         self._final_df = final_df
     
     def append_merged_edge_features_to_df(self, edge_df):
+        # This accumulator doesn't support blockwise processing and merging,
+        # so just merge our one-and-only block results into the edge_df.
         return pd.merge(edge_df, self._final_df, on=['sp1', 'sp2'], how='left', copy=False)

@@ -17,7 +17,7 @@ origin_url=$(echo ${origin_details} | python -c "import sys; print sys.stdin.rea
 
 # Clone a copy into /tmp/
 rm -rf /tmp/ilastikrag-gh-pages
-git clone --depth=1 "${repo_dir}" /tmp/ilastikrag-gh-pages
+git clone --depth=1 "file://${repo_dir}" /tmp/ilastikrag-gh-pages
 
 # Completely erase the old gh-pages branch and start it from scratch
 cd /tmp/ilastikrag-gh-pages

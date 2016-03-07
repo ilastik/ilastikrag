@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 from .util import label_vol_mapping, edge_mask_for_axis, edge_ids_for_axis, \
                   unique_edge_labels, extract_edge_values_for_axis, nonzero_coord_array
 
+from .accumulators.base import BaseEdgeAccumulator, BaseSpAccumulator
 from .accumulators.standard import StandardEdgeAccumulator
 from .accumulators.standard import StandardSpAccumulator
 from .accumulators.edgeregion import EdgeRegionEdgeAccumulator
@@ -768,6 +769,10 @@ class Rag(object):
 
         counts = defaultdict(lambda: 0)
         for acc in accumulator_set:
+            assert isinstance(acc, BaseEdgeAccumulator) or isinstance(acc, BaseSpAccumulator), \
+                "All accumulators must inherit from an accumulator base class.\n"\
+                "Wrong type: {}".format( acc )
+            
             counts[(acc.ACCUMULATOR_ID, acc.ACCUMULATOR_TYPE)] += 1
             if counts[(acc.ACCUMULATOR_ID, acc.ACCUMULATOR_TYPE)] > 1:
                 raise RuntimeError("Conflicting accumulator selections.\n"

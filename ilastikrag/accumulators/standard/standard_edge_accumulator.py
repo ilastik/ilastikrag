@@ -40,10 +40,6 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
 #     - edge_count is computed 'manhattan' style, meaning that it
 #       is sensitive to the edge orientation (and so is edge_sum).
 #       Should we try to compensate for that somehow?
-#       Hmm... probably not. If we implement a RegionRadii edge feature,
-#       that's more informative than edge_count anyway, as long as it is
-#       implemented correctly (e.g. be sure to de-duplicate the edge coords
-#       after concatenating the edge points from each axis)
 
     
     ACCUMULATOR_ID = 'standard'
@@ -77,6 +73,10 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
         self._block_vigra_accumulators = []
     
     def ingest_edges_for_block(self, axial_edge_dfs, block_start, block_stop):
+        assert len(self._block_vigra_accumulators) == 0, \
+            "FIXME: This accumulator is written to support block-wise accumulation, but that use-case isn't tested yet.\n"\
+            "Write a unit test for that use-case, then remove this assertion."
+        
         block_vigra_acc = self._accumulate_edge_vigra_features( axial_edge_dfs )
         self._block_vigra_accumulators.append( block_vigra_acc )
 

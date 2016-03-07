@@ -113,6 +113,10 @@ class StandardSpAccumulator(BaseSpAccumulator):
         self._block_vigra_accumulators = []
 
     def ingest_values_for_block(self, label_block, value_block, block_start, block_stop):
+        assert len(self._block_vigra_accumulators) == 0, \
+            "FIXME: This accumulator is written to support block-wise accumulation, but that use-case isn't tested yet.\n"\
+            "Write a unit test for that use-case, then remove this assertion."
+
         logger.debug("Computing SP features...")
         block_vigra_acc = self._accumulate_sp_vigra_features( label_block, value_block )
         self._block_vigra_accumulators.append( block_vigra_acc )

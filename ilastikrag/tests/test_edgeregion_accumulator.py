@@ -3,7 +3,7 @@ import vigra
 
 from ilastikrag import Rag
 from ilastikrag.util import generate_random_voronoi
-from ilastikrag.accumulators.edgeregions import EdgeRegionEdgeAccumulator
+from ilastikrag.accumulators.edgeregion import EdgeRegionEdgeAccumulator
 
 class TestEdgeRegionEdgeAccumulator(object):
 

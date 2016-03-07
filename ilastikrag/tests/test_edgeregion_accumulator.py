@@ -17,6 +17,7 @@ class TestEdgeRegionEdgeAccumulator(object):
         acc = EdgeRegionEdgeAccumulator(rag, feature_names)
         features_df = rag.compute_features(None, feature_names, accumulator_set=[acc])
         radii = features_df[features_df.columns.values[2:]].values
+        assert (radii[:,0] >= radii[:,1]).all()
  
         # Transpose superpixels and check again
         # Should match (radii are sorted by magnitude).
@@ -69,8 +70,38 @@ class TestEdgeRegionEdgeAccumulator(object):
         features_df = rag.compute_features(None, feature_names)
         
         radii = features_df[['edgeregion_edge_regionradii_0', 'edgeregion_edge_regionradii_1']].values
+        assert (radii[:,0] >= radii[:,1]).all()
+
         areas = features_df[['edgeregion_edge_area']].values
+        assert ((radii[:,0] * radii[:,1]) == areas[:,0]).all()
+
+    def test_volume(self):
+        superpixels = generate_random_voronoi((100,200), 200)
+        feature_names = ['edgeregion_edge_regionradii', 'edgeregion_edge_volume']
+        rag = Rag( superpixels )
         
+        try:
+            rag.compute_features(None, feature_names)
+        except AssertionError:
+            pass
+        except:
+            raise
+        else:
+            assert False, "EdgeRegion accumulator should refuse to compute 'volume' for 2D images."
+
+        superpixels = generate_random_voronoi((25,50,100), 200)
+        feature_names = ['edgeregion_edge_regionradii', 'edgeregion_edge_area', 'edgeregion_edge_volume']
+
+        rag = Rag( superpixels )
+        features_df = rag.compute_features(None, feature_names)
+        
+        radii = features_df[['edgeregion_edge_regionradii_0', 'edgeregion_edge_regionradii_1', 'edgeregion_edge_regionradii_2']].values
+        assert (radii[:,0] >= radii[:,1]).all() and (radii[:,1] >= radii[:,2]).all()
+        
+        volumes = features_df[['edgeregion_edge_volume']].values        
+        assert ((radii[:,0] * radii[:,1] * radii[:,2]) == volumes[:,0]).all()
+
+        areas = features_df[['edgeregion_edge_area']].values        
         assert ((radii[:,0] * radii[:,1]) == areas[:,0]).all()
 
 if __name__ == "__main__":

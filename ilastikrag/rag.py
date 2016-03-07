@@ -430,6 +430,12 @@ class Rag(object):
                 with edge_accumulator:
                     edge_accumulator.ingest_edges_for_block( self.axial_edge_dfs, block_start, block_stop )
                     edge_df = edge_accumulator.append_merged_edge_features_to_df(edge_df)
+
+                # If the accumulator provided more features than the
+                # user is asking for right now, remove the extra columns
+                for colname in edge_df.columns.values[2:]:
+                    if '_edge_' in colname and not any(colname.startswith(name) for name in feature_group_names):
+                        del edge_df[colname]
         finally:
             # Cleanup: Drop value columns
             for axial_edge_df in self.axial_edge_dfs:
@@ -461,6 +467,11 @@ class Rag(object):
                 sp_accumulator.ingest_values_for_block(self._label_img, value_img, block_start, block_stop)
                 edge_df = sp_accumulator.append_merged_sp_features_to_edge_df(edge_df)
 
+                # If the accumulator provided more features than the
+                # user is asking for right now, remove the extra columns
+                for colname in edge_df.columns.values[2:]:
+                    if '_sp_' in colname and not any(colname.startswith(name) for name in feature_group_names):
+                        del edge_df[colname]
         return edge_df
 
     def edge_decisions_from_groundtruth(self, groundtruth_vol, asdict=False):

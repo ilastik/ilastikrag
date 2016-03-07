@@ -20,11 +20,6 @@ There are two types of acccumulators: ``edge`` and ``sp``:
 - ``edge`` accumulators process tables of **edge pixels** (and corresponding values)
 - ``sp`` features process the **dense volume** of labels and values.
 
-All accumulators inherit from one of the two accumulator base classes:
-
- - :class:`~ilastikrag.accumulators.BaseEdgeAccumulator`
- - :class:`~ilastikrag.accumulators.BaseSpAccumulator`
-
 You can implement your own accumulators, but ``ilastikrag`` comes with the
 following built-in accumulators, already activated by default:
 
@@ -32,12 +27,58 @@ following built-in accumulators, already activated by default:
 - :class:`~ilastikrag.accumulators.standard.StandardSpAccumulator` 
 - :class:`~ilastikrag.accumulators.edgeregion.EdgeRegionEdgeAccumulator` 
 
-.. _base_accumulators:
+All accumulators inherit from one of these two base classes:
 
-.. currentmodule:: ilastikrag.accumulators.base
+ - :class:`~ilastikrag.accumulators.BaseEdgeAccumulator`
+ - :class:`~ilastikrag.accumulators.BaseSpAccumulator`
+
+
+.. _standard_accumulators:
+
+Standard Accumulators
+---------------------
+
+.. currentmodule:: ilastikrag.accumulators.standard
+
+.. autoclass:: ilastikrag.accumulators.standard.StandardEdgeAccumulator
+
+   .. autoattribute:: ACCUMULATOR_TYPE
+   .. autoattribute:: ACCUMULATOR_ID
+
+   **Methods:** See :class:`~ilastikrag.accumulators.base.BaseEdgeAccumulator`
+
+.. autoclass:: ilastikrag.accumulators.standard.StandardSpAccumulator
+
+   .. autoattribute:: ACCUMULATOR_TYPE
+   .. autoattribute:: ACCUMULATOR_ID
+
+   **Methods:** See :class:`~ilastikrag.accumulators.base.BaseSpAccumulator`
+
+
+
+.. _edgeregion_accumulator:
+
+EdgeRegion Accumulator
+----------------------
+
+.. currentmodule:: ilastikrag.accumulators.edgeregion
+
+
+.. autoclass:: ilastikrag.accumulators.edgeregion.EdgeRegionEdgeAccumulator
+
+   .. autoattribute:: ACCUMULATOR_TYPE
+   .. autoattribute:: ACCUMULATOR_ID
+
+   **Methods:** See :class:`~ilastikrag.accumulators.base.BaseEdgeAccumulator`
+
+
+
+.. _base_accumulators:
 
 Base Accumulators
 -----------------
+
+.. currentmodule:: ilastikrag.accumulators.base
 
 .. autoclass:: BaseEdgeAccumulator
 
@@ -58,38 +99,4 @@ Base Accumulators
    .. automethod:: append_merged_sp_features_to_edge_df   
 
 
-.. _standard_accumulators:
-
-.. currentmodule:: ilastikrag.accumulators.standard
-
-Standard Accumulators
----------------------
-
-.. autoclass:: ilastikrag.accumulators.standard.StandardEdgeAccumulator
-
-   .. autoattribute:: ACCUMULATOR_TYPE
-   .. autoattribute:: ACCUMULATOR_ID
-
-   **Methods:** See :class:`~ilastikrag.accumulators.base.BaseEdgeAccumulator`
-
-.. autoclass:: ilastikrag.accumulators.standard.StandardSpAccumulator
-
-   .. autoattribute:: ACCUMULATOR_TYPE
-   .. autoattribute:: ACCUMULATOR_ID
-
-   **Methods:** See :class:`~ilastikrag.accumulators.base.BaseSpAccumulator`
-
-
-.. _edgeregion_accumulator:
-
-.. currentmodule:: ilastikrag.accumulators.edgeregion
-
-EdgeRegion Accumulator
-----------------------
-
-.. autoclass:: ilastikrag.accumulators.edgeregion.EdgeRegionEdgeAccumulator
-
-   .. autoattribute:: ACCUMULATOR_TYPE
-   .. autoattribute:: ACCUMULATOR_ID
-
-   **Methods:** See :class:`~ilastikrag.accumulators.base.BaseEdgeAccumulator`
+   

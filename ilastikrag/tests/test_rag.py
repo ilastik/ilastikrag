@@ -17,6 +17,18 @@ class TestRag(object):
         assert rag.num_sp == 200, "num_sp was: {}".format(rag.num_sp)
         assert rag.max_sp == 200
         assert (rag.sp_ids == np.arange(1,201)).all()
+        assert rag.sp_ids.dtype == np.uint32
+        assert isinstance(rag.max_sp, np.uint32)
+        assert rag.edge_ids.dtype == np.uint32
+        assert (rag.edge_label_lookup_df[['sp1', 'sp2', 'edge_label']].dtypes == np.uint32).all()
+        for df in rag.axial_edge_dfs:
+            assert df['sp1'].dtype == df['sp2'].dtype == np.uint32
+            assert df['forwardness'].dtype == bool
+            assert df['edge_label'].dtype == np.uint32
+            
+            # The coordinate dtype can be uint16 or uint32,
+            # depending on the size of the size of the image 
+            assert df['y'].dtype == df['x'].dtype == np.uint16        
 
         # Just check some basic invariants of the edge_ids
         assert rag.edge_ids.shape == (rag.num_edges, 2)

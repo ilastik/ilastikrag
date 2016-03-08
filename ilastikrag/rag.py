@@ -291,9 +291,11 @@ class Rag(object):
         Compute and store our properties for sp_ids, num_sp, max_sp
         """
         # Cache the unique sp ids to expose as an attribute
+        # FIXME: vigra.unique() would be faster, and no implicit cast to int64
         unique_left = self._final_edge_label_lookup_df['sp1'].unique()
         unique_right = self._final_edge_label_lookup_df['sp2'].unique()
         self._sp_ids = pd.Series( np.concatenate((unique_left, unique_right)) ).unique()
+        self._sp_ids = self._sp_ids.astype(np.uint32)
         self._sp_ids.sort()
         
         # We don't assume that SP ids are consecutive,
@@ -494,6 +496,7 @@ class Rag(object):
         
         If ``asdict=True``, return the result as a dict of ``{(sp1, sp2) : bool}``
         """
+        assert (groundtruth_vol.shape == self._label_img.shape)
         sp_to_gt_mapping = label_vol_mapping(self._label_img, groundtruth_vol)
 
         unique_sp_edges = self.edge_ids

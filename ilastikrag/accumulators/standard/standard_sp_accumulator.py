@@ -245,3 +245,46 @@ class StandardSpAccumulator(BaseSpAccumulator):
             del edge_df[sp_feature + '_sp2']
         
         return edge_df
+
+    @classmethod
+    def supported_features(cls, rag):
+        names = ['standard_sp_count',
+                 'standard_sp_sum',
+                 'standard_sp_minimum',
+                 'standard_sp_maximum',
+                 'standard_sp_mean',
+                 'standard_sp_variance',
+                 'standard_sp_kurtosis',
+                 'standard_sp_skewness',
+                 'standard_sp_quantiles',
+                 'standard_sp_quantiles_0',
+                 'standard_sp_quantiles_10',
+                 'standard_sp_quantiles_25',
+                 'standard_sp_quantiles_50',
+                 'standard_sp_quantiles_75',
+                 'standard_sp_quantiles_90',
+                 'standard_sp_quantiles_100' ]
+
+        names += ['standard_sp_regionradii',
+                  'standard_sp_regionradii_0',
+                  'standard_sp_regionradii_1']
+        
+        if rag.label_img.ndim == 3:
+            names += ['standard_sp_regionradii_2']
+
+        axes_names = ['standard_sp_regionaxes',
+                      'standard_sp_regionaxes_0x',
+                      'standard_sp_regionaxes_0y',
+                      'standard_sp_regionaxes_1x',
+                      'standard_sp_regionaxes_1y']
+
+        if rag.label_img.ndim == 3:
+            axes_names += [ 'standard_sp_regionaxes_0z',
+                            'standard_sp_regionaxes_1z',
+                            'standard_sp_regionaxes_2x',
+                            'standard_sp_regionaxes_2y',
+                            'standard_sp_regionaxes_2z' ]
+            axes_names = sorted(axes_names)
+
+        names += axes_names
+        return names

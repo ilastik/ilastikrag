@@ -19,15 +19,15 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
     
     Supported feature names:
 
+        - edgeregion_edge_area (radii_0 * radii_1)
+        - edgeregion_edge_volume (radii_0 * radii_1 * radii_2)
+
+    ..
+    
         - edgeregion_edge_regionradii (all of the below)
         - edgeregion_edge_regionradii_0
         - edgeregion_edge_regionradii_1
         - edgeregion_edge_regionradii_2
-
-    ..
-    
-        - edgeregion_edge_area (radii_0 * radii_1)
-        - edgeregion_edge_volume (radii_0 * radii_1 * radii_2)
     ..
 
         - edgeregion_edge_regionaxes (all of the below)
@@ -156,3 +156,34 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
         # This accumulator doesn't support blockwise processing and merging,
         # so just merge our one-and-only block results into the edge_df.
         return pd.merge(edge_df, self._final_df, on=['sp1', 'sp2'], how='left', copy=False)
+
+    @classmethod
+    def supported_features(cls, rag):
+        names = ['edgeregion_edge_area']
+
+        if rag.label_img.ndim == 3:
+            names += ['edgeregion_edge_volume']
+
+        names += [ 'edgeregion_edge_regionradii',
+                   'edgeregion_edge_regionradii_0',
+                   'edgeregion_edge_regionradii_1' ]
+            
+        if rag.label_img.ndim == 3:
+            names += ['edgeregion_edge_regionradii_2']
+
+        axes_names = [ 'edgeregion_edge_regionaxes',
+                       'edgeregion_edge_regionaxes_0x',
+                       'edgeregion_edge_regionaxes_0y',
+                       'edgeregion_edge_regionaxes_1x',
+                       'edgeregion_edge_regionaxes_1y' ]
+
+        if rag.label_img.ndim == 3:
+            axes_names += [ 'edgeregion_edge_regionaxes_0z',
+                            'edgeregion_edge_regionaxes_1z',
+                            'edgeregion_edge_regionaxes_2x',
+                            'edgeregion_edge_regionaxes_2y',
+                            'edgeregion_edge_regionaxes_2z' ]
+            axes_names = sorted(axes_names)
+
+        names += axes_names
+        return names 

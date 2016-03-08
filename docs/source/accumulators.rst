@@ -13,9 +13,8 @@ Feature Accumulators
 
    <br />
 
-The features produced by :py:meth:`ilastikrag.Rag.compute_features()` are computed using "accumulator" classes.
-
-There are two types of acccumulators: ``edge`` and ``sp``:
+The main work of :py:meth:`~ilastikrag.rag.Rag.compute_features()` is performed by "accumulator" classes.
+There are two types of acccumulators: ``edge`` and ``sp``.
 
 - ``edge`` accumulators process tables of **edge pixels** (and corresponding values)
 - ``sp`` features process the **dense volume** of labels and values.
@@ -29,8 +28,8 @@ following built-in accumulators, already activated by default:
 
 All accumulators inherit from one of these two base classes:
 
- - :class:`~ilastikrag.accumulators.BaseEdgeAccumulator`
- - :class:`~ilastikrag.accumulators.BaseSpAccumulator`
+ - :class:`~ilastikrag.accumulators.base.BaseEdgeAccumulator`
+ - :class:`~ilastikrag.accumulators.base.BaseSpAccumulator`
 
 
 .. _standard_accumulators:
@@ -86,8 +85,9 @@ Base Accumulators
    .. autoattribute:: ACCUMULATOR_ID
    .. automethod:: __init__   
    .. automethod:: cleanup   
-   .. automethod:: ingest_edges_for_block   
+   .. automethod:: ingest_edges_for_block
    .. automethod:: append_merged_edge_features_to_df   
+   .. automethod:: supported_features
 
 .. autoclass:: BaseSpAccumulator
 
@@ -95,8 +95,8 @@ Base Accumulators
    .. autoattribute:: ACCUMULATOR_ID
    .. automethod:: __init__   
    .. automethod:: cleanup   
-   .. automethod:: ingest_values_for_block   
+   .. automethod:: ingest_values_for_block
    .. automethod:: append_merged_sp_features_to_edge_df   
-
+   .. automethod:: supported_features
 
    

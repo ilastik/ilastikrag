@@ -1,5 +1,6 @@
 import os
 import tempfile
+import itertools
 
 import numpy as np
 import pandas as pd
@@ -28,7 +29,7 @@ class TestRag(object):
             
             # The coordinate dtype can be uint16 or uint32,
             # depending on the size of the size of the image 
-            assert df['y'].dtype == df['x'].dtype == np.uint16        
+            assert df['y'].dtype == df['x'].dtype == np.uint16
 
         # Just check some basic invariants of the edge_ids
         assert rag.edge_ids.shape == (rag.num_edges, 2)
@@ -42,6 +43,11 @@ class TestRag(object):
         edge_df = pd.DataFrame(edge_ids_copy, columns=['sp1', 'sp2'])
         edge_df.sort(columns=['sp1', 'sp2'], inplace=True)
         assert (rag.edge_ids == edge_df.values).all()
+
+        # We're just using default features, so the supported features should match.
+        default_features = [acc_cls.supported_features(rag) for acc_cls in Rag.DEFAULT_ACCUMULATOR_CLASSES.values()]
+        default_features = itertools.chain(*default_features)
+        assert set(rag.supported_features()) == set( default_features )
 
     def test_edge_decisions_from_groundtruth(self):
         # 1 2

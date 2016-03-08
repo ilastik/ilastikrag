@@ -34,6 +34,13 @@ class BaseSpAccumulator(object):
         """
         raise NotImplementedError
 
+    @classmethod
+    def supported_features(cls, rag):
+        """
+        Returns the list of feature names that can be computed for the given Rag.
+        """
+        raise NotImplementedError
+
     def ingest_values_for_block(self, label_block, value_block, block_start, block_stop):
         """
         Ingests a particular block of label data and its corresponding (single-channel) pixel values.

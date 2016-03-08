@@ -44,7 +44,7 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
     
     ACCUMULATOR_ID = 'standard'
     ACCUMULATOR_TYPE = 'edge'
-    
+
     def __init__(self, rag, feature_names):
         self.cleanup() # Initialize members
         feature_names = list(feature_names)
@@ -148,3 +148,24 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
             axis_to_final_index_array = np.arange( acc.maxRegionLabel()+1, dtype=np.uint32 )
             final_acc.merge( acc, axis_to_final_index_array )
         return final_acc
+
+    @classmethod
+    def supported_features(cls, rag):
+        names = ['standard_edge_count',
+                 'standard_edge_sum',
+                 'standard_edge_minimum',
+                 'standard_edge_maximum',
+                 'standard_edge_mean',
+                 'standard_edge_variance',
+                 'standard_edge_kurtosis',
+                 'standard_edge_skewness',
+                 'standard_edge_quantiles',
+                 'standard_edge_quantiles_0',
+                 'standard_edge_quantiles_10',
+                 'standard_edge_quantiles_25',
+                 'standard_edge_quantiles_50',
+                 'standard_edge_quantiles_75',
+                 'standard_edge_quantiles_90',
+                 'standard_edge_quantiles_100' ]
+        return names
+    

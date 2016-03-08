@@ -309,6 +309,39 @@ class Rag(object):
     for acc_cls in [StandardEdgeAccumulator, StandardSpAccumulator, EdgeRegionEdgeAccumulator]:
         DEFAULT_ACCUMULATOR_CLASSES[(acc_cls.ACCUMULATOR_ID, acc_cls.ACCUMULATOR_TYPE)] = acc_cls
 
+    def supported_features(self, accumulator_set="default"):
+        """
+        Return the set of available feature names to be used
+        with this Rag and the given ``accumulator_set``.
+        
+        Parameters
+        ----------
+        accumulator_set:
+            A list of acumulators to consider in addition to the built-in accumulators.
+            If ``accumulator_set="default"``, then only the built-in accumulators are considered.
+        
+        Returns
+        -------
+        *list* of *str*
+            The list acceptable feature names.
+        """
+        Rag._check_accumulator_conflicts(accumulator_set)
+
+        feature_groups = {}
+        if accumulator_set != "default":
+            for acc in accumulator_set:
+                feature_groups[(acc.ACCUMULATOR_ID, acc.ACCUMULATOR_TYPE)] = acc.supported_features()
+
+        for (acc_id, acc_type) in Rag.DEFAULT_ACCUMULATOR_CLASSES.keys():
+            if (acc_id, acc_type) not in feature_groups:
+                acc_cls = Rag.DEFAULT_ACCUMULATOR_CLASSES[(acc_id, acc_type)]
+                feature_groups[(acc_id, acc_type)] = acc_cls.supported_features(self)
+
+        feature_names = []
+        for group_names in feature_groups.values():
+            feature_names += group_names
+        return feature_names
+        
     def compute_features(self, value_img, feature_names, accumulator_set="default"):
         """
         The primary API function for computing features. |br|
@@ -376,23 +409,8 @@ class Rag(object):
         +---------+---------+------------------------+---------------------------+----------------------------------+
 
         """
-        feature_names = map(str.lower, feature_names)
-        Rag._check_accumulator_conflicts(accumulator_set)
-
-        # Group the names by type (edge/sp), then by accumulator ID,
-        # but preserve the order of the features in each group (as a convenience to the user)
-        sorted_feature_names = sorted(feature_names, key=lambda name: name.split('_')[:2])
-        feature_groups = defaultdict(dict)
-        for (acc_id, acc_type), feature_group in groupby(sorted_feature_names,
-                                                         key=lambda name: name.split('_')[:2]):
-            feature_groups[acc_type][acc_id] = list(feature_group)
-
-        # We only know about 'edge' and 'sp' features.
-        unknown_feature_types = list(set(feature_groups.keys()) - set(['edge', 'sp']))
-        if unknown_feature_types:
-            bad_names = feature_groups[unknown_feature_types[0]].values()[0]
-            assert not unknown_feature_types, "Feature(s) have unknown type: {}".format(bad_names)
-
+        feature_groups = self._get_feature_groups(feature_names, accumulator_set)
+        
         # Create a DataFrame for the results
         index_u32 = pd.Index(np.arange(self.num_edges), dtype=np.uint32)
         edge_df = pd.DataFrame(self.edge_ids, columns=['sp1', 'sp2'], index=index_u32)
@@ -411,6 +429,31 @@ class Rag(object):
             "dtypes were: {}".format(dtypes)
 
         return edge_df
+
+    def _get_feature_groups(self, feature_names, accumulator_set="default"):
+        """
+        For the given list of feature_names, return features grouped in a dict:
+            feature_groups[acc_type][acc_id] : [feature_name1, feature_name2, ...]
+        """
+        Rag._check_accumulator_conflicts(accumulator_set)
+
+        feature_names = map(str.lower, feature_names)
+        sorted_feature_names = sorted(feature_names, key=lambda name: name.split('_')[:2])
+
+        # Group the names by type (edge/sp), then by accumulator ID,
+        # but preserve the order of the features in each group (as a convenience to the user)
+        feature_groups = defaultdict(dict)
+        for (acc_id, acc_type), feature_group in groupby(sorted_feature_names,
+                                                         key=lambda name: name.split('_')[:2]):
+            feature_groups[acc_type][acc_id] = list(feature_group)
+
+        # We only know about 'edge' and 'sp' features.
+        unknown_feature_types = list(set(feature_groups.keys()) - set(['edge', 'sp']))
+        if unknown_feature_types:
+            bad_names = feature_groups[unknown_feature_types[0]].values()[0]
+            assert not unknown_feature_types, "Feature(s) have unknown type: {}".format(bad_names)
+
+        return feature_groups
 
     def _append_edge_features_for_values(self, edge_df, edge_feature_groups, value_img, accumulator_set="default"):
         """
@@ -437,6 +480,10 @@ class Rag(object):
             # Create an accumulator for each group
             for acc_id, feature_group_names in edge_feature_groups.items():
                 edge_accumulator = self._select_accumulator_for_group(acc_id, 'edge', feature_group_names, accumulator_set)
+                unsupported_names = set(feature_group_names) - set(edge_accumulator.supported_features(self))
+                assert not unsupported_names, \
+                    "Some of your requested features aren't supported by this accumulator: {}".format(unsupported_names)
+                
                 with edge_accumulator:
                     edge_accumulator.ingest_edges_for_block( self.axial_edge_dfs, block_start, block_stop )
                     edge_df = edge_accumulator.append_merged_edge_features_to_df(edge_df)
@@ -474,6 +521,10 @@ class Rag(object):
         # Create an accumulator for each group
         for acc_id, feature_group_names in sp_feature_groups.items():
             sp_accumulator = self._select_accumulator_for_group(acc_id, 'sp', feature_group_names, accumulator_set)
+            unsupported_names = set(feature_group_names) - set(sp_accumulator.supported_features(self))
+            assert not unsupported_names, \
+                "Some of your requested features aren't supported by this accumulator: {}".format(unsupported_names)
+
             with sp_accumulator:
                 sp_accumulator.ingest_values_for_block(self._label_img, value_img, block_start, block_stop)
                 edge_df = sp_accumulator.append_merged_sp_features_to_edge_df(edge_df)

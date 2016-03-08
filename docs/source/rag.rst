@@ -16,6 +16,7 @@ Rag
 .. autoclass:: Rag
 
    .. automethod:: __init__
+   .. automethod:: supported_features
    .. automethod:: compute_features
    .. automethod:: edge_decisions_from_groundtruth
    .. automethod:: naive_segmentation_from_edge_decisions

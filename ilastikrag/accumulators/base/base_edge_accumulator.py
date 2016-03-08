@@ -34,6 +34,13 @@ class BaseEdgeAccumulator(object):
         """
         raise NotImplementedError
 
+    @classmethod
+    def supported_features(cls, rag):
+        """
+        Returns the list of feature names that can be computed for the given Rag.
+        """
+        raise NotImplementedError
+
     def ingest_edges_for_block(self, axial_edge_dfs, block_start, block_stop):
         """
         Ingests the edge data from a particular block of labels in the Rag.

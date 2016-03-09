@@ -104,6 +104,33 @@ class TestEdgeRegionEdgeAccumulator(object):
         areas = features_df[['edgeregion_edge_area']].values        
         assert ((radii[:,0] * radii[:,1]) == areas[:,0]).all()
 
+    def test_invalid_feature_names(self):
+        """
+        The Rag should refuse to compute features it doesn't 
+        support, not silently omit them.
+        """
+        superpixels = generate_random_voronoi((100,200), 200)
+        rag = Rag( superpixels )
+
+        # For simplicity, just make values identical to superpixels
+        values = superpixels.astype(np.float32)
+
+        def try_bad_features(feature_names):
+            try:
+                _ = rag.compute_features(values, feature_names)
+            except:
+                pass
+            else:
+                assert False, "Rag should raise an error if the user gives bad feature names!"
+
+        # These aren't supported for a 2D rag
+        try_bad_features(['edgeregion_edge_regionradii_2'])
+        try_bad_features(['edgeregion_edge_regionaxes_0z'])
+        try_bad_features(['edgeregion_edge_regionaxes_1z'])
+        try_bad_features(['edgeregion_edge_regionaxes_2x'])
+        try_bad_features(['edgeregion_edge_regionaxes_2y'])
+        try_bad_features(['edgeregion_edge_regionaxes_2z'])
+    
 if __name__ == "__main__":
     import sys
     import nose

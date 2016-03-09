@@ -260,8 +260,13 @@ class TestRag(object):
             else:
                 assert False, "Rag should raise an error if the user gives bad feature names!"
 
-        try_bad_features(['standard_edddddge_count', 'standard_sssp_count'])
-        try_bad_features(['ssssstandard_edge_count', 'ssssstandard_sp_count'])
+        try_bad_features(['standard_edddddge_count'])
+        try_bad_features(['standard_sssp_count'])
+        try_bad_features(['ssssstandard_sp_count'])
+        try_bad_features(['ssssstandard_edge_count'])
+        try_bad_features(['standard_edge_countttt'])
+        try_bad_features(['standard_sp_countttt'])
+        
 
 if __name__ == "__main__":
     import sys

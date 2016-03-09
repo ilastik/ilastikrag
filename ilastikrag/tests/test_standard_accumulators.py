@@ -275,20 +275,6 @@ class TestStandardAccumulators(object):
 
         assert list(features_df.columns.values) == ['sp1', 'sp2'] + edge_feature_names + sp_output_columns
 
-    def unsupported_features(self):
-        superpixels = generate_random_voronoi((100,200), 200)
-        rag = Rag( superpixels )
-        values = superpixels.astype(np.float32)
-        
-        try:
-            rag.compute_features(values, ['standard_sp_regionradii_2'])
-        except AssertionError:
-            pass
-        except:
-            raise
-        else:
-            assert False, "Rag should refuse to compute unsupported feature names."
-    
     def test_edge_features_blockwise(self):
         import nose
         raise nose.SkipTest

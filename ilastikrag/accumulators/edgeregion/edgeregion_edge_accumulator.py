@@ -28,6 +28,7 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
         - edgeregion_edge_regionradii_0
         - edgeregion_edge_regionradii_1
         - edgeregion_edge_regionradii_2
+
     ..
 
         - edgeregion_edge_regionaxes (all of the below)

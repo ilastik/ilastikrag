@@ -152,14 +152,6 @@ class StandardSpAccumulator(BaseSpAccumulator):
         
         Returns: vigra.RegionFeatureAccumulator
         """
-        for feature_name in self._vigra_feature_names:
-            for nonsupported_name in ('coord',):
-                # This could be fixed easily (just don't flatten the data)
-                # but we should check the performance implications.
-                assert nonsupported_name not in feature_name, \
-                    "Arbitrary coordinate-based SP features are not currently supported!\n"\
-                    "Can't compute {}".format( nonsupported_name )
-
         histogram_range = self._histogram_range
         if histogram_range is None:
             histogram_range = "globalminmax"
@@ -181,14 +173,13 @@ class StandardSpAccumulator(BaseSpAccumulator):
     def _append_sp_features_onto_edge_features(self, edge_df, sp_df):
         """
         Given a DataFrame with edge features and another DataFrame with superpixel features,
-        add columns to the edge_df for each of the specified (superpixel) feature names.
+        add columns to the edge_df for each of the names in self._feature_names.
         
-        For each sp feature, two columns are added to the output, for the sum and (absolute) difference
-        between the feature values for the two superpixels adjacent to the edge.
-        (See 'output' feature naming convention notes above for column names.)
+        For each sp feature, *two* columns are added to the output, for the sum and (absolute)
+        difference between the feature values for the two superpixels adjacent to the edge.
 
-        As a special case, the 'count' and 'sum' sp features are normalized first by taking
-        their cube roots (or square roots), as indicated in the Multicut paper.
+        As a special case, the 'count' and 'sum' sp features are normalized first, by
+        taking their cube roots (or square roots), as indicated in the Multicut paper.
         
         Returns the augmented edge_df.
 
@@ -203,15 +194,6 @@ class StandardSpAccumulator(BaseSpAccumulator):
             The dataframe with raw superpixel features.
             First column must be 'sp_id'.
             len(sp_df) == self.num_sp
-
-        generic_vigra_features
-            Superpixel feature names without 'sp_' prefix or '_sp1' suffix,
-            but possibly with quantile suffix, e.g. '_25'.
-            See feature naming convention notes above for details.
-        
-        ndim
-            The dimensionality of the original label volume (an integer).
-            Used to normalize the 'count' and 'sum' features.
         """
         # Add two columns to the edge_df for every sp_df column (for sp1 and sp2)
         # note: pd.merge() is like a SQL 'join' operation.

@@ -74,7 +74,8 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
     
     def ingest_edges_for_block(self, axial_edge_dfs, block_start, block_stop):
         assert len(self._block_vigra_accumulators) == 0, \
-            "FIXME: This accumulator is written to support block-wise accumulation, but that use-case isn't tested yet.\n"\
+            "FIXME: This accumulator is written to support block-wise accumulation, "\
+            "but that use-case isn't tested yet.\n"\
             "Write a unit test for that use-case, then remove this assertion."
         
         block_vigra_acc = self._accumulate_edge_vigra_features( axial_edge_dfs )
@@ -103,17 +104,7 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
         
         If this is the first block of data we've seen, initialize the histogram range.
         """
-        for feature_name in self._vigra_feature_names:
-            for nonsupported_name in ('coord', 'region'):
-                # We can't use vigra to compute coordinate-based features because 
-                # we've already flattened the edge pixels into a 1D array.
-                # However, the coordinates are already recorded in the axial_edge_df,
-                # so it would be easy to compute RegionRadii directly, without vigra.
-                assert nonsupported_name not in feature_name.lower(), \
-                    "Coordinate-based edge features are not currently supported!"
-
-        # If we need to compute quantiles,
-        # we first need to find the histogram_range to use
+        # Compute histogram_range across all axes of the first block (if quantiles are needed)
         if self._histogram_range is None and set(['quantiles', 'histogram']) & set(self._vigra_feature_names):
             logger.debug("Computing global histogram range...")
             histogram_range = [min(map(lambda df: df['edge_value'].min(), axial_edge_dfs)),
@@ -130,10 +121,11 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
 
         axial_accumulators = []
         for axis, axial_edge_df in enumerate( axial_edge_dfs ):
+            logger.debug("Axis {}: Computing region features...".format( axis ))
+
             edge_labels = axial_edge_df['edge_label'].values
             edge_values = axial_edge_df['edge_value'].values
         
-            logger.debug("Axis {}: Computing region features...".format( axis ))
             # Must add an extra singleton axis here because vigra doesn't support 1D data
             acc = vigra.analysis.extractRegionFeatures( edge_values.reshape((1,-1), order='A'),
                                                         edge_labels.reshape((1,-1), order='A'),

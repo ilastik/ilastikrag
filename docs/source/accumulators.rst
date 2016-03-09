@@ -19,17 +19,23 @@ There are two types of acccumulators: ``edge`` and ``sp``.
 - ``edge`` accumulators process tables of **edge pixels** (and corresponding values)
 - ``sp`` features process the **dense volume** of labels and values.
 
-You can implement your own accumulators, but ``ilastikrag`` comes with the
-following built-in accumulators, already activated by default:
+Built-in
+--------
 
 - :class:`~ilastikrag.accumulators.standard.StandardEdgeAccumulator` 
 - :class:`~ilastikrag.accumulators.standard.StandardSpAccumulator` 
 - :class:`~ilastikrag.accumulators.edgeregion.EdgeRegionEdgeAccumulator` 
 
-All accumulators inherit from one of these two base classes:
 
- - :class:`~ilastikrag.accumulators.base.BaseEdgeAccumulator`
- - :class:`~ilastikrag.accumulators.base.BaseSpAccumulator`
+Base classes
+------------
+
+You can write your own accumulator classes and pass them in an ``accumulator_set``
+to :py:meth:`~ilastikrag.rag.Rag.compute_features()`.
+All accumulators must inherit from one of these two base classes:
+
+- :class:`~ilastikrag.accumulators.base.BaseEdgeAccumulator`
+- :class:`~ilastikrag.accumulators.base.BaseSpAccumulator`
 
 
 .. _standard_accumulators:

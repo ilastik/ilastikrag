@@ -13,6 +13,18 @@ Rag
 
    <br />
 
+
+- :py:class:`Rag`
+  
+  - :py:meth:`__init__ <Rag.__init__>`
+  - :py:meth:`supported_features <Rag.supported_features>`
+  - :py:meth:`compute_features <Rag.compute_features>`
+  - :py:meth:`edge_decisions_from_groundtruth <Rag.edge_decisions_from_groundtruth>`
+  - :py:meth:`naive_segmentation_from_edge_decisions <Rag.naive_segmentation_from_edge_decisions>`
+  - :py:meth:`serialize_hdf5 <Rag.serialize_hdf5>`
+  - :py:meth:`deserialize_hdf5 <Rag.deserialize_hdf5>`
+  - :py:meth:`axial_edge_dfs <Rag.axial_edge_dfs>`
+
 .. autoclass:: Rag
 
    .. automethod:: __init__

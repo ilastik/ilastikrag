@@ -33,4 +33,5 @@ test:
 about:
   home: https://github.com/stuarteberg/ilastikrag
   license: Simplified BSD
+  license_file: LICENSE-BSD
   summary: ND Region Adjacency Graph with edge feature algorithms

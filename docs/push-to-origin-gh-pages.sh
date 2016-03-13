@@ -15,7 +15,7 @@ repo_dir=$(git rev-parse --show-toplevel)
 
 # Build the docs in the user's repo
 cd "${repo_dir}"/docs
-make html
+PYTHONPATH=$repo_dir make html
 
 # Record the current commit, so we can log it in the gh-pages commit message
 curr_commit=$(git rev-parse HEAD)

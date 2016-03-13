@@ -38,9 +38,8 @@ class Rag(object):
     | num_edges            | The number of edges in the label volume.                                     |
     +----------------------+------------------------------------------------------------------------------+
     | edge_ids             | *ndarray, shape=(N,2)*                                                 |br|  |
-    |                      | List of adjacent superpixel IDs, sorted.                               |br|  |
+    |                      | List of adjacent superpixel IDs, sorted. (No duplicates).              |br|  |
     |                      | *Guarantee:* For all edge_ids (sp1,sp2): sp1 < sp2.                    |br|  |
-    |                      | (No duplicates.)                                                       |br|  |
     +----------------------+------------------------------------------------------------------------------+
     | edge_label_lookup_df | *pandas.DataFrame*                                                     |br|  |
     |                      | Columns: ``[sp1, sp2, edge_label]``, where ``edge_label``              |br|  |

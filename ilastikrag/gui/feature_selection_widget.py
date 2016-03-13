@@ -13,6 +13,7 @@ from util import HierarchicalChecklistView, Checklist
 class FeatureSelectionDialog(QDialog):
     """
     A UI for selecting edge features on a per-channel basis.
+    
     Example usage:
     
     .. code-block:: python
@@ -31,6 +32,26 @@ class FeatureSelectionDialog(QDialog):
             print dlg.selections()
     """
     def __init__(self, channel_names, feature_names, default_selections=None, parent=None):
+        """
+        Parameters
+        ----------
+        channel_names
+            *list of str*
+            The user will be shown a separate checklist of feature options for each channel.
+        
+        feature_names
+            *list of str*
+            Feature names, exactly as expected by :py:meth:`~ilastikrag.rag.Rag.compute_features()`.
+            The features will be grouped by category and shown in duplicate checklist widgets for each channel.
+        
+        default_selections
+            *dict, str: list-of-str*
+            Mapping from channel_name -> feature_names, indicating which
+            features should be selected by default for each channel.
+        
+        parent
+            *QWidget*
+        """
         super(FeatureSelectionDialog, self).__init__(parent)
         
         self.setWindowTitle("Select Edge Features")
@@ -71,6 +92,10 @@ class FeatureSelectionDialog(QDialog):
         self.resize(total_width, 500)
 
     def selections(self):
+        """
+        Return the user's choices as a dictionary (channel -> feature names).
+        Call this after the dialog has been accepted.
+        """
         selections = {}
         for channel_name, checklist_widget in self.checklist_widgets.items():
             channel_selections = []

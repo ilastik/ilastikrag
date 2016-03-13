@@ -23,7 +23,7 @@ Feature Selection Widget
    :scale: 50  %
    :alt: Feature Selection Dialog
 
-.. currentmodule:: ilastikrag.gui.feature_selection_widget
+.. currentmodule:: ilastikrag.gui.feature_selection_dialog
 
 .. autoclass:: FeatureSelectionDialog
 

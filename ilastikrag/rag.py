@@ -45,10 +45,10 @@ class Rag(object):
     |                      | Columns: ``[sp1, sp2, edge_label]``, where ``edge_label``              |br|  |
     |                      | uniquely identifies each edge ``(sp1, sp2)``.                          |br|  |
     +----------------------+------------------------------------------------------------------------------+
-    | axial_edge_dfs       | *List* of *pandas.DataFrame* objects (one per axis).                   |br|  |
+    | dense_edge_tables    | *List* of *pandas.DataFrame* objects (one per axis).                   |br|  |
     |                      | Each DataFrame stores the id and location of all pixel                 |br|  |
     |                      | edge pairs in the volume *along a particular axis.*                    |br|  |
-    |                      | See :py:attr:`axial_edge_dfs` for details.                             |br|  |
+    |                      | See :py:attr:`dense_edge_tables` for details.                          |br|  |
     +----------------------+------------------------------------------------------------------------------+
 
     **Limitations:**
@@ -144,7 +144,7 @@ class Rag(object):
 
         self._init_final_edge_label_lookup_df(edge_datas)
         self._init_final_edge_ids()
-        self._init_axial_edge_dfs(edge_datas)
+        self._init_dense_edge_tables(edge_datas)
         self._init_sp_attributes()
 
     @property
@@ -176,7 +176,7 @@ class Rag(object):
         return self._final_edge_label_lookup_df
     
     @property
-    def axial_edge_dfs(self):
+    def dense_edge_tables(self):
         """
         Read-only property.                                                    |br|
         A list of ``pandas.DataFrame`` objects (one per image axis).           |br|
@@ -227,7 +227,7 @@ class Rag(object):
         +-----------------+----------------------------------------------------------------------------------------+
         
         """
-        return self._axial_edge_dfs
+        return self._dense_edge_tables
 
     def _init_final_edge_label_lookup_df(self, edge_datas):
         """
@@ -253,12 +253,12 @@ class Rag(object):
                                                                'sp2': self._edge_ids[:,1],
                                                                'edge_label': self._final_edge_label_lookup_df['edge_label'].values } )
 
-    def _init_axial_edge_dfs(self, edge_datas):
+    def _init_dense_edge_tables(self, edge_datas):
         """
         Construct the N axial_edge_df DataFrames (for each axis)
         """
         # Now create an axial_edge_df for each axis
-        self._axial_edge_dfs = []
+        self._dense_edge_tables = []
         for edge_data in edge_datas:
             edge_mask, edge_ids, edge_forwardness = edge_data
 
@@ -283,7 +283,7 @@ class Rag(object):
             coord_cols = self._label_img.axistags.keys()
             axial_edge_df.columns = ['sp1', 'sp2', 'forwardness', 'edge_label'] + coord_cols
 
-            self._axial_edge_dfs.append( axial_edge_df )
+            self._dense_edge_tables.append( axial_edge_df )
 
     def _init_sp_attributes(self):
         """
@@ -470,7 +470,7 @@ class Rag(object):
         try:
             # Extract values at the edge pixels
             if value_img is not None:
-                for axis, axial_edge_df in enumerate(self.axial_edge_dfs):
+                for axis, axial_edge_df in enumerate(self.dense_edge_tables):
                     logger.debug("Axis {}: Extracting values...".format( axis ))
                     coord_cols = self._label_img.axistags.keys()
                     mask_coords = tuple(series.values for _colname, series in axial_edge_df[coord_cols].iteritems())
@@ -484,7 +484,7 @@ class Rag(object):
                     "Some of your requested features aren't supported by this accumulator: {}".format(unsupported_names)
                 
                 with edge_accumulator:
-                    edge_accumulator.ingest_edges_for_block( self.axial_edge_dfs, block_start, block_stop )
+                    edge_accumulator.ingest_edges_for_block( self.dense_edge_tables, block_start, block_stop )
                     edge_df = edge_accumulator.append_merged_edge_features_to_df(edge_df)
 
                 # If the accumulator provided more features than the
@@ -494,7 +494,7 @@ class Rag(object):
                         del edge_df[colname]
         finally:
             # Cleanup: Drop value columns
-            for axial_edge_df in self.axial_edge_dfs:
+            for axial_edge_df in self.dense_edge_tables:
                 if 'edge_value' in axial_edge_df:
                     del axial_edge_df['edge_value']
 
@@ -624,8 +624,8 @@ class Rag(object):
             Passed directly to ``h5py.Group.create_dataset``.
         """
         # Edge DFs
-        axial_df_parent_group = h5py_group.create_group('axial_edge_dfs')
-        for axis, axial_edge_df in enumerate(self.axial_edge_dfs):
+        axial_df_parent_group = h5py_group.create_group('dense_edge_tables')
+        for axis, axial_edge_df in enumerate(self.dense_edge_tables):
             df_group = axial_df_parent_group.create_group('{}'.format(axis))
             Rag._dataframe_to_hdf5(df_group, axial_edge_df)
 
@@ -663,10 +663,10 @@ class Rag(object):
         rag = Rag('__will_deserialize__')
         
         # Edge DFs
-        rag._axial_edge_dfs =[]
-        axial_df_parent_group = h5py_group['axial_edge_dfs']
+        rag._dense_edge_tables =[]
+        axial_df_parent_group = h5py_group['dense_edge_tables']
         for _name, df_group in sorted(axial_df_parent_group.items()):
-            rag._axial_edge_dfs.append( Rag._dataframe_from_hdf5(df_group) )
+            rag._dense_edge_tables.append( Rag._dataframe_from_hdf5(df_group) )
 
         # Final lookup DF
         rag._final_edge_label_lookup_df = Rag._dataframe_from_hdf5( h5py_group['final_edge_label_lookup_df'] )
@@ -703,7 +703,7 @@ class Rag(object):
               not the same format as pandas.DataFrame.to_hdf().
 
         Known to work for the DataFrames used in this file,
-        including the MultiIndex columns in the axial_edge_dfs.
+        including the MultiIndex columns in the dense_edge_tables.
         Not tested with more complicated DataFrame structures. 
         """
         h5py_group['row_index'] = df.index.values
@@ -722,7 +722,7 @@ class Rag(object):
               not the same format as pandas.read_hdf().
 
         Known to work for the DataFrames used in this file,
-        including the MultiIndex columns in the axial_edge_dfs.
+        including the MultiIndex columns in the dense_edge_tables.
         Not tested with more complicated DataFrame structures. 
         """
         from numpy import array # We use eval() for the column index, which uses 'array'
@@ -876,8 +876,8 @@ if __name__ == '__main__':
         rag = Rag( watershed )
     logger.info("Creating rag ({} superpixels, {} edges) took {} seconds"
                 .format( rag.num_sp, rag.num_edges, timer.seconds() ))
-    print "unique edge labels per axis: {}".format( [len(df['edge_label'].unique()) for df in rag.axial_edge_dfs] )
-    print "Total pixel edges: {}".format( sum(len(df) for df in rag.axial_edge_dfs ) )
+    print "unique edge labels per axis: {}".format( [len(df['edge_label'].unique()) for df in rag.dense_edge_tables] )
+    print "Total pixel edges: {}".format( sum(len(df) for df in rag.dense_edge_tables ) )
 
     with Timer() as timer:
         edge_features_df = rag.compute_features(grayscale, feature_names)

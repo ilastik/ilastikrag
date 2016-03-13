@@ -72,13 +72,13 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
         self._histogram_range = None
         self._block_vigra_accumulators = []
     
-    def ingest_edges_for_block(self, axial_edge_dfs, block_start, block_stop):
+    def ingest_edges_for_block(self, dense_edge_tables, block_start, block_stop):
         assert len(self._block_vigra_accumulators) == 0, \
             "FIXME: This accumulator is written to support block-wise accumulation, "\
             "but that use-case isn't tested yet.\n"\
             "Write a unit test for that use-case, then remove this assertion."
         
-        block_vigra_acc = self._accumulate_edge_vigra_features( axial_edge_dfs )
+        block_vigra_acc = self._accumulate_edge_vigra_features( dense_edge_tables )
         self._block_vigra_accumulators.append( block_vigra_acc )
 
     def append_merged_edge_features_to_df(self, edge_df):
@@ -94,7 +94,7 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
         edge_df = append_vigra_features_to_dataframe(final_acc, edge_df, self._feature_names, overwrite_quantile_minmax=True)
         return edge_df
     
-    def _accumulate_edge_vigra_features(self, axial_edge_dfs):
+    def _accumulate_edge_vigra_features(self, dense_edge_tables):
         """
         Return a vigra RegionFeaturesAccumulator with the results of all features,
         computed over the edge pixels of the given value_img.
@@ -107,8 +107,8 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
         # Compute histogram_range across all axes of the first block (if quantiles are needed)
         if self._histogram_range is None and set(['quantiles', 'histogram']) & set(self._vigra_feature_names):
             logger.debug("Computing global histogram range...")
-            histogram_range = [min(map(lambda df: df['edge_value'].min(), axial_edge_dfs)),
-                               max(map(lambda df: df['edge_value'].max(), axial_edge_dfs))]
+            histogram_range = [min(map(lambda df: df['edge_value'].min(), dense_edge_tables)),
+                               max(map(lambda df: df['edge_value'].max(), dense_edge_tables))]
             
             # Cache histogram_range for subsequent blocks
             # Technically, this means that the range of the first block
@@ -120,7 +120,7 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
             histogram_range = "globalminmax"
 
         axial_accumulators = []
-        for axis, axial_edge_df in enumerate( axial_edge_dfs ):
+        for axis, axial_edge_df in enumerate( dense_edge_tables ):
             logger.debug("Axis {}: Computing region features...".format( axis ))
 
             edge_labels = axial_edge_df['edge_label'].values

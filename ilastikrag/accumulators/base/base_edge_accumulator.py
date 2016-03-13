@@ -41,16 +41,16 @@ class BaseEdgeAccumulator(object):
         """
         raise NotImplementedError
 
-    def ingest_edges_for_block(self, axial_edge_dfs, block_start, block_stop):
+    def ingest_edges_for_block(self, dense_edge_tables, block_start, block_stop):
         """
         Ingests the edge data from a particular block of labels in the Rag.
 
         Parameters
         ----------
-        axial_edge_dfs
+        dense_edge_tables
             *list* of *pandas.DataFrame* objects, one per image axis.          |br|
             Contains only the edges contained within block_start, block_stop.  |br|
-            Each DataFrame has the same columns as ``Rag.axial_edge_dfs``,     |br|
+            Each DataFrame has the same columns as ``Rag.dense_edge_tables``,     |br|
             plus an extra column for ``edge_value``                            |br|
         
         block_start

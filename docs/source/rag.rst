@@ -23,7 +23,7 @@ Rag
   - :py:meth:`naive_segmentation_from_edge_decisions <Rag.naive_segmentation_from_edge_decisions>`
   - :py:meth:`serialize_hdf5 <Rag.serialize_hdf5>`
   - :py:meth:`deserialize_hdf5 <Rag.deserialize_hdf5>`
-  - :py:meth:`axial_edge_dfs <Rag.axial_edge_dfs>`
+  - :py:meth:`dense_edge_tables <Rag.dense_edge_tables>`
 
 .. autoclass:: Rag
 
@@ -34,5 +34,5 @@ Rag
    .. automethod:: naive_segmentation_from_edge_decisions
    .. automethod:: serialize_hdf5
    .. automethod:: deserialize_hdf5
-   .. autoattribute:: axial_edge_dfs
+   .. autoattribute:: dense_edge_tables
    

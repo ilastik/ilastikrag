@@ -70,13 +70,13 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
     def cleanup(self):
         self._final_df = None
 
-    def ingest_edges_for_block(self, axial_edge_dfs, block_start, block_stop):
+    def ingest_edges_for_block(self, dense_edge_tables, block_start, block_stop):
         assert self._final_df is None, \
             "This accumulator doesn't support block-wise merging (yet).\n"\
             "You can only process a volume as a single block"
 
         # Concatenate edges from all axes into one big DataFrame
-        coords_df = pd.concat(axial_edge_dfs)[['sp1', 'sp2'] + self._axisnames]
+        coords_df = pd.concat(dense_edge_tables)[['sp1', 'sp2'] + self._axisnames]
         
         # Create a new DataFrame to store the results
         final_df = pd.DataFrame(self._rag.edge_ids, columns=['sp1', 'sp2'])

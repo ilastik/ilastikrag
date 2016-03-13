@@ -22,7 +22,7 @@ class TestRag(object):
         assert isinstance(rag.max_sp, np.uint32)
         assert rag.edge_ids.dtype == np.uint32
         assert (rag.edge_label_lookup_df[['sp1', 'sp2', 'edge_label']].dtypes == np.uint32).all()
-        for df in rag.axial_edge_dfs:
+        for df in rag.dense_edge_tables:
             assert df['sp1'].dtype == df['sp2'].dtype == np.uint32
             assert df['forwardness'].dtype == bool
             assert df['edge_label'].dtype == np.uint32

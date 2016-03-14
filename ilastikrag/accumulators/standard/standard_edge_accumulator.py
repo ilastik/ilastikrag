@@ -104,6 +104,10 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
         
         If this is the first block of data we've seen, initialize the histogram range.
         """
+        if 'edge_value' not in dense_edge_tables.values()[0]:
+            assert self._vigra_feature_names == ['count'], \
+                "Can't compute edge features without a value image (except for standard_edge_count)"
+
         # Compute histogram_range across all axes of the first block (if quantiles are needed)
         if self._histogram_range is None and set(['quantiles', 'histogram']) & set(self._vigra_feature_names):
             logger.debug("Computing global histogram range...")
@@ -124,7 +128,14 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
             logger.debug("Axis {}: Computing region features...".format( axiskey ))
 
             edge_labels = dense_edge_table['edge_label'].values
-            edge_values = dense_edge_table['edge_value'].values
+            
+            if 'edge_value' in dense_edge_table:
+                edge_values = dense_edge_table['edge_value'].values
+            else:
+                # Vigra wants a value image, even though we won't be using it.
+                # We'll give it some garbage:
+                # Just cast the labels as if they were float.
+                edge_values = edge_labels.view(np.float32)
         
             # Must add an extra singleton axis here because vigra doesn't support 1D data
             acc = vigra.analysis.extractRegionFeatures( edge_values.reshape((1,-1), order='A'),

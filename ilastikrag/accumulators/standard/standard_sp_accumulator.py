@@ -157,7 +157,18 @@ class StandardSpAccumulator(BaseSpAccumulator):
             histogram_range = "globalminmax"
         
         # Convert to float32 if necessary
-        value_block = value_block.astype(np.float32, copy=False)
+        if value_block is not None:
+            value_block = value_block.astype(np.float32, copy=False)
+        else:
+            for feat in self._vigra_feature_names:
+                assert feat.startswith('region') or feat == 'count', \
+                    "Can't compute feature {} without a value image!"
+            
+            # Vigra wants a value image, even though we won't be using it.
+            # We'll give it some garbage:
+            # Just cast the labels as if they were float.
+            value_block = label_block.view(np.float32)
+        
         acc = vigra.analysis.extractRegionFeatures( value_block,
                                                     label_block,
                                                     features=self._vigra_feature_names,

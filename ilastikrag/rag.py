@@ -63,10 +63,6 @@ class Rag(object):
       superpixels are connected via multiple 'faces', those faces will both
       be lumped into one 'edge'.
 
-    - The :ref:`accumulators` API supports iterative block-wise accumulation of features,
-      but the :class:`Rag` class doesn't yet exploit it.
-      (The entire volume is always processed as a whole.)
-
     - No support for parallelization yet.
     """
 
@@ -97,13 +93,6 @@ class Rag(object):
     
     TODO
     ----
-    - The accumulator API supports block-wise computation of features,
-      but Rag.compute_features() doesn't take advantage of it yet.
-      (The entire volume is passed in one big block.)
-    
-    - Basic support for anisotropic features will be easy, but perhaps not RAM efficient.
-      Need to add 'axes' parameter to compute_highlevel_features().
-    
     - Adding a function to merge two Rags should be trivial, if it seems useful
       (say, for parallelizing construction.)
     """
@@ -238,9 +227,6 @@ class Rag(object):
         A list of ``pandas.DataFrame`` objects (one per image axis).           |br|
         Each DataFrame stores the location and superpixel ids of all pixelwise |br|
         edge pairs in the volume *along a particular axis.*                    |br|
-
-        These DataFrames are passed verbatim to ``EdgeAccumulator`` objects via their 
-        ``ingest_edges_for_block()`` function, but with an extra column for the ``edge_value``.
 
         **Example:**
         
@@ -549,43 +535,34 @@ class Rag(object):
         value_img: ndarray of pixel values, or None
         accumulator_set: A list of additional accumulators to consider, or "default" to just use built-in.
         """
-        # For now, everything is with one big block
-        block_start = self._label_img.ndim*(0,)
-        block_stop = self._label_img.shape
+        # Extract values at the edge pixels
+        if value_img is None:
+            edge_values = None
+        else:
+            edge_values = OrderedDict()
+            for axiskey, dense_edge_table in self.dense_edge_tables.items():
+                axis_index = self._label_img.axistags.keys().index(axiskey)
+                logger.debug("Axis {}: Extracting values...".format( axiskey ))
+                coord_cols = self._label_img.axistags.keys()
+                mask_coords = tuple(series.values for _colname, series in dense_edge_table[coord_cols].iteritems())
+                edge_values[axiskey] = extract_edge_values_for_axis(axis_index, mask_coords, value_img)
 
-        try:
-            # Extract values at the edge pixels
-            if value_img is not None:
-                for axiskey, dense_edge_table in self.dense_edge_tables.items():
-                    axis_index = self._label_img.axistags.keys().index(axiskey)
-                    logger.debug("Axis {}: Extracting values...".format( axiskey ))
-                    coord_cols = self._label_img.axistags.keys()
-                    mask_coords = tuple(series.values for _colname, series in dense_edge_table[coord_cols].iteritems())
-                    dense_edge_table['edge_value'] = extract_edge_values_for_axis(axis_index, mask_coords, value_img, aspandas=True)
+        # Create an accumulator for each group
+        for acc_id, feature_group_names in edge_feature_groups.items():
+            edge_accumulator = self._select_accumulator_for_group(acc_id, 'edge', feature_group_names, accumulator_set)
+            unsupported_names = set(feature_group_names) - set(edge_accumulator.supported_features(self))
+            assert not unsupported_names, \
+                "Some of your requested features aren't supported by this accumulator: {}".format(unsupported_names)
+            
+            with edge_accumulator:
+                edge_accumulator.ingest_edges( self, edge_values )
+                edge_df = edge_accumulator.append_edge_features_to_df(edge_df)
 
-            # Create an accumulator for each group
-            for acc_id, feature_group_names in edge_feature_groups.items():
-                edge_accumulator = self._select_accumulator_for_group(acc_id, 'edge', feature_group_names, accumulator_set)
-                unsupported_names = set(feature_group_names) - set(edge_accumulator.supported_features(self))
-                assert not unsupported_names, \
-                    "Some of your requested features aren't supported by this accumulator: {}".format(unsupported_names)
-                
-                with edge_accumulator:
-                    edge_accumulator.ingest_edges_for_block( self.dense_edge_tables, block_start, block_stop )
-                    edge_df = edge_accumulator.append_merged_edge_features_to_df(edge_df)
-
-                # If the accumulator provided more features than the
-                # user is asking for right now, remove the extra columns
-                for colname in edge_df.columns.values[2:]:
-                    if '_edge_' in colname and not any(colname.startswith(name) for name in feature_group_names):
-                        del edge_df[colname]
-        finally:
-            # Cleanup: Drop value columns
-            # FIXME: It would be cleaner not to modify the dense_edge_table like this,
-            #        and it would eventually allow multi-threaded operation here...
-            for dense_edge_table in self.dense_edge_tables:
-                if 'edge_value' in dense_edge_table:
-                    del dense_edge_table['edge_value']
+            # If the accumulator provided more features than the
+            # user is asking for right now, remove the extra columns
+            for colname in edge_df.columns.values[2:]:
+                if '_edge_' in colname and not any(colname.startswith(name) for name in feature_group_names):
+                    del edge_df[colname]
 
         return edge_df
 
@@ -602,10 +579,6 @@ class Rag(object):
             raise NotImplementedError("Can't compute superpixel-based features.\n"
                                       "You deserialized the Rag without deserializing the labels.")
 
-        # For now, everything is with one big block
-        block_start = self._label_img.ndim*(0,)
-        block_stop = self._label_img.shape
-
         # Create an accumulator for each group
         for acc_id, feature_group_names in sp_feature_groups.items():
             sp_accumulator = self._select_accumulator_for_group(acc_id, 'sp', feature_group_names, accumulator_set)
@@ -614,8 +587,8 @@ class Rag(object):
                 "Some of your requested features aren't supported by this accumulator: {}".format(unsupported_names)
 
             with sp_accumulator:
-                sp_accumulator.ingest_values_for_block(self._label_img, value_img, block_start, block_stop)
-                edge_df = sp_accumulator.append_merged_sp_features_to_edge_df(edge_df)
+                sp_accumulator.ingest_values(self, value_img)
+                edge_df = sp_accumulator.append_edge_features_to_df(edge_df)
 
                 # If the accumulator provided more features than the
                 # user is asking for right now, remove the extra columns
@@ -925,7 +898,7 @@ class Rag(object):
         try:
             acc_class = Rag.DEFAULT_ACCUMULATOR_CLASSES[(acc_id, acc_type)]
         except KeyError:
-            raise RuntimeError("No known accumulator class for features: {}".format( feature_group_names ))        
+            raise RuntimeError("No known accumulator class for features: {}".format( feature_group_names ))
         return acc_class(self, feature_group_names)
 
     @classmethod

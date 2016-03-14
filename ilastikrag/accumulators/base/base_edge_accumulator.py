@@ -41,31 +41,26 @@ class BaseEdgeAccumulator(object):
         """
         raise NotImplementedError
 
-    def ingest_edges_for_block(self, dense_edge_tables, block_start, block_stop):
+    def ingest_edges(self, rag, edge_values):
         """
-        Ingests the edge data from a particular block of labels in the Rag.
+        Ingests the given edge values using the given Rag.
 
         Parameters
         ----------
-        dense_edge_tables
-            *list* of *pandas.DataFrame* objects, one per image axis.          |br|
-            Contains only the edges contained within block_start, block_stop.  |br|
-            Each DataFrame has the same columns as ``Rag.dense_edge_tables``,     |br|
-            plus an extra column for ``edge_value``                            |br|
-        
-        block_start
-            The location of the block within the Rag's full label volume.
-        
-        block_stop
-            The end of the block within the Rag's full label volume.
+        rag
+            *Rag*
+            
+        edge_values
+            *OrderedDict* of 1D *ndarray*.
+            Each ndarray ``edge_values[k]`` is in the same order as ``rag.dense_edges[k]``
         """
         raise NotImplementedError
     
-    def append_merged_edge_features_to_df(self, edge_df):
+    def append_edge_features_to_df(self, edge_df):
         """
-        Called by the Rag after all blocks have been ingested.
+        Called by the Rag after ``ingest_edges()``.
 
-        Merges the features of all ingested blocks into a final set of edge
+        Merges the features of all ingested edges into a final set of edge
         feature columns, and appends those columns to the given
         ``pandas.DataFrame`` object.
         """        

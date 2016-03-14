@@ -11,17 +11,21 @@ def append_vigra_features_to_dataframe( acc, df, feature_names, overwrite_quanti
     
     Parameters
     ----------
-    feature_names
-        High-level feature names with prefix and possible suffix, e.g. edge_vigra_quantiles_25
-
     acc
         A RegionFeatureAccumulator from which to extract the specified features.
 
     df
         A pandas.DataFrame to append the features to
 
-    output_prefix
-        Prefix column names with the given string.  Must be either 'edge_' or 'sp_'.
+    feature_names
+        High-level feature names with prefix and possible suffix, e.g. edge_vigra_quantiles_25
+    
+    overwrite_quantile_minmax
+        If True, don't use quantiles_0 and quantiles_100 directly.
+        Instead, overwrite those values with 'minimum' and 'maximum'.
+        This is useful if the vigra accumulator you are passing in used a histogram_range
+        that was chosen before min/max were chosen.
+        (If not, then the values will be the same anyway.)
     """
     # Add a column for each feature we'll need
     vigra_feature_names = map(lambda name: name.split('_')[2], feature_names )

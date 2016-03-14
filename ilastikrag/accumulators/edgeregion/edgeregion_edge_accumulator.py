@@ -72,17 +72,16 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
     def cleanup(self):
         self._final_df = None
 
-    def ingest_edges_for_block(self, dense_edge_tables, block_start, block_stop):
-        assert self._final_df is None, \
-            "This accumulator doesn't support block-wise merging (yet).\n"\
-            "You can only process a volume as a single block"
-
+    def ingest_edges(self, rag, edge_values):
+        # This class computes only unweighted region
+        # features, so edge_values is not used below.
+        
         # Concatenate edges from all axes into one big DataFrame
-        tables = [table[['sp1', 'sp2'] + self._dense_axiskeys] for table in dense_edge_tables.values()]
+        tables = [table[['sp1', 'sp2'] + self._dense_axiskeys] for table in rag.dense_edge_tables.values()]
         coords_df = pd.concat(tables, axis=0)
         
         # Create a new DataFrame to store the results
-        dense_axes = ''.join(dense_edge_tables.keys())
+        dense_axes = ''.join(rag.dense_edge_tables.keys())
         final_df = pd.DataFrame(self._rag.unique_edge_tables[dense_axes][['sp1', 'sp2']])
         
         num_edges = len(final_df)
@@ -157,9 +156,7 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
 
         self._final_df = final_df
     
-    def append_merged_edge_features_to_df(self, edge_df):
-        # This accumulator doesn't support blockwise processing and merging,
-        # so just merge our one-and-only block results into the edge_df.
+    def append_edge_features_to_df(self, edge_df):
         return pd.merge(edge_df, self._final_df, on=['sp1', 'sp2'], how='left', copy=False)
 
     @classmethod

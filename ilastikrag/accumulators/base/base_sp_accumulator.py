@@ -41,31 +41,25 @@ class BaseSpAccumulator(object):
         """
         raise NotImplementedError
 
-    def ingest_values_for_block(self, label_block, value_block, block_start, block_stop):
+    def ingest_values(self, rag, value_img):
         """
-        Ingests a particular block of label data and its corresponding (single-channel) pixel values.
+        Ingest the given (single-channel) pixel values, using the superpixels stored in ``rag.label_img``.
         
         Parameters
         ----------
-        label_block
-            *VigraArray*, ``uint32``
+        rag
+            *Rag*
         
-        value_block
-            *VigraArray*
-        
-        block_start
-            The location of the block within the Rag's full label volume.
-        
-        block_stop
-            The end of the block within the Rag's full label volume.
+        value_img
+            *VigraArray*, same shape as ``rag.label_img``
         """
         raise NotImplementedError
     
-    def append_merged_sp_features_to_edge_df(self, edge_df):
+    def append_edge_features_to_df(self, edge_df):
         """
-        Called by the Rag after all blocks have been ingested.
+        Called by the Rag after ``ingest_values()``.
 
-        Merges the features of all ingested blocks into a final set of edge
+        Merges the features of ingested data into a final set of edge
         feature columns, and appends those columns to the given
         ``pandas.DataFrame`` object.
         

@@ -275,14 +275,6 @@ class TestStandardAccumulators(object):
 
         assert list(features_df.columns.values) == ['sp1', 'sp2'] + edge_feature_names + sp_output_columns
 
-    def test_edge_features_blockwise(self):
-        import nose
-        raise nose.SkipTest
-
-    def test_sp_features_blockwise(self):
-        import nose
-        raise nose.SkipTest
-
 if __name__ == "__main__":
     import sys
     import nose

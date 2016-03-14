@@ -53,92 +53,55 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
         if 'standard_edge_quantiles' in feature_names:
             feature_names.remove('standard_edge_quantiles')
 
-            # Quantile histogram_range is based on the first block only,
-            # so the '0' and '100' values would be misleading if we used them as-is.
-            # Instead, we silently replace the '0' and '100' quantiles with 'minimum' and 'maximum'.
-            # See vigra_util.append_vigra_features_to_dataframe()
-            feature_names += ['standard_edge_quantiles_0',  # Will be automatically replaced with 'minimum'
+            feature_names += ['standard_edge_quantiles_0',
                               'standard_edge_quantiles_10',
                               'standard_edge_quantiles_25',
                               'standard_edge_quantiles_50',
                               'standard_edge_quantiles_75',
                               'standard_edge_quantiles_90',
-                              'standard_edge_quantiles_100'] # Will be automatically replaced with 'maximum'
+                              'standard_edge_quantiles_100']
 
         self._feature_names = feature_names
         self._vigra_feature_names = get_vigra_feature_names(feature_names)
 
     def cleanup(self):
-        self._histogram_range = None
-        self._block_vigra_accumulators = []
+        self._vigra_acc = None
     
-    def ingest_edges_for_block(self, dense_edge_tables, block_start, block_stop):
-        assert len(self._block_vigra_accumulators) == 0, \
-            "FIXME: This accumulator is written to support block-wise accumulation, "\
-            "but that use-case isn't tested yet.\n"\
-            "Write a unit test for that use-case, then remove this assertion."
-        
-        block_vigra_acc = self._accumulate_edge_vigra_features( dense_edge_tables )
-        self._block_vigra_accumulators.append( block_vigra_acc )
-
-    def append_merged_edge_features_to_df(self, edge_df):
-        # Merge all the accumulators from each block
-        final_acc = self._block_vigra_accumulators[0].createAccumulator()
-        for block_vigra_acc in self._block_vigra_accumulators:
-            # This is an identity lookup, but it's necessary since vigra will complain 
-            # about different maxIds if we call merge() without a lookup 
-            axis_to_final_index_array = np.arange( block_vigra_acc.maxRegionLabel()+1, dtype=np.uint32 )
-            final_acc.merge( block_vigra_acc, axis_to_final_index_array )
-        
-        # Add the vigra accumulator results to the dataframe
-        edge_df = append_vigra_features_to_dataframe(final_acc, edge_df, self._feature_names, overwrite_quantile_minmax=True)
-        return edge_df
-    
-    def _accumulate_edge_vigra_features(self, dense_edge_tables):
+    def ingest_edges(self, rag, edge_values):
         """
-        Return a vigra RegionFeaturesAccumulator with the results of all features,
+        Create a vigra RegionFeaturesAccumulator with the results of all features,
         computed over the edge pixels of the given value_img.
 
         The accumulator's 'region' indexes will correspond to the 'edge_label'
         column from the given DataFrames.
-        
-        If this is the first block of data we've seen, initialize the histogram range.
         """
-        if 'edge_value' not in dense_edge_tables.values()[0]:
+        if edge_values is None:
             assert self._vigra_feature_names == ['count'], \
                 "Can't compute edge features without a value image (except for standard_edge_count)"
 
-        # Compute histogram_range across all axes of the first block (if quantiles are needed)
-        if self._histogram_range is None and set(['quantiles', 'histogram']) & set(self._vigra_feature_names):
+        # Compute histogram_range across all axes (if quantiles are needed)
+        if set(['quantiles', 'histogram']) & set(self._vigra_feature_names):
             logger.debug("Computing global histogram range...")
-            histogram_range = [min(map(lambda df: df['edge_value'].min(), dense_edge_tables.values())),
-                               max(map(lambda df: df['edge_value'].max(), dense_edge_tables.values()))]
-            
-            # Cache histogram_range for subsequent blocks
-            # Technically, this means that the range of the first block
-            # is used for all other blocks, too, but that's necessary for merging
-            # the results in get_final_features_df()
-            self._histogram_range = histogram_range
-
-        if self._histogram_range is None:
+            histogram_range = [min(map(np.min, edge_values.values())),
+                               max(map(np.max, edge_values.values()))]
+        else:
             histogram_range = "globalminmax"
 
         axial_accumulators = []
-        for axiskey, dense_edge_table in dense_edge_tables.items():
+        for axiskey, dense_edge_table in rag.dense_edge_tables.items():
             logger.debug("Axis {}: Computing region features...".format( axiskey ))
-
-            edge_labels = dense_edge_table['edge_label'].values
             
-            if 'edge_value' in dense_edge_table:
-                edge_values = dense_edge_table['edge_value'].values
+            edge_labels = dense_edge_table['edge_label'].values
+            if edge_values:            
+                edge_values_thisaxis = edge_values[axiskey]
             else:
                 # Vigra wants a value image, even though we won't be using it.
                 # We'll give it some garbage:
                 # Just cast the labels as if they were float.
-                edge_values = edge_labels.view(np.float32)
+                edge_values_thisaxis = edge_labels.view(np.float32)
         
             # Must add an extra singleton axis here because vigra doesn't support 1D data
-            acc = vigra.analysis.extractRegionFeatures( edge_values.reshape((1,-1), order='A'),
+            acc = vigra.analysis.extractRegionFeatures( edge_values_thisaxis.reshape((1,-1), order='A'),
                                                         edge_labels.reshape((1,-1), order='A'),
                                                         features=self._vigra_feature_names,
                                                         histogramRange=histogram_range )
@@ -150,8 +113,12 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
             # about different maxIds if we call merge() without a lookup 
             axis_to_final_index_array = np.arange( acc.maxRegionLabel()+1, dtype=np.uint32 )
             final_acc.merge( acc, axis_to_final_index_array )
-        return final_acc
+        self._vigra_acc = final_acc
 
+    def append_edge_features_to_df(self, edge_df):
+        # Add the vigra accumulator results to the dataframe
+        return append_vigra_features_to_dataframe(self._vigra_acc, edge_df, self._feature_names, overwrite_quantile_minmax=True)
+    
     @classmethod
     def supported_features(cls, rag):
         names = ['standard_edge_count',

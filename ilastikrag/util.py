@@ -60,6 +60,24 @@ def edge_ids_for_axis(label_img, edge_mask, axis):
     The edge ids returned in scan-order (i.e. like ``.nonzero()``), but are *not* sorted such that u < v.
     Instead, each edge id (u,v) is ordered from 'left' to 'right'.
 
+    Parameters
+    ----------
+    label_img
+        ndarray
+    
+    edge_mask
+        A 'left-hand' mask indicating where the image edges are.
+        Should be same shape as label_img, except in the dimension of the given axis,
+        where it is 1 pixel narrower.
+
+        You may also provide edge_mask=None, which implies that *all* pixel locations
+        contain an edge along the requested axis.
+        (Useful if you're dealing with flat superpixels.)
+    
+    axis
+        An int, < label_img.ndim
+        Indicates the axis along which edges will be extracted.
+
     Returns
     -------
     ``ndarray`` of ``edge_ids``, ``shape=(N,2)``
@@ -75,7 +93,12 @@ def edge_ids_for_axis(label_img, edge_mask, axis):
     left_slicing = ((slice(None),) * axis) + (np.s_[:-1],)
     right_slicing = ((slice(None),) * axis) + (np.s_[1:],)
 
-    num_edges = np.count_nonzero(edge_mask)
+    if edge_mask is None:
+        edge_mask = slice(None)
+        num_edges = label_img[left_slicing].size
+    else:
+        num_edges = np.count_nonzero(edge_mask)
+
     edge_ids = np.ndarray(shape=(num_edges, 2), dtype=np.uint32 )
     edge_ids[:, 0] = label_img[left_slicing][edge_mask]
     edge_ids[:, 1] = label_img[right_slicing][edge_mask]

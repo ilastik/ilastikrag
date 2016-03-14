@@ -48,7 +48,9 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
         self.cleanup() # Initialize members
         
         label_img = rag.label_img
-        self._axisnames = label_img.axistags.keys()
+        self._dense_axiskeys = label_img.axistags.keys()
+        if rag.flat_superpixels:
+            self._dense_axiskeys = ['y', 'x']
         feature_names = list(feature_names)
 
         # 'edgeregion_edge_regionradii' is shorthand for "all edge region radii"
@@ -76,13 +78,15 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
             "You can only process a volume as a single block"
 
         # Concatenate edges from all axes into one big DataFrame
-        coords_df = pd.concat(dense_edge_tables)[['sp1', 'sp2'] + self._axisnames]
+        tables = [table[['sp1', 'sp2'] + self._dense_axiskeys] for table in dense_edge_tables.values()]
+        coords_df = pd.concat(tables, axis=0)
         
         # Create a new DataFrame to store the results
-        final_df = pd.DataFrame(self._rag.edge_ids, columns=['sp1', 'sp2'])
+        dense_axes = ''.join(dense_edge_tables.keys())
+        final_df = pd.DataFrame(self._rag.unique_edge_tables[dense_axes][['sp1', 'sp2']])
         
         num_edges = len(final_df)
-        ndim = len(self._axisnames)
+        ndim = len(self._dense_axiskeys)
         covariance_matrices_array = np.zeros( (num_edges, ndim, ndim), dtype=np.float32 )
 
         group_index = [-1]
@@ -115,7 +119,7 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
 
         # Compute/store covariance matrices
         grouper = coords_df.groupby(['sp1', 'sp2'], sort=True, group_keys=False)
-        grouper = grouper[self._axisnames]
+        grouper = grouper[list(self._dense_axiskeys)]
         grouper.apply(write_covariance_matrix) # Used for its side-effects only
 
         # Eigensystems
@@ -141,7 +145,7 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
                 final_df[feature_name] = radii[:, region_axis_index]
             elif feature_name.startswith('edgeregion_edge_regionaxes'):
                 region_axis_index = int(feature_name[-2])
-                coord_index = self._axisnames.index(feature_name[-1])
+                coord_index = self._dense_axiskeys.index(feature_name[-1])
                 final_df[feature_name] = eigenvectors[:, region_axis_index, coord_index]
             elif feature_name == 'edgeregion_edge_area':
                 final_df[feature_name] = np.prod(radii[:, :2], axis=1)

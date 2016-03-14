@@ -107,8 +107,8 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
         # Compute histogram_range across all axes of the first block (if quantiles are needed)
         if self._histogram_range is None and set(['quantiles', 'histogram']) & set(self._vigra_feature_names):
             logger.debug("Computing global histogram range...")
-            histogram_range = [min(map(lambda df: df['edge_value'].min(), dense_edge_tables)),
-                               max(map(lambda df: df['edge_value'].max(), dense_edge_tables))]
+            histogram_range = [min(map(lambda df: df['edge_value'].min(), dense_edge_tables.values())),
+                               max(map(lambda df: df['edge_value'].max(), dense_edge_tables.values()))]
             
             # Cache histogram_range for subsequent blocks
             # Technically, this means that the range of the first block
@@ -120,11 +120,11 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
             histogram_range = "globalminmax"
 
         axial_accumulators = []
-        for axis, axial_edge_df in enumerate( dense_edge_tables ):
-            logger.debug("Axis {}: Computing region features...".format( axis ))
+        for axiskey, dense_edge_table in dense_edge_tables.items():
+            logger.debug("Axis {}: Computing region features...".format( axiskey ))
 
-            edge_labels = axial_edge_df['edge_label'].values
-            edge_values = axial_edge_df['edge_value'].values
+            edge_labels = dense_edge_table['edge_label'].values
+            edge_values = dense_edge_table['edge_value'].values
         
             # Must add an extra singleton axis here because vigra doesn't support 1D data
             acc = vigra.analysis.extractRegionFeatures( edge_values.reshape((1,-1), order='A'),

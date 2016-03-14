@@ -21,8 +21,8 @@ class TestRag(object):
         assert rag.sp_ids.dtype == np.uint32
         assert isinstance(rag.max_sp, np.uint32)
         assert rag.edge_ids.dtype == np.uint32
-        assert (rag.edge_label_lookup_df[['sp1', 'sp2', 'edge_label']].dtypes == np.uint32).all()
-        for df in rag.dense_edge_tables:
+        assert (rag.unique_edge_tables['yx'][['sp1', 'sp2', 'edge_label']].dtypes == np.uint32).all()
+        for _axiskey, df in rag.dense_edge_tables.items():
             assert df['sp1'].dtype == df['sp2'].dtype == np.uint32
             assert df['forwardness'].dtype == bool
             assert df['edge_label'].dtype == np.uint32
@@ -106,35 +106,35 @@ class TestRag(object):
         then deserialize it and make sure nothing was lost.
         """
         import h5py
-
+ 
         superpixels = generate_random_voronoi((100,200), 200)
         original_rag = Rag( superpixels )
-
+ 
         tmp_dir = tempfile.mkdtemp()
         filepath = os.path.join(tmp_dir, 'test_rag.h5')
         rag_groupname = 'saved_rag'
-
+ 
         # Serialize with labels       
         with h5py.File(filepath, 'w') as f:
             rag_group = f.create_group(rag_groupname)
             original_rag.serialize_hdf5(rag_group, store_labels=True)
-
+ 
         # Deserialize
         with h5py.File(filepath, 'r') as f:
             rag_group = f[rag_groupname]
             deserialized_rag = Rag.deserialize_hdf5(rag_group)
-
+ 
         assert deserialized_rag.label_img.dtype == original_rag.label_img.dtype
         assert deserialized_rag.label_img.shape == original_rag.label_img.shape
         assert deserialized_rag.label_img.axistags == original_rag.label_img.axistags
         assert (deserialized_rag.label_img == original_rag.label_img).all()        
-
+ 
         assert (deserialized_rag.sp_ids == original_rag.sp_ids).all()
         assert deserialized_rag.max_sp == original_rag.max_sp
         assert deserialized_rag.num_sp == original_rag.num_sp
         assert deserialized_rag.num_edges == original_rag.num_edges
         assert (deserialized_rag.edge_ids == original_rag.edge_ids).all()
-
+ 
         # Check some features
         # For simplicity, just make values identical to superpixels
         values = superpixels.astype(np.float32)
@@ -142,42 +142,42 @@ class TestRag(object):
         features_df_original = original_rag.compute_features(values, feature_names)
         features_df_deserialized = deserialized_rag.compute_features(values, feature_names)
         assert (features_df_original.values == features_df_deserialized.values).all()
-
+ 
     def test_serialization_without_labels(self):
         """
         Users can opt to serialize the Rag without serializing the labels,
         but then they can't use superpixel features on the deserialized Rag.
         """
         import h5py
-
+ 
         superpixels = generate_random_voronoi((100,200), 200)
         original_rag = Rag( superpixels )
-
+ 
         tmp_dir = tempfile.mkdtemp()
         filepath = os.path.join(tmp_dir, 'test_rag.h5')
         rag_groupname = 'saved_rag'
-
+ 
         # Serialize with labels       
         with h5py.File(filepath, 'w') as f:
             rag_group = f.create_group(rag_groupname)
             original_rag.serialize_hdf5(rag_group, store_labels=False) # Don't store
-
+ 
         # Deserialize
         with h5py.File(filepath, 'r') as f:
             rag_group = f[rag_groupname]
             deserialized_rag = Rag.deserialize_hdf5(rag_group)
-
+ 
         assert deserialized_rag.label_img.dtype == original_rag.label_img.dtype
         assert deserialized_rag.label_img.shape == original_rag.label_img.shape
         assert deserialized_rag.label_img.axistags == original_rag.label_img.axistags
         #assert (deserialized_rag.label_img == original_rag.label_img).all() # not stored
-
+ 
         assert (deserialized_rag.sp_ids == original_rag.sp_ids).all()
         assert deserialized_rag.max_sp == original_rag.max_sp
         assert deserialized_rag.num_sp == original_rag.num_sp
         assert deserialized_rag.num_edges == original_rag.num_edges
         assert (deserialized_rag.edge_ids == original_rag.edge_ids).all()
-
+ 
         # Check some features
         # For simplicity, just make values identical to superpixels
         values = superpixels.astype(np.float32)
@@ -185,7 +185,7 @@ class TestRag(object):
         features_df_original = original_rag.compute_features(values, feature_names)
         features_df_deserialized = deserialized_rag.compute_features(values, feature_names)
         assert (features_df_original.values == features_df_deserialized.values).all()
-
+ 
         try:
             deserialized_rag.compute_features(values, ['standard_sp_count'])
         except NotImplementedError:
@@ -194,45 +194,45 @@ class TestRag(object):
             raise
         else:
             assert False, "Shouldn't be able to use superpixels if labels weren't serialized/deserialized!"
-
+ 
     def test_serialization_with_external_labels(self):
         """
         Users can opt to serialize the Rag without serializing the labels,
         but then they can't use superpixel features on the deserialized Rag.
-        
+         
         When deserializing, they can provide the labels from an external source,
         as tested here.
         """
         import h5py
-
+ 
         superpixels = generate_random_voronoi((100,200), 200)
         original_rag = Rag( superpixels )
-
+ 
         tmp_dir = tempfile.mkdtemp()
         filepath = os.path.join(tmp_dir, 'test_rag.h5')
         rag_groupname = 'saved_rag'
-
+ 
         # Serialize with labels       
         with h5py.File(filepath, 'w') as f:
             rag_group = f.create_group(rag_groupname)
             original_rag.serialize_hdf5(rag_group, store_labels=False)
-
+ 
         # Deserialize
         with h5py.File(filepath, 'r') as f:
             rag_group = f[rag_groupname]
             deserialized_rag = Rag.deserialize_hdf5(rag_group, label_img=superpixels) # Provide labels explicitly
-
+ 
         assert deserialized_rag.label_img.dtype == original_rag.label_img.dtype
         assert deserialized_rag.label_img.shape == original_rag.label_img.shape
         assert deserialized_rag.label_img.axistags == original_rag.label_img.axistags
         assert (deserialized_rag.label_img == original_rag.label_img).all()
-
+ 
         assert (deserialized_rag.sp_ids == original_rag.sp_ids).all()
         assert deserialized_rag.max_sp == original_rag.max_sp
         assert deserialized_rag.num_sp == original_rag.num_sp
         assert deserialized_rag.num_edges == original_rag.num_edges
         assert (deserialized_rag.edge_ids == original_rag.edge_ids).all()
-
+ 
         # Check some features
         # For simplicity, just make values identical to superpixels
         values = superpixels.astype(np.float32)

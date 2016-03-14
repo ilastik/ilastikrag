@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict, namedtuple
 from itertools import izip, imap, groupby
 
 import numpy as np
@@ -41,14 +41,20 @@ class Rag(object):
     |                      | List of adjacent superpixel IDs, sorted. (No duplicates).              |br|  |
     |                      | *Guarantee:* For all edge_ids (sp1,sp2): sp1 < sp2.                    |br|  |
     +----------------------+------------------------------------------------------------------------------+
-    | edge_label_lookup_df | *pandas.DataFrame*                                                     |br|  |
+    | unique_edge_tables   | *dict* of *pandas.DataFrame* objects                                   |br|  |
     |                      | Columns: ``[sp1, sp2, edge_label]``, where ``edge_label``              |br|  |
-    |                      | uniquely identifies each edge ``(sp1, sp2)``.                          |br|  |
+    |                      | uniquely identifies each edge ``(sp1, sp2)`` within that table.        |br|  |
+    |                      | See :py:attr:`unique_edge_tables` for details.                         |br|  |
     +----------------------+------------------------------------------------------------------------------+
-    | dense_edge_tables    | *List* of *pandas.DataFrame* objects (one per axis).                   |br|  |
+    | dense_edge_tables    | *OrderedDict* of *pandas.DataFrame* objects (one per isotropic axis).  |br|  |
     |                      | Each DataFrame stores the id and location of all pixel                 |br|  |
     |                      | edge pairs in the volume *along a particular axis.*                    |br|  |
     |                      | See :py:attr:`dense_edge_tables` for details.                          |br|  |
+    +----------------------+------------------------------------------------------------------------------+
+    | flat_edge_label_img  | *ndarray, same shape as label_img except for the z-axis (1 px smaller)* |br| |
+    |                      | If ``flat_superpixels=True``, this is a label volume for edges along    |br| |
+    |                      | the z-axis, labeled according to the ``edge_label`` column from         |br| |
+    |                      | :py:attr:`unique_edge_tables['z'] <unique_edge_tables>`.                |br| |
     +----------------------+------------------------------------------------------------------------------+
 
     **Limitations:**
@@ -102,7 +108,10 @@ class Rag(object):
       (say, for parallelizing construction.)
     """
 
-    def __init__( self, label_img ):
+    # Used internally, during initialization
+    _EdgeData = namedtuple("_EdgeData", "mask mask_coords ids forwardness")
+    
+    def __init__( self, label_img, flat_superpixels=False ):
         """
         Parameters
         ----------
@@ -111,6 +120,10 @@ class Rag(object):
             Label values do not need to be consecutive, but *excessively* high label values
             will require extra RAM when computing features, due to zeros stored
             within ``RegionFeatureAccumulators``.
+        
+        flat_superpixels
+            *bool* |br|
+            Set to ``True`` if ``label_img`` is a 3D volume whose superpixels are flat in the xy direction.
         """
         if isinstance(label_img, str) and label_img == '__will_deserialize__':
             return
@@ -121,35 +134,50 @@ class Rag(object):
             "Only axes z,y,x are permitted, not {}".format( label_img.axistags.keys() )
         assert label_img.dtype == np.uint32, \
             "label_img must have dtype uint32"
+        assert not flat_superpixels or set('zyx').issubset(set(label_img.axistags.keys())), \
+            "Can't use flat_superpixels with a 2D image."
         
         axes = 'zyx'[-label_img.ndim:]
         self._label_img = label_img.withAxes(axes)
+        self._flat_superpixels = flat_superpixels
         
-        edge_datas = []
-        for axis in range(label_img.ndim):
-            edge_mask = edge_mask_for_axis(label_img, axis)
+        edge_datas = OrderedDict()
+        for axis, axiskey in enumerate(label_img.axistags.keys()):
+
+            if flat_superpixels and axiskey == 'z':
+                edge_mask = None # edge_ids_for_axis() supports edge_mask=None
+                edge_mask_coords = None
+            else:
+                edge_mask = edge_mask_for_axis(label_img, axis)
+                edge_mask_coords = nonzero_coord_array(edge_mask).transpose()
+                
+                # Save RAM: Convert to the smallest dtype we can get away with.
+                if (np.array(label_img.shape) < 2**16).all():
+                    edge_mask_coords = edge_mask_coords.astype(np.uint16)
+                else:
+                    edge_mask_coords = edge_mask_coords.astype(np.uint32)
+                    
             edge_ids = edge_ids_for_axis(label_img, edge_mask, axis)
             edge_forwardness = edge_ids[:,0] < edge_ids[:,1]
             edge_ids.sort()
 
-            edge_mask_coords = nonzero_coord_array(edge_mask).transpose()
-            
-            # Save RAM: Convert to the smallest dtype we can get away with.
-            if (np.array(label_img.shape) < 2**16).all():
-                edge_mask_coords = edge_mask_coords.astype(np.uint16)
-            else:
-                edge_mask_coords = edge_mask_coords.astype(np.uint32)
-                
-            edge_datas.append( (edge_mask_coords, edge_ids, edge_forwardness) )
+            edge_datas[axiskey] = Rag._EdgeData(edge_mask, edge_mask_coords, edge_ids, edge_forwardness)
 
-        self._init_final_edge_label_lookup_df(edge_datas)
-        self._init_final_edge_ids()
+        self._init_unique_edge_tables(edge_datas)
         self._init_dense_edge_tables(edge_datas)
+
+        self._init_edge_ids()
         self._init_sp_attributes()
+        if flat_superpixels:
+            self._init_flat_edge_label_img(edge_datas)
 
     @property
     def label_img(self):
         return self._label_img
+
+    @property
+    def flat_superpixels(self):
+        return self._flat_superpixels
 
     @property
     def sp_ids(self):
@@ -165,16 +193,44 @@ class Rag(object):
 
     @property
     def num_edges(self):
-        return len(self._final_edge_label_lookup_df)
+        all_axes = ''.join(self._label_img.axistags.keys())
+        return len(self._unique_edge_tables[all_axes])
 
     @property
     def edge_ids(self):
         return self._edge_ids
 
     @property
-    def edge_label_lookup_df(self):
-        return self._final_edge_label_lookup_df
+    def flat_edge_label_img(self):
+        if self._flat_superpixels:
+            return self._flat_edge_label_img
+        return None
     
+    @property
+    def unique_edge_tables(self):
+        """
+        *OrderedDict* of *pandas.DataFrame* objects.
+        
+        Each of these tables represents the set of edges that lie along a particular set of axes.
+
+        If ``flat_superpixels=False``, then this dict contains just one item,
+        with key ``zyx`` or ``yx``, depending on whether or not ``label_img`` is 3D or 2D.
+        
+        If ``flat_superpixels=True``, then this dict contains two tables for the disjoint
+        sets of ``yx`` edges and ``z`` edges.  And additionally, it contains a third table in
+        key ``zyx`` with all edges in the Rag (i.e. the superset of edges ``z``and ``yx``).
+
+        Each table has columns: ``[sp1, sp2, edge_label]``, where ``edge_label`` 
+        uniquely identifies each edge ``(sp1, sp2)`` within *that table*.
+
+        .. note::
+        
+           Each table has an independent ``edge_label`` column. For a given edge
+           ``(sp1,sp2)``, ``edge_label`` in table ``yx`` will not match the edge_label
+           in table ``zyx``.
+        """
+        return self._unique_edge_tables
+
     @property
     def dense_edge_tables(self):
         """
@@ -229,70 +285,100 @@ class Rag(object):
         """
         return self._dense_edge_tables
 
-    def _init_final_edge_label_lookup_df(self, edge_datas):
+    def _init_unique_edge_tables(self, edge_datas):
         """
         Initialize the edge_label_lookup_df attribute.
         """
-        all_edge_ids = map(lambda t: t[1], edge_datas)
-        self._final_edge_label_lookup_df = unique_edge_labels( all_edge_ids )
+        all_axes = ''.join(self._label_img.axistags.keys())
+        all_edge_ids = [t.ids for t in edge_datas.values()]
 
-    def _init_final_edge_ids(self):
-        """
-        Initialize the edge_ids, and as a little optimization, RE-initialize the 
-        final_edge_lookup, so its columns can be a view of the edge_ids
-        """
+        self._unique_edge_tables = {}
+        if not self._flat_superpixels:
+            self._unique_edge_tables[all_axes] = unique_edge_labels( all_edge_ids )
+        else:
+            assert len(all_edge_ids) == 3
+            assert edge_datas.keys() == list('zyx')
+            unique_z = unique_edge_labels( all_edge_ids[0] )
+            unique_yx = unique_edge_labels( all_edge_ids[1:] )
+            unique_zyx = unique_edge_labels( [ unique_z[['sp1', 'sp2']].values,
+                                               unique_yx[['sp1', 'sp2']].values ] )
+
+            # If the superpixels are really flat, then unique_yx and unique_z
+            # should be completely disjoint.
+            assert len(unique_zyx) == ( len(unique_z) + len(unique_yx) )
+
+            self._unique_edge_tables['z'] = unique_z
+            self._unique_edge_tables['yx'] = unique_yx
+            self._unique_edge_tables['zyx'] = unique_zyx
+
+    def _init_edge_ids(self):
         # Tiny optimization:
-        # Users will be accessing edge_ids over and over, so let's extract them now
-        self._edge_ids = self._final_edge_label_lookup_df[['sp1', 'sp2']].values
+        # Users will be accessing Rag.edge_ids over and over, so let's 
+        # cache them now instead of extracting them on-the-fly
+        all_axes = ''.join(self._label_img.axistags.keys())
+        self._edge_ids = self._unique_edge_tables[all_axes][['sp1', 'sp2']].values
 
-        # Now, to avoid having multiple copies of _edge_ids in RAM,
-        # re-create final_edge_label_lookup_df using the cached edge_ids array
-        index_u32 = pd.Index(np.arange(len(self._edge_ids)), dtype=np.uint32)
-        self._final_edge_label_lookup_df = pd.DataFrame( index=index_u32,
-                                                         data={'sp1': self._edge_ids[:,0],
-                                                               'sp2': self._edge_ids[:,1],
-                                                               'edge_label': self._final_edge_label_lookup_df['edge_label'].values } )
+    def _init_flat_edge_label_img(self, edge_datas):
+        assert self._flat_superpixels
+        unique_table_z = self.unique_edge_tables['z']
+        assert list(unique_table_z.columns.values) == ['sp1', 'sp2', 'edge_label']
+        
+        dense_table_z = pd.DataFrame(edge_datas['z'].ids, columns=['sp1', 'sp2'])
+        dense_table_with_labels = pd.merge(dense_table_z, unique_table_z, on=['sp1', 'sp2'], how='left', copy=False)
+        flat_edge_label_img = dense_table_with_labels['edge_label'].values
+        
+        shape = np.subtract(self._label_img.shape, (1, 0, 0))
+        flat_edge_label_img.shape = tuple(shape)
+        assert self._label_img.axistags.keys() == list('zyx')
+        self._flat_edge_label_img = vigra.taggedView(flat_edge_label_img, 'zyx')
 
     def _init_dense_edge_tables(self, edge_datas):
         """
-        Construct the N axial_edge_df DataFrames (for each axis)
+        Construct the N dense_edge_tables (one for each axis)
         """
-        # Now create an axial_edge_df for each axis
-        self._dense_edge_tables = []
-        for edge_data in edge_datas:
-            edge_mask, edge_ids, edge_forwardness = edge_data
+        if self._flat_superpixels:
+            dense_axes = 'yx'
+        else:
+            dense_axes = ''.join(self._label_img.axistags.keys())
+        
+        # Now create an dense_edge_table for each axis
+        self._dense_edge_tables = OrderedDict()
+        for axiskey in dense_axes:
+            edge_data = edge_datas[axiskey]
 
             # Use uint32 index instead of deafult int64 to save ram            
-            index_u32 = pd.Index(np.arange(len(edge_ids)), dtype=np.uint32)
+            index_u32 = pd.Index(np.arange(len(edge_data.ids)), dtype=np.uint32)
 
             # Initialize with edge sp ids and directionality
-            axial_edge_df = pd.DataFrame( columns=['sp1', 'sp2', 'is_forward'],
-                                          index=index_u32,
-                                          data={ 'sp1': edge_ids[:, 0],
-                                                 'sp2': edge_ids[:, 1],
-                                                 'is_forward': edge_forwardness } )
+            edge_table = pd.DataFrame( columns=['sp1', 'sp2', 'is_forward'],
+                                       index=index_u32,
+                                       data={ 'sp1': edge_data.ids[:, 0],
+                                              'sp2': edge_data.ids[:, 1],
+                                              'is_forward': edge_data.forwardness } )
 
             # Add 'edge_label' column. Note: pd.merge() is like a SQL 'join'
-            axial_edge_df = pd.merge(axial_edge_df, self._final_edge_label_lookup_df, on=['sp1', 'sp2'], how='left', copy=False)
+            dense_edge_table = pd.merge(edge_table, self._unique_edge_tables[dense_axes], on=['sp1', 'sp2'], how='left', copy=False)
             
             # Append columns for coordinates
-            for key, coords, in zip(self._label_img.axistags.keys(), edge_mask):
-                axial_edge_df[key] = coords
+            for key, coords, in zip(self._label_img.axistags.keys(), edge_data.mask_coords):
+                dense_edge_table[key] = coords
 
             # Set column names
             coord_cols = self._label_img.axistags.keys()
-            axial_edge_df.columns = ['sp1', 'sp2', 'forwardness', 'edge_label'] + coord_cols
+            dense_edge_table.columns = ['sp1', 'sp2', 'forwardness', 'edge_label'] + coord_cols
 
-            self._dense_edge_tables.append( axial_edge_df )
+            self._dense_edge_tables[axiskey] = dense_edge_table
 
     def _init_sp_attributes(self):
         """
         Compute and store our properties for sp_ids, num_sp, max_sp
         """
+        all_axes = ''.join(self._label_img.axistags.keys())
+
         # Cache the unique sp ids to expose as an attribute
         # FIXME: vigra.unique() would be faster, and no implicit cast to int64
-        unique_left = self._final_edge_label_lookup_df['sp1'].unique()
-        unique_right = self._final_edge_label_lookup_df['sp2'].unique()
+        unique_left = self._unique_edge_tables[all_axes]['sp1'].unique()
+        unique_right = self._unique_edge_tables[all_axes]['sp2'].unique()
         self._sp_ids = pd.Series( np.concatenate((unique_left, unique_right)) ).unique()
         self._sp_ids = self._sp_ids.astype(np.uint32)
         self._sp_ids.sort()
@@ -340,7 +426,7 @@ class Rag(object):
         for group_names in feature_groups.values():
             feature_names += group_names
         return feature_names
-        
+
     def compute_features(self, value_img, feature_names, accumulator_set="default"):
         """
         The primary API function for computing features. |br|
@@ -470,11 +556,12 @@ class Rag(object):
         try:
             # Extract values at the edge pixels
             if value_img is not None:
-                for axis, axial_edge_df in enumerate(self.dense_edge_tables):
-                    logger.debug("Axis {}: Extracting values...".format( axis ))
+                for axiskey, dense_edge_table in self.dense_edge_tables.items():
+                    axis_index = self._label_img.axistags.keys().index(axiskey)
+                    logger.debug("Axis {}: Extracting values...".format( axiskey ))
                     coord_cols = self._label_img.axistags.keys()
-                    mask_coords = tuple(series.values for _colname, series in axial_edge_df[coord_cols].iteritems())
-                    axial_edge_df['edge_value'] = extract_edge_values_for_axis(axis, mask_coords, value_img, aspandas=True)
+                    mask_coords = tuple(series.values for _colname, series in dense_edge_table[coord_cols].iteritems())
+                    dense_edge_table['edge_value'] = extract_edge_values_for_axis(axis_index, mask_coords, value_img, aspandas=True)
 
             # Create an accumulator for each group
             for acc_id, feature_group_names in edge_feature_groups.items():
@@ -494,9 +581,11 @@ class Rag(object):
                         del edge_df[colname]
         finally:
             # Cleanup: Drop value columns
-            for axial_edge_df in self.dense_edge_tables:
-                if 'edge_value' in axial_edge_df:
-                    del axial_edge_df['edge_value']
+            # FIXME: It would be cleaner not to modify the dense_edge_table like this,
+            #        and it would eventually allow multi-threaded operation here...
+            for dense_edge_table in self.dense_edge_tables:
+                if 'edge_value' in dense_edge_table:
+                    del dense_edge_table['edge_value']
 
         return edge_df
 
@@ -876,7 +965,7 @@ if __name__ == '__main__':
         rag = Rag( watershed )
     logger.info("Creating rag ({} superpixels, {} edges) took {} seconds"
                 .format( rag.num_sp, rag.num_edges, timer.seconds() ))
-    print "unique edge labels per axis: {}".format( [len(df['edge_label'].unique()) for df in rag.dense_edge_tables] )
+    print "unique edge labels per axis: {}".format( [len(df['edge_label'].unique()) for df in rag.dense_edge_tables.values()] )
     print "Total pixel edges: {}".format( sum(len(df) for df in rag.dense_edge_tables ) )
 
     with Timer() as timer:

@@ -712,15 +712,20 @@ class Rag(object):
         compression_opts
             Passed directly to ``h5py.Group.create_dataset``.
         """
-        # Edge DFs
-        axial_df_parent_group = h5py_group.create_group('dense_edge_tables')
-        for axis, axial_edge_df in enumerate(self.dense_edge_tables):
-            df_group = axial_df_parent_group.create_group('{}'.format(axis))
-            Rag._dataframe_to_hdf5(df_group, axial_edge_df)
+        # Flag: flat_superpixels
+        h5py_group.create_dataset('flat_superpixels', data=self.flat_superpixels)
+        
+        # Dense DFs
+        dense_tables_parent_group = h5py_group.create_group('dense_edge_tables')
+        for axiskey, df in self.dense_edge_tables.items():
+            df_group = dense_tables_parent_group.create_group('{}'.format(axiskey))
+            Rag._dataframe_to_hdf5(df_group, df)
 
-        # Final lookup DF
-        lookup_df_group = h5py_group.create_group('final_edge_label_lookup_df')
-        Rag._dataframe_to_hdf5(lookup_df_group, self._final_edge_label_lookup_df)
+        # Unique DFs
+        unique_tables_parent_group = h5py_group.create_group('unique_edge_tables')
+        for axiskey, df in self.unique_edge_tables.items():
+            df_group = unique_tables_parent_group.create_group('{}'.format(axiskey))
+            Rag._dataframe_to_hdf5(df_group, df)
 
         # label_img metadata
         labels_dset = h5py_group.create_dataset('label_img',
@@ -731,11 +736,22 @@ class Rag(object):
         labels_dset.attrs['axistags'] = self.label_img.axistags.toJSON()
         labels_dset.attrs['valid_data'] = False
 
-        # label_img contents        
+        # label_img contents
         if store_labels:
             # Copy and compress.
             labels_dset[:] = self._label_img
             labels_dset.attrs['valid_data'] = True
+
+        # Z edge-label image
+        if self._flat_superpixels:
+            flat_edge_labels_dset = h5py_group.create_dataset('flat_edge_labels',
+                                                              shape=self._flat_edge_label_img.shape,
+                                                              dtype=self._flat_edge_label_img.dtype,
+                                                              compression=compression,
+                                                              compression_opts=compression_opts,
+                                                              data=self.flat_edge_label_img)
+            flat_edge_labels_dset.attrs['axistags'] = self.flat_edge_label_img.axistags.toJSON()
+
 
     @classmethod
     def deserialize_hdf5(cls, h5py_group, label_img=None):
@@ -750,15 +766,21 @@ class Rag(object):
             Useful for when ``serialize_hdf5()`` was called with ``store_labels=False``. 
         """
         rag = Rag('__will_deserialize__')
-        
-        # Edge DFs
-        rag._dense_edge_tables =[]
-        axial_df_parent_group = h5py_group['dense_edge_tables']
-        for _name, df_group in sorted(axial_df_parent_group.items()):
-            rag._dense_edge_tables.append( Rag._dataframe_from_hdf5(df_group) )
 
-        # Final lookup DF
-        rag._final_edge_label_lookup_df = Rag._dataframe_from_hdf5( h5py_group['final_edge_label_lookup_df'] )
+        # Flag: flat_superpixels
+        rag._flat_superpixels = h5py_group['flat_superpixels'][()]
+        
+        # Dense Edge DFs
+        rag._dense_edge_tables = OrderedDict()
+        dense_tables_parent_group = h5py_group['dense_edge_tables']
+        for axiskey, df_group in sorted(dense_tables_parent_group.items())[::-1]: # tables should be restored to zyx order.
+            rag._dense_edge_tables[axiskey] = Rag._dataframe_from_hdf5(df_group)
+
+        # Dense Edge DFs
+        rag._unique_edge_tables = {}
+        unique_tables_parent_group = h5py_group['unique_edge_tables']
+        for axiskey, df_group in sorted(unique_tables_parent_group.items()):
+            rag._unique_edge_tables[axiskey] = Rag._dataframe_from_hdf5(df_group)
         
         # label_img
         label_dset = h5py_group['label_img']
@@ -777,8 +799,14 @@ class Rag(object):
         else:
             rag._label_img = Rag._EmptyLabels(label_dset.shape, label_dset.dtype, axistags)
 
+        if rag._flat_superpixels:
+            flat_edge_labels_dset = h5py_group['flat_edge_labels']
+            flat_edge_labels = flat_edge_labels_dset[:]
+            axistags = vigra.AxisTags.fromJSON(flat_edge_labels_dset.attrs['axistags'])
+            rag._flat_edge_label_img = vigra.taggedView( flat_edge_labels, axistags )
+
         # Other attributes
-        rag._init_final_edge_ids()
+        rag._init_edge_ids()
         rag._init_sp_attributes()
 
         return rag

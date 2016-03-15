@@ -233,3 +233,11 @@ def generate_random_voronoi(shape, num_sp):
     superpixels = vigra.taggedView(superpixels, 'zyx'[3-len(shape):])        
     return superpixels
 
+def colorize_labels(label_img):
+    label_img = label_img.withAxes('yx')
+    random_colors = np.random.randint(0,255,size=(label_img.max()+1, 3) ).astype(np.uint8)
+    colorized = np.zeros(label_img.shape + (3,), dtype=np.uint8)
+    colorized = vigra.taggedView(colorized, 'yxc')
+    for c in range(3):
+        colorized[...,c] = random_colors[...,c][label_img]
+    return colorized

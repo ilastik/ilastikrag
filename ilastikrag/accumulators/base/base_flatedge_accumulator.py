@@ -1,12 +1,12 @@
-class BaseSpAccumulator(object):
+class BaseFlatEdgeAccumulator(object):
     """
-    Base class for all superpixel accumulators,
-    i.e. accumulators that compute features from the
-    contents of superpixels (not their edges).
+    Base class for all flatedge accumulators,
+    i.e. accumulators that compute features over the edges 
+    in the Z direction when ``Rag.flat_superpixels == True``
     """
     
     #: Accumulator type
-    ACCUMULATOR_TYPE = 'sp'
+    ACCUMULATOR_TYPE = 'flatedge'
 
     #: An id string for this accumulator.
     #: Must not contain an underscore (``_``).
@@ -43,7 +43,7 @@ class BaseSpAccumulator(object):
 
     def ingest_values(self, rag, value_img):
         """
-        Ingest the given (single-channel) pixel values, using the superpixels stored in ``rag.label_img``.
+        Ingest the given (single-channel) pixel values, using the (flat) superpixels stored in ``rag.label_img``.
         
         Parameters
         ----------
@@ -59,14 +59,10 @@ class BaseSpAccumulator(object):
         """
         Called by the Rag after ``ingest_values()``.
 
-        Merges the features of ingested data into a final set of edge
+        Merges the features of all ingested edges into a final set of edge
         feature columns, and appends those columns to the given
         ``pandas.DataFrame`` object.
-        
-        This involves converting pairs superpixel features into edge features,
-        typically by taking the sum and/or difference between the features of
-        each superpixel in an adjacent pair.
-        """        
+        """
         raise NotImplementedError
 
     def __enter__(self):

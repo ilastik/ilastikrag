@@ -79,17 +79,13 @@ class StandardSpAccumulator(BaseSpAccumulator):
         if 'standard_sp_quantiles' in feature_names:
             feature_names.remove('standard_sp_quantiles')
             
-            # Quantile histogram_range is based on the first block only,
-            # so the '0' and '100' values would be misleading if we used them as-is.
-            # Instead, we silently replace the '0' and '100' quantiles with 'minimum' and 'maximum'.
-            # See vigra_util.append_vigra_features_to_dataframe()
-            feature_names += ['standard_sp_quantiles_0',  # Will be automatically replaced with 'minimum'
+            feature_names += ['standard_sp_quantiles_0',
                               'standard_sp_quantiles_10',
                               'standard_sp_quantiles_25',
                               'standard_sp_quantiles_50',
                               'standard_sp_quantiles_75',
                               'standard_sp_quantiles_90',
-                              'standard_sp_quantiles_100'] # Will be automatically replaced with 'maximum'
+                              'standard_sp_quantiles_100']
 
         # 'standard_sp_regionradii' is shorthand for "all regionradii"
         if 'standard_sp_regionradii' in feature_names:
@@ -109,66 +105,45 @@ class StandardSpAccumulator(BaseSpAccumulator):
         self._ndim = label_img.ndim
     
     def cleanup(self):
-        self._histogram_range = None
-        self._block_vigra_accumulators = []
+        self._vigra_acc = None
 
-    def ingest_values_for_block(self, label_block, value_block, block_start, block_stop):
-        assert len(self._block_vigra_accumulators) == 0, \
-            "FIXME: This accumulator is written to support block-wise accumulation, but that use-case isn't tested yet.\n"\
-            "Write a unit test for that use-case, then remove this assertion."
-
+    def ingest_values(self, rag, value_img):
         logger.debug("Computing SP features...")
-        block_vigra_acc = self._accumulate_sp_vigra_features( label_block, value_block )
-        self._block_vigra_accumulators.append( block_vigra_acc )
+        """
+        Pass the given pixel data to vigra.extractRegionFeatures().
+        Returns: vigra.RegionFeatureAccumulator
+        """
+        # Convert to float32 if necessary
+        if value_img is not None:
+            value_img = value_img.astype(np.float32, copy=False)
+        else:
+            for feat in self._vigra_feature_names:
+                assert feat.startswith('region') or feat == 'count', \
+                    "Can't compute feature {} without a value image!"
+            
+            # Vigra wants a value image, even though we won't be using it.
+            # We'll give it some garbage:
+            # Just cast the labels as if they were float.
+            value_img = rag.label_img.view(np.float32)
+        
+        self._vigra_acc = vigra.analysis.extractRegionFeatures( value_img,
+                                                                rag.label_img,
+                                                                features=self._vigra_feature_names,
+                                                                histogramRange="globalminmax" )
     
-    def append_merged_sp_features_to_edge_df(self, edge_df):        
-        # Merge all the accumulators from each block
-        final_sp_acc = self._block_vigra_accumulators[0].createAccumulator()
-        for block_vigra_acc in self._block_vigra_accumulators:
-            # This is an identity lookup, but it's necessary since vigra will complain 
-            # about different maxIds if we call merge() without a lookup 
-            axis_to_final_index_array = np.arange( block_vigra_acc.maxRegionLabel()+1, dtype=np.uint32 )
-            final_sp_acc.merge( block_vigra_acc, axis_to_final_index_array )
-
-
+    def append_edge_features_to_df(self, edge_df):
         # Create an almost-empty dataframe to store the sp features
         logger.debug("Saving SP features to DataFrame...")
-        index_u32 = pd.Index(np.arange(final_sp_acc.maxRegionLabel()+1), dtype=np.uint32)
-        sp_df = pd.DataFrame({ 'sp_id' : np.arange(final_sp_acc.maxRegionLabel()+1, dtype=np.uint32) }, index=index_u32)
+        index_u32 = pd.Index(np.arange(self._vigra_acc.maxRegionLabel()+1), dtype=np.uint32)
+        sp_df = pd.DataFrame({ 'sp_id' : np.arange(self._vigra_acc.maxRegionLabel()+1, dtype=np.uint32) }, index=index_u32)
 
         # Add the vigra accumulator results to the SP dataframe
-        sp_df = append_vigra_features_to_dataframe(final_sp_acc, sp_df, self._feature_names, overwrite_quantile_minmax=True)
+        sp_df = append_vigra_features_to_dataframe(self._vigra_acc, sp_df, self._feature_names, overwrite_quantile_minmax=True)
         
         # Combine SP features and append to the edge_df
         edge_df = self._append_sp_features_onto_edge_features( edge_df, sp_df )
         return edge_df
 
-    def _accumulate_sp_vigra_features(self, label_block, value_block):
-        """
-        Pass the given pixel data to vigra.extractRegionFeatures().
-        If this is the first block of data we've seen, store the histogram range
-        so that future blocks can use the same range (and thus the resulting 
-        accumulators can be merged).
-        
-        Returns: vigra.RegionFeatureAccumulator
-        """
-        histogram_range = self._histogram_range
-        if histogram_range is None:
-            histogram_range = "globalminmax"
-        
-        # Convert to float32 if necessary
-        value_block = value_block.astype(np.float32, copy=False)
-        acc = vigra.analysis.extractRegionFeatures( value_block,
-                                                    label_block,
-                                                    features=self._vigra_feature_names,
-                                                    histogramRange=histogram_range )
-
-        # If this was the first block we've processed,
-        # initialize the histogram_range (if necessary)
-        if self._histogram_range is None and set(['quantiles', 'histogram']) & set(self._vigra_feature_names):
-            self._histogram_range = [ acc['Global<Minimum >'],
-                                      acc['Global<Maximum >'] ]        
-        return acc
 
     def _append_sp_features_onto_edge_features(self, edge_df, sp_df):
         """

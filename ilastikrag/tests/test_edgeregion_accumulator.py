@@ -24,11 +24,38 @@ class TestEdgeRegionEdgeAccumulator(object):
         superpixels.axistags = vigra.defaultAxistags('xy')
         rag = Rag( superpixels )
         acc = EdgeRegionEdgeAccumulator(rag, feature_names)
-        
+
         transposed_features_df = rag.compute_features(None, feature_names, accumulator_set=[acc])
         transposed_radii = transposed_features_df[transposed_features_df.columns.values[2:]].values
+
+        assert (transposed_features_df[['sp1', 'sp1']].values == features_df[['sp1', 'sp1']].values).all()
         
-        assert np.isclose(radii, transposed_radii).all()
+        DEBUG = False
+        if DEBUG:
+            count_features = rag.compute_features(None, ['standard_edge_count', 'standard_sp_count'])
+    
+            import pandas as pd
+            combined_features_df = pd.merge(features_df, transposed_features_df, how='left', on=['sp1', 'sp2'], suffixes=('_orig', '_transposed'))
+            combined_features_df = pd.merge(combined_features_df, count_features, how='left', on=['sp1', 'sp2'])
+            
+            problem_rows = np.logical_or(np.isclose(radii[:, 0], transposed_radii[:, 0]) != 1,
+                                         np.isclose(radii[:, 1], transposed_radii[:, 1]) != 1)
+            problem_df = combined_features_df.loc[problem_rows][sorted(list(combined_features_df.columns))]
+            print problem_df.transpose()
+            
+            debug_sp = np.zeros_like(superpixels, dtype=np.uint8)
+            for sp1 in problem_df['sp1'].values:
+                debug_sp[superpixels == sp1] = 128
+            for sp2 in problem_df['sp2'].values:
+                debug_sp[superpixels == sp2] = 255
+    
+            vigra.impex.writeImage(debug_sp, '/tmp/debug_sp.png', dtype='NATIVE')
+                
+        # The first axes should all be close.
+        # The second axes may differ somewhat in the case of purely linear edges,
+        # so we allow a higher tolerance.
+        assert np.isclose(radii[:,0], transposed_radii[:,0]).all()
+        assert np.isclose(radii[:,1], transposed_radii[:,1], atol=0.001).all()
 
     def test2(self):
         superpixels = np.zeros((10, 10), dtype=np.uint32)

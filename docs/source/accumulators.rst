@@ -68,6 +68,12 @@ Standard Accumulators
 
    **Methods:** See :class:`~ilastikrag.accumulators.base.BaseSpAccumulator`
 
+.. autoclass:: ilastikrag.accumulators.standard.StandardFlatEdgeAccumulator
+
+   .. autoattribute:: ACCUMULATOR_TYPE
+   .. autoattribute:: ACCUMULATOR_ID
+
+   **Methods:** See :class:`~ilastikrag.accumulators.base.BaseFlatEdgeAccumulator`
 
 
 .. _edgeregion_accumulator:

@@ -89,5 +89,7 @@ class SimilarityFlatEdgeAccumulator(BaseFlatEdgeAccumulator):
 
     @classmethod
     def supported_features(cls, rag):
+        if not rag.flat_superpixels:
+            return []
         names = ['similarity_flatedge_correlation']
         return names

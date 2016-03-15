@@ -123,6 +123,8 @@ class StandardFlatEdgeAccumulator(BaseFlatEdgeAccumulator):
 
     @classmethod
     def supported_features(cls, rag):
+        if not rag.flat_superpixels:
+            return []
         names = ['standard_flatedge_count',
                  'standard_flatedge_sum',
                  'standard_flatedge_minimum',

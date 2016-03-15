@@ -16,7 +16,8 @@ library and the `pandas <http://pandas.pydata.org/>`_ data analysis package.
 Tutorials
 =========
 
-- `Tutorial <_static/quickstart-tutorial.html>`_
+- `Quickstart Tutorial <_static/quickstart-tutorial.html>`_
+- `Anisotropic Rag Tutorial <_static/anisotropic-tutorial.html>`_
 
 
 API Reference

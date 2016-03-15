@@ -12,3 +12,4 @@ ilastikrag.egg-info
 *.*~
 *.jpg
 *.swp
+*.ipynb_checkpoints

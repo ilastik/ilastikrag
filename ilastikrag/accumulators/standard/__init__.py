@@ -1,2 +1,3 @@
 from .standard_edge_accumulator import StandardEdgeAccumulator
 from .standard_sp_accumulator import StandardSpAccumulator
+from .standard_flatedge_accumulator import StandardFlatEdgeAccumulator

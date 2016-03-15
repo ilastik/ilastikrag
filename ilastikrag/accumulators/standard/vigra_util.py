@@ -37,27 +37,27 @@ def append_vigra_features_to_dataframe( acc, df, feature_names, overwrite_quanti
             # because 'quantile_0' and 'quantile_100' are the min/max for the first block only,
             # whereas 'minimum' and 'maximum' are global to all blocks.
             if overwrite_quantile_minmax and quantile_suffix == '0':
-                df[feature_name] = pd.Series(acc['minimum'], dtype=np.float32)
+                df[feature_name] = pd.Series(acc['minimum'], dtype=np.float32, index=df.index)
             if overwrite_quantile_minmax and quantile_suffix == '100':
-                df[feature_name] = pd.Series(acc['maximum'], dtype=np.float32)
+                df[feature_name] = pd.Series(acc['maximum'], dtype=np.float32, index=df.index)
             else:
                 q_index = ['0', '10', '25', '50', '75', '90', '100'].index(quantile_suffix)
-                df[feature_name] = pd.Series(acc['quantiles'][:, q_index], dtype=np.float32)
+                df[feature_name] = pd.Series(acc['quantiles'][:, q_index], dtype=np.float32, index=df.index)
 
         elif 'regionradii' in feature_name:
             radii_suffix = feature_name.split('_')[-1]
             r_index = int(radii_suffix)
-            df[feature_name] = pd.Series(acc['regionradii'][:, r_index], dtype=np.float32)
+            df[feature_name] = pd.Series(acc['regionradii'][:, r_index], dtype=np.float32, index=df.index)
 
         elif 'regionaxes' in feature_name:
             suffix = feature_name.split('_')[-1]
             assert len(suffix) == 2
             r_index, axis = suffix
             axis_index = 'xyz'.index(axis) # vigra puts results in xyz order, regardless of array order.
-            df[feature_name] = pd.Series(acc['regionaxes'][:, r_index, axis_index], dtype=np.float32)
+            df[feature_name] = pd.Series(acc['regionaxes'][:, r_index, axis_index], dtype=np.float32, index=df.index)
 
         else:
-            df[feature_name] = pd.Series(acc[vigra_feature_name], dtype=np.float32)
+            df[feature_name] = pd.Series(acc[vigra_feature_name], dtype=np.float32, index=df.index)
     
     return df
 

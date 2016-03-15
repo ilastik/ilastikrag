@@ -12,8 +12,8 @@ from .util import label_vol_mapping, edge_mask_for_axis, edge_ids_for_axis, \
                   unique_edge_labels, extract_edge_values_for_axis, nonzero_coord_array
 
 from .accumulators.base import BaseEdgeAccumulator, BaseSpAccumulator
-from .accumulators.standard import StandardEdgeAccumulator
-from .accumulators.standard import StandardSpAccumulator
+from .accumulators.standard import StandardEdgeAccumulator, StandardSpAccumulator, StandardFlatEdgeAccumulator
+from .accumulators.similarity import SimilarityFlatEdgeAccumulator
 from .accumulators.edgeregion import EdgeRegionEdgeAccumulator
 
 class Rag(object):
@@ -284,7 +284,7 @@ class Rag(object):
         else:
             assert len(all_edge_ids) == 3
             assert edge_datas.keys() == list('zyx')
-            unique_z = unique_edge_labels( all_edge_ids[0] )
+            unique_z = unique_edge_labels( [all_edge_ids[0]] )
             unique_yx = unique_edge_labels( all_edge_ids[1:] )
             unique_zyx = unique_edge_labels( [ unique_z[['sp1', 'sp2']].values,
                                                unique_yx[['sp1', 'sp2']].values ] )
@@ -377,7 +377,8 @@ class Rag(object):
 
     # Initialize Rag.DEFAULT_ACCUMULATOR_CLASSES
     DEFAULT_ACCUMULATOR_CLASSES = {}
-    for acc_cls in [StandardEdgeAccumulator, StandardSpAccumulator, EdgeRegionEdgeAccumulator]:
+    for acc_cls in [StandardEdgeAccumulator, StandardSpAccumulator, StandardFlatEdgeAccumulator,
+                    EdgeRegionEdgeAccumulator, SimilarityFlatEdgeAccumulator]:
         DEFAULT_ACCUMULATOR_CLASSES[(acc_cls.ACCUMULATOR_ID, acc_cls.ACCUMULATOR_TYPE)] = acc_cls
 
     def supported_features(self, accumulator_set="default"):
@@ -413,7 +414,7 @@ class Rag(object):
             feature_names += group_names
         return feature_names
 
-    def compute_features(self, value_img, feature_names, accumulator_set="default"):
+    def compute_features(self, value_img, feature_names, edge_type='dense', accumulator_set="default"):
         """
         The primary API function for computing features. |br|
         Returns a pandas DataFrame with columns ``['sp1', 'sp2', ...output feature names...]``
@@ -480,26 +481,68 @@ class Rag(object):
         +---------+---------+------------------------+---------------------------+----------------------------------+
 
         """
+        assert value_img is None or hasattr(value_img, 'axistags'), \
+            "For optimal performance, make sure label_img is a VigraArray with accurate axistags"
+
+        results = OrderedDict()
+        if isinstance(edge_type, str):
+            results[edge_type] = None
+        else:
+            for t in edge_type:
+                results[t] = None
+        assert all(edge_type in ('dense', 'flat') for edge_type in results.keys()), \
+            "Unsupported edge_type." 
+        
         feature_groups = self._get_feature_groups(feature_names, accumulator_set)
         
-        # Create a DataFrame for the results
-        index_u32 = pd.Index(np.arange(self.num_edges), dtype=np.uint32)
-        edge_df = pd.DataFrame(self.edge_ids, columns=['sp1', 'sp2'], index=index_u32)
+        if 'dense' in results.keys():
+            # Create a DataFrame for the results
+            dense_axes = ''.join(self.dense_edge_tables.keys())
+            dense_edge_ids = self.unique_edge_tables[dense_axes][['sp1', 'sp2']].values
+            
+            index_u32 = pd.Index(np.arange(len(dense_edge_ids)), dtype=np.uint32)
+            edge_df = pd.DataFrame(dense_edge_ids, columns=['sp1', 'sp2'], index=index_u32)
+    
+            # Compute and append columns
+            if 'edge' in feature_groups:
+                edge_df = self._append_edge_features_for_values(edge_df, feature_groups['edge'], value_img, accumulator_set)
+    
+            if 'sp' in feature_groups:
+                edge_df = self._append_sp_features_for_values(edge_df, feature_groups['sp'], value_img, accumulator_set)
+            
+            results['dense'] = edge_df
 
-        # Compute and append columns
-        if 'edge' in feature_groups:
-            edge_df = self._append_edge_features_for_values(edge_df, feature_groups['edge'], value_img, accumulator_set)
+            # Typecheck the columns to help new accumulator authors spot problems in their code.
+            dtypes = { colname: series.dtype for colname, series in edge_df.iterkv() }
+            assert all(dtype != np.float64 for dtype in dtypes.values()), \
+                "An accumulator returned float64 features. That's a waste of ram.\n"\
+                "dtypes were: {}".format(dtypes)
 
-        if 'sp' in feature_groups:
-            edge_df = self._append_sp_features_for_values(edge_df, feature_groups['sp'], value_img, accumulator_set)
 
-        # Typecheck the columns to help new accumulator authors spot problems in their code.
-        dtypes = { colname: series.dtype for colname, series in edge_df.iterkv() }
-        assert all(dtype != np.float64 for dtype in dtypes.values()), \
-            "An accumulator returned float64 features. That's a waste of ram.\n"\
-            "dtypes were: {}".format(dtypes)
+        # FIXME: This recomputes the sp features
+        if 'flat' in results.keys():
+            # Create a DataFrame for the results
+            index_u32 = pd.Index(np.arange(len(self.unique_edge_tables['z'])), dtype=np.uint32)
+            edge_df = pd.DataFrame(self.unique_edge_tables['z'][['sp1', 'sp2']].values, columns=['sp1', 'sp2'], index=index_u32)
+    
+            # Compute and append columns
+            if 'flatedge' in feature_groups:
+                edge_df = self._append_flatedge_features_for_values(edge_df, feature_groups['flatedge'], value_img, accumulator_set)
+    
+            if 'sp' in feature_groups:
+                edge_df = self._append_sp_features_for_values(edge_df, feature_groups['sp'], value_img, accumulator_set)
 
-        return edge_df
+            results['flat'] = edge_df
+            
+            # Typecheck the columns to help new accumulator authors spot problems in their code.
+            dtypes = { colname: series.dtype for colname, series in edge_df.iterkv() }
+            assert all(dtype != np.float64 for dtype in dtypes.values()), \
+                "An accumulator returned float64 features. That's a waste of ram.\n"\
+                "dtypes were: {}".format(dtypes)
+
+        if len(results) == 1:
+            return results.values()[0]
+        return results
 
     def _get_feature_groups(self, feature_names, accumulator_set="default"):
         """
@@ -519,7 +562,7 @@ class Rag(object):
             feature_groups[acc_type][acc_id] = list(feature_group)
 
         # We only know about 'edge' and 'sp' features.
-        unknown_feature_types = list(set(feature_groups.keys()) - set(['edge', 'sp']))
+        unknown_feature_types = list(set(feature_groups.keys()) - set(['edge', 'sp', 'flatedge']))
         if unknown_feature_types:
             bad_names = feature_groups[unknown_feature_types[0]].values()[0]
             assert not unknown_feature_types, "Feature(s) have unknown type: {}".format(bad_names)
@@ -594,6 +637,37 @@ class Rag(object):
                 # user is asking for right now, remove the extra columns
                 for colname in edge_df.columns.values[2:]:
                     if '_sp_' in colname and not any(colname.startswith(name) for name in feature_group_names):
+                        del edge_df[colname]
+        return edge_df
+
+    def _append_flatedge_features_for_values(self, edge_df, flatedge_feature_groups, value_img, accumulator_set="default"):
+        """
+        Compute superpixel-based features and append them as columns to the given DataFrame.
+        
+        edge_df: DataFrame with columns (sp1, sp2) at least.
+        flatedge_feature_groups: Dict of { accumulator_id : [feature_name, feature_name...] }
+        value_img: ndarray of pixel values, or None
+        accumulator_set: A list of additional accumulators to consider, or "default" to just use built-in.
+        """
+        if isinstance(self._label_img, Rag._EmptyLabels):
+            raise NotImplementedError("Can't compute flatedge features.\n"
+                                      "You deserialized the Rag without deserializing the labels.")
+
+        # Create an accumulator for each group
+        for acc_id, feature_group_names in flatedge_feature_groups.items():
+            flatedge_accumulator = self._select_accumulator_for_group(acc_id, 'flatedge', feature_group_names, accumulator_set)
+            unsupported_names = set(feature_group_names) - set(flatedge_accumulator.supported_features(self))
+            assert not unsupported_names, \
+                "Some of your requested features aren't supported by this accumulator: {}".format(unsupported_names)
+
+            with flatedge_accumulator:
+                flatedge_accumulator.ingest_values(self, value_img)
+                edge_df = flatedge_accumulator.append_edge_features_to_df(edge_df)
+
+                # If the accumulator provided more features than the
+                # user is asking for right now, remove the extra columns
+                for colname in edge_df.columns.values[2:]:
+                    if '_flatedge_' in colname and not any(colname.startswith(name) for name in feature_group_names):
                         del edge_df[colname]
         return edge_df
 
@@ -877,7 +951,7 @@ class Rag(object):
             accumulator_set = []
 
         for acc in accumulator_set:
-            assert acc.ACCUMULATOR_TYPE in ('edge', 'sp'), \
+            assert acc.ACCUMULATOR_TYPE in ('edge', 'sp', 'flatedge'), \
                 "{} has unknown accumulator-type: {}".format( acc, acc.ACCUMULATOR_TYPE )
             assert acc.ACCUMULATOR_ID, \
                 "{} has empty accumulator-id: {}".format( acc, acc.ACCUMULATOR_ID )

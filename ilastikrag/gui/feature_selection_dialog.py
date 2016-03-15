@@ -108,6 +108,20 @@ class FeatureSelectionDialog(QDialog):
             selections[channel_name] = channel_selections
         return selections
 
+    @classmethod
+    def launch(cls, channel_names, feature_names, default_selections=None):
+        from PyQt4.QtGui import QApplication
+        if QApplication.instance() is None:
+            app = QApplication([])
+        
+        dlg = FeatureSelectionDialog(channel_names, feature_names, default_selections)
+        dlg.show()
+        dlg.raise_()
+        dlg.exec_()
+        if dlg.result() == QDialog.Accepted:
+            return dlg.selections()
+        return None
+
 def _make_checklist(feature_names, default_checked):
     feature_groups = _group_features(feature_names)
 
@@ -169,9 +183,6 @@ if __name__ == "__main__":
     import signal
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    from PyQt4.QtGui import QApplication
-    app = QApplication([])
-
     #channel_names = ['Grayscale', 'Membranes', 'Cytoplasm', 'Mitochondria']
     channel_names = ['Grayscale', 'Membranes']
     feature_names = ['standard_edge_mean', 'standard_edge_maximum', 'standard_edge_count',
@@ -181,10 +192,16 @@ if __name__ == "__main__":
     default_selections = { 'Grayscale': ['standard_sp_mean', 'standard_sp_count'],
                            'Membranes': ['standard_edge_quantiles'] }
 
-    dlg = FeatureSelectionDialog(channel_names, feature_names, default_selections)
-    dlg.show()
-    dlg.raise_()
-    dlg.exec_()
+    selections = FeatureSelectionDialog.launch(channel_names, feature_names, default_selections)
+    print selections
 
-    print dlg.selections()
-    
+#     from PyQt4.QtGui import QApplication
+#     app = QApplication([])
+# 
+# 
+#     dlg = FeatureSelectionDialog(
+#     dlg.show()
+#     dlg.raise_()
+#     dlg.exec_()
+# 
+#     print dlg.selections()

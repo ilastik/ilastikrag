@@ -86,7 +86,7 @@ EdgeRegion Accumulator
    **Methods:** See :class:`~ilastikrag.accumulators.base.BaseEdgeAccumulator`
 
 
-.. _edgeregion_accumulator:
+.. _similarity_accumulator:
 
 Similarity FlatEdge Accumulator
 -------------------------------

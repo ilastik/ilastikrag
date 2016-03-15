@@ -5,7 +5,7 @@ ilastikrag
 
 ND Region Adjacency Graph, with superpixel edge features.
 
-See the online **[documentation][]** for details.
+See the online **[Documentation][]** and **[Quickstart Tutorial][]** for details.
 
 Installation
 ------------
@@ -14,4 +14,5 @@ Installation
 conda install -c stuarteberg ilastikrag
 ```
 
-[documentation]: http://stuarteberg.github.io/ilastikrag
+[Documentation]: http://stuarteberg.github.io/ilastikrag
+[Quickstart Tutorial]: http://stuarteberg.github.io/ilastikrag/_static/quickstart-tutorial.html

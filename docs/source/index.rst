@@ -13,6 +13,12 @@ along with  algorithms to compute *features* for the edges between superpixels i
 It has good performance, thanks to the `VIGRA <http://ukoethe.github.io/vigra>`_ image processing
 library and the `pandas <http://pandas.pydata.org/>`_ data analysis package.
 
+Tutorials
+=========
+
+- `Tutorial <_static/quickstart-tutorial.html>`_
+
+
 API Reference
 =============
 

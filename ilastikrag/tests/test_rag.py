@@ -239,6 +239,7 @@ class TestRag(object):
         feature_names = ['standard_edge_mean', 'standard_sp_count']
         features_df_original = original_rag.compute_features(values, feature_names)
         features_df_deserialized = deserialized_rag.compute_features(values, feature_names)
+        
         assert (features_df_original.values == features_df_deserialized.values).all()
 
     def test_invalid_feature_names(self):

@@ -25,7 +25,7 @@ class TestStandardFlatEdgeAccumulator(object):
         sp_counts = np.bincount(superpixels[:-1].flat[:])
         sp_counts = sp_counts[1:] # Drop zero sp (it doesn't exist)
          
-        features_df = rag.compute_features(None, ['standard_flatedge_count'], edge_type='flat')
+        features_df = rag.compute_features(None, ['standard_flatedge_count'], edge_group='z')
         assert sorted(features_df['standard_flatedge_count'].values) == sorted(sp_counts)
 
     def test_quantiles(self):
@@ -44,8 +44,8 @@ class TestStandardFlatEdgeAccumulator(object):
         values = np.random.random(size=(superpixels.shape)).astype(np.float32)
         values = vigra.taggedView(values, 'zyx')
         
-        flat_features_df = rag_flat.compute_features(values, ['standard_flatedge_quantiles'], edge_type='flat')
-        flat_features_df2 = rag_flat.compute_features(values, ['standard_edge_quantiles'], edge_type='dense')
+        flat_features_df = rag_flat.compute_features(values, ['standard_flatedge_quantiles'], edge_group='z')
+        flat_features_df2 = rag_flat.compute_features(values, ['standard_edge_quantiles'], edge_group='yx')
         
         # Rename columns
         flat_features_df2.columns = flat_features_df.columns.values
@@ -79,7 +79,7 @@ class TestStandardFlatEdgeAccumulator(object):
         values = np.random.random(size=(superpixels.shape)).astype(np.float32)
         values = vigra.taggedView(values, 'zyx')
         
-        flat_features_df = rag_flat.compute_features(values, ['standard_flatedge_regionradii'], edge_type='flat')
+        flat_features_df = rag_flat.compute_features(values, ['standard_flatedge_regionradii'], edge_group='z')
 
         # Now compute the radii using a normal 'dense' rag
         rag_dense = Rag( superpixels )

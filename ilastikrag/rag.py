@@ -414,7 +414,7 @@ class Rag(object):
             feature_names += group_names
         return feature_names
 
-    def compute_features(self, value_img, feature_names, edge_type='dense', accumulator_set="default"):
+    def compute_features(self, value_img, feature_names, edge_group=None, accumulator_set="default"):
         """
         The primary API function for computing features. |br|
         Returns a pandas DataFrame with columns ``['sp1', 'sp2', ...output feature names...]``
@@ -451,10 +451,13 @@ class Rag(object):
             an edge, and then converted into an edge feature, typically via sum or difference
             between the two superpixels.
 
-        edge_type
-            *str* or *list-of-str*                                                |br|
-            Valid choices are ``'dense'``, ``'flat'``, or ``['dense', 'flat']``   |br|
-            In the latter case, an ``OrderedDict`` of results is returned.        |br|
+        edge_group
+            *str* or *list-of-str*                                                                |br|
+            If ``Rag.flat_superpixels=True``, valid choices are ``'z'`` or ``'yx'``,
+            or ``['z', 'yx']``, in which case an ``OrderedDict`` is returned with both results.
+            
+            For isotropic rags, there is only one valid choice, and it is selected by default:
+            ``'zyx'`` (or ``'yx'`` if Rag is 2D).
         
         accumulator_set
             A list of acumulators to use in addition to the built-in accumulators.
@@ -488,19 +491,31 @@ class Rag(object):
         """
         assert value_img is None or hasattr(value_img, 'axistags'), \
             "For optimal performance, make sure label_img is a VigraArray with accurate axistags"
+        dense_axes =''.join(self.dense_edge_tables.keys())
+
+        if self.flat_superpixels:
+            valid_edge_groups = ('z', 'yx')
+        else:
+            valid_edge_groups = (''.join(self._label_img.axistags.keys()),)
+
+        if edge_group is None:
+            assert not self._flat_superpixels, "Must provide an edge_group"
+            edge_group = dense_axes
+
+        edge_group = str(edge_group)
 
         results = OrderedDict()
-        if isinstance(edge_type, str):
-            results[edge_type] = None
+        if isinstance(edge_group, str):
+            results[edge_group] = None
         else:
-            for t in edge_type:
+            for t in edge_group:
                 results[t] = None
-        assert all(edge_type in ('dense', 'flat') for edge_type in results.keys()), \
-            "Unsupported edge_type." 
+        assert all(edge_group in valid_edge_groups for edge_group in results.keys()), \
+            "Unsupported edge_group."
         
         feature_groups = self._get_feature_groups(feature_names, accumulator_set)
         
-        if 'dense' in results.keys():
+        if dense_axes in results.keys():
             # Create a DataFrame for the results
             dense_axes = ''.join(self.dense_edge_tables.keys())
             dense_edge_ids = self.unique_edge_tables[dense_axes][['sp1', 'sp2']].values
@@ -515,7 +530,7 @@ class Rag(object):
             if 'sp' in feature_groups:
                 edge_df = self._append_sp_features_for_values(edge_df, feature_groups['sp'], value_img, accumulator_set)
             
-            results['dense'] = edge_df
+            results[dense_axes] = edge_df
 
             # Typecheck the columns to help new accumulator authors spot problems in their code.
             dtypes = { colname: series.dtype for colname, series in edge_df.iterkv() }
@@ -525,7 +540,7 @@ class Rag(object):
 
 
         # FIXME: This recomputes the sp features
-        if 'flat' in results.keys():
+        if 'z' in results.keys():
             # Create a DataFrame for the results
             index_u32 = pd.Index(np.arange(len(self.unique_edge_tables['z'])), dtype=np.uint32)
             edge_df = pd.DataFrame(self.unique_edge_tables['z'][['sp1', 'sp2']].values, columns=['sp1', 'sp2'], index=index_u32)
@@ -537,7 +552,7 @@ class Rag(object):
             if 'sp' in feature_groups:
                 edge_df = self._append_sp_features_for_values(edge_df, feature_groups['sp'], value_img, accumulator_set)
 
-            results['flat'] = edge_df
+            results['z'] = edge_df
             
             # Typecheck the columns to help new accumulator authors spot problems in their code.
             dtypes = { colname: series.dtype for colname, series in edge_df.iterkv() }

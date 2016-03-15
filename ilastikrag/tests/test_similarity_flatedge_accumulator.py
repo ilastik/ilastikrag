@@ -23,7 +23,7 @@ class TestSimilarityFlatEdgeAccumulator(object):
         values = np.zeros_like(superpixels, dtype=np.float32)
         values[:] = slice_superpixels[None]
 
-        features_df = rag.compute_features(values, ['similarity_flatedge_correlation'], edge_type='flat')
+        features_df = rag.compute_features(values, ['similarity_flatedge_correlation'], edge_group='z')
         assert (features_df['similarity_flatedge_correlation'].values == 1.0).all()
 
         # Now add a little noise from one slice to the next.
@@ -35,14 +35,14 @@ class TestSimilarityFlatEdgeAccumulator(object):
             else:
                 values[z] += 1.0001*np.abs(values[z-1] - values[z-2])
 
-        features_df = rag.compute_features(values, ['similarity_flatedge_correlation'], edge_type='flat')        
+        features_df = rag.compute_features(values, ['similarity_flatedge_correlation'], edge_group='z')        
         assert (features_df['similarity_flatedge_correlation'].values >= 0.7).all()
         assert (features_df['similarity_flatedge_correlation'].values <= 1.0).all()
         
         # Now use just noise
         values = np.random.random(size=values.shape).astype(np.float32)
         values = vigra.taggedView(values, 'zyx')
-        features_df = rag.compute_features(values, ['similarity_flatedge_correlation'], edge_type='flat')
+        features_df = rag.compute_features(values, ['similarity_flatedge_correlation'], edge_group='z')
         assert (features_df['similarity_flatedge_correlation'].values <= 1.0).all()
         assert (features_df['similarity_flatedge_correlation'].values >= -1.0).all()
         

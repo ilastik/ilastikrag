@@ -451,7 +451,12 @@ class Rag(object):
             an edge, and then converted into an edge feature, typically via sum or difference
             between the two superpixels.
 
-        accumulator_set:
+        edge_type
+            *str* or *list-of-str*                                                |br|
+            Valid choices are ``'dense'``, ``'flat'``, or ``['dense', 'flat']``   |br|
+            In the latter case, an ``OrderedDict`` of results is returned.        |br|
+        
+        accumulator_set
             A list of acumulators to use in addition to the built-in accumulators.
             If ``accumulator_set="default"``, then only the built-in accumulators can be used.
 

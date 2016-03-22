@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-def append_vigra_features_to_dataframe( acc, df, feature_names, overwrite_quantile_minmax=False):
+def append_vigra_features_to_dataframe( acc, df, feature_names, replace_nan=0.0, overwrite_quantile_minmax=False):
     """
     Extract the specified features from the given RegionFeaturesAccumulator
     and append them as columns to the given DataFrame.
@@ -19,6 +19,10 @@ def append_vigra_features_to_dataframe( acc, df, feature_names, overwrite_quanti
 
     feature_names
         High-level feature names with prefix and possible suffix, e.g. edge_vigra_quantiles_25
+    
+    replace_nan:
+        If not None, replace all NaN values with the given value.
+        (Vigra may return `NaN` for skewness and kurtosis features if the region is too small.)
     
     overwrite_quantile_minmax
         If True, don't use quantiles_0 and quantiles_100 directly.
@@ -58,6 +62,10 @@ def append_vigra_features_to_dataframe( acc, df, feature_names, overwrite_quanti
 
         else:
             df[feature_name] = pd.Series(acc[vigra_feature_name], dtype=np.float32, index=df.index)
+
+        # Only some features might include NaN values.
+        if vigra_feature_name in ('kurtosis', 'skewness') and replace_nan is not None:
+            df[feature_name].fillna( replace_nan, inplace=True )
     
     return df
 

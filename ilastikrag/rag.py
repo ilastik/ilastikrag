@@ -9,7 +9,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 from .util import label_vol_mapping, edge_mask_for_axis, edge_ids_for_axis, \
-                  unique_edge_labels, extract_edge_values_for_axis, nonzero_coord_array
+                  unique_edge_labels, extract_edge_values_for_axis, nonzero_coord_array, \
+                  dataframe_to_hdf5, dataframe_from_hdf5
 
 from .accumulators.base import BaseEdgeAccumulator, BaseSpAccumulator
 from .accumulators.standard import StandardEdgeAccumulator, StandardSpAccumulator, StandardFlatEdgeAccumulator
@@ -770,7 +771,7 @@ class Rag(object):
         store_labels
             If True, the labels will be stored as a (compressed) h5py Dataset. |br|
             If False, the labels are *not* stored, but you are responsible     |br|
-            for loading them separately when calling _dataframe_to_hdf5(),     |br|
+            for loading them separately when calling dataframe_to_hdf5(),      |br|
             unless you don't plan to use superpixel features.
         
         compression
@@ -786,13 +787,13 @@ class Rag(object):
         dense_tables_parent_group = h5py_group.create_group('dense_edge_tables')
         for axiskey, df in self.dense_edge_tables.items():
             df_group = dense_tables_parent_group.create_group('{}'.format(axiskey))
-            Rag._dataframe_to_hdf5(df_group, df)
+            dataframe_to_hdf5(df_group, df)
 
         # Unique DFs
         unique_tables_parent_group = h5py_group.create_group('unique_edge_tables')
         for axiskey, df in self.unique_edge_tables.items():
             df_group = unique_tables_parent_group.create_group('{}'.format(axiskey))
-            Rag._dataframe_to_hdf5(df_group, df)
+            dataframe_to_hdf5(df_group, df)
 
         # label_img metadata
         labels_dset = h5py_group.create_dataset('label_img',
@@ -841,13 +842,13 @@ class Rag(object):
         rag._dense_edge_tables = OrderedDict()
         dense_tables_parent_group = h5py_group['dense_edge_tables']
         for axiskey, df_group in sorted(dense_tables_parent_group.items())[::-1]: # tables should be restored to zyx order.
-            rag._dense_edge_tables[axiskey] = Rag._dataframe_from_hdf5(df_group)
+            rag._dense_edge_tables[axiskey] = dataframe_from_hdf5(df_group)
 
         # Dense Edge DFs
         rag._unique_edge_tables = {}
         unique_tables_parent_group = h5py_group['unique_edge_tables']
         for axiskey, df_group in sorted(unique_tables_parent_group.items()):
-            rag._unique_edge_tables[axiskey] = Rag._dataframe_from_hdf5(df_group)
+            rag._unique_edge_tables[axiskey] = dataframe_from_hdf5(df_group)
         
         # label_img
         label_dset = h5py_group['label_img']
@@ -877,59 +878,6 @@ class Rag(object):
         rag._init_sp_attributes()
 
         return rag
-
-    @classmethod
-    def _dataframe_to_hdf5(cls, h5py_group, df):
-        """
-        Helper function to serialize a pandas.DataFrame to an h5py.Group.
-
-        Note: This function uses a custom storage format,
-              not the same format as pandas.DataFrame.to_hdf().
-
-        Known to work for the DataFrames used in this file,
-        including the MultiIndex columns in the dense_edge_tables.
-        Not tested with more complicated DataFrame structures. 
-        """
-        h5py_group['row_index'] = df.index.values
-        h5py_group['column_index'] = repr(df.columns.values)
-        columns_group = h5py_group.create_group('columns')
-        for col_index, col_name in enumerate(df.columns.values):
-            columns_group['{:03}'.format(col_index)] = df[col_name].values
-
-    @classmethod
-    def _dataframe_from_hdf5(cls, h5py_group):
-        """
-        Helper function to deserialize a pandas.DataFrame from an h5py.Group,
-        as written by Rag._dataframe_to_hdf5().
-
-        Note: This function uses a custom storage format,
-              not the same format as pandas.read_hdf().
-
-        Known to work for the DataFrames used in this file,
-        including the MultiIndex columns in the dense_edge_tables.
-        Not tested with more complicated DataFrame structures. 
-        """
-        from numpy import array # We use eval() for the column index, which uses 'array'
-        array # Avoid linter usage errors
-        row_index_values = h5py_group['row_index'][:]
-        column_index_names = list(eval(h5py_group['column_index'][()]))
-        if isinstance(column_index_names[0], np.ndarray):
-            column_index_names = map(tuple, column_index_names)
-            column_index = pd.MultiIndex.from_tuples(column_index_names)
-        elif isinstance(column_index_names[0], str):
-            column_index = column_index_names
-        else:
-            raise NotImplementedError("I don't know how to handle that type of column index.: {}"
-                                      .format(h5py_group['column_index'][()]))
-
-        columns_group = h5py_group['columns']
-        col_values = []
-        for _name, col_values_dset in sorted(columns_group.items()):
-            col_values.append( col_values_dset[:] )
-        
-        return pd.DataFrame( index=row_index_values,
-                             columns=column_index,
-                             data={ name: values for name,values in zip(column_index_names, col_values) } )
 
     class _EmptyLabels(object):
         """

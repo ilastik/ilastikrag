@@ -241,3 +241,55 @@ def colorize_labels(label_img):
     for c in range(3):
         colorized[...,c] = random_colors[...,c][label_img]
     return colorized
+
+def dataframe_to_hdf5(h5py_group, df):
+    """
+    Helper function to serialize a pandas.DataFrame to an h5py.Group.
+
+    Note: This function uses a custom storage format,
+          not the same format as pandas.DataFrame.to_hdf().
+
+    Known to work for the DataFrames used in the Rag datastructure,
+    including the MultiIndex columns in the dense_edge_tables.
+    Not tested with more complicated DataFrame structures. 
+    """
+    h5py_group['row_index'] = df.index.values
+    h5py_group['column_index'] = repr(df.columns.values)
+    columns_group = h5py_group.create_group('columns')
+    for col_index, col_name in enumerate(df.columns.values):
+        columns_group['{:03}'.format(col_index)] = df[col_name].values
+
+def dataframe_from_hdf5(h5py_group):
+    """
+    Helper function to deserialize a pandas.DataFrame from an h5py.Group,
+    as written by ``dataframe_to_hdf5()``.
+
+    Note: This function uses a custom storage format,
+          not the same format as pandas.read_hdf().
+
+    Known to work for the DataFrames used in the Rag datastructure,
+    including the MultiIndex columns in the dense_edge_tables.
+    Not tested with more complicated DataFrame structures. 
+    """
+    from numpy import array # We use eval() for the column index, which uses 'array'
+    array # Avoid linter usage errors
+    row_index_values = h5py_group['row_index'][:]
+    column_index_names = list(eval(h5py_group['column_index'][()]))
+    if isinstance(column_index_names[0], np.ndarray):
+        column_index_names = map(tuple, column_index_names)
+        column_index = pd.MultiIndex.from_tuples(column_index_names)
+    elif isinstance(column_index_names[0], str):
+        column_index = column_index_names
+    else:
+        raise NotImplementedError("I don't know how to handle that type of column index.: {}"
+                                  .format(h5py_group['column_index'][()]))
+
+    columns_group = h5py_group['columns']
+    col_values = []
+    for _name, col_values_dset in sorted(columns_group.items()):
+        col_values.append( col_values_dset[:] )
+    
+    return pd.DataFrame( index=row_index_values,
+                         columns=column_index,
+                         data={ name: values for name,values in zip(column_index_names, col_values) } )
+

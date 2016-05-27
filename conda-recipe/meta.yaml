@@ -20,7 +20,7 @@ requirements:
     - hdf5   1.8.14
     - h5py   >=2.5
     - pandas >=0.16
-    - vigra  1.11rc*
+    - vigra  >=1.11
     - networkx >=1.11
 
 test:

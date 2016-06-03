@@ -26,7 +26,7 @@ dependencies:
           echo "Installing Miniconda...";
           wget --quiet https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh;
           bash Miniconda-latest-Linux-x86_64.sh -b -p ${CONDA_ROOT};
-          conda install -y conda-build;
+          conda install -y conda-build=1.20.2;
           conda config --add channels ilastik;          
           conda create -y -n ${TEST_ENV_NAME} ilastikrag;
           conda remove -y -n ${TEST_ENV_NAME} ilastikrag;

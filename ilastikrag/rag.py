@@ -857,12 +857,21 @@ class Rag(object):
             assert not label_img, \
                 "The labels were already stored to hdf5. Why are you also providing them externally?"
             label_img = label_dset[:]
-            rag._label_img = vigra.taggedView( label_img, axistags )
+            label_img = vigra.taggedView( label_img, axistags )
+            # Transpose to proper order
+            axes = 'zyx'[-label_img.ndim:]
+            label_img = label_img.withAxes(axes)
+            rag._label_img = label_img
         elif label_img is not None:
             assert hasattr(label_img, 'axistags'), \
                 "For optimal performance, make sure label_img is a VigraArray with accurate axistags"
             assert set(label_img.axistags.keys()).issubset('zyx'), \
                 "Only axes z,y,x are permitted, not {}".format( label_img.axistags.keys() )
+
+            # Transpose to proper order
+            axes = 'zyx'[-label_img.ndim:]
+            label_img = label_img.withAxes(axes)
+
             rag._label_img = label_img
         else:
             rag._label_img = Rag._EmptyLabels(label_dset.shape, label_dset.dtype, axistags)

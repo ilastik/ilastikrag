@@ -255,9 +255,14 @@ def dataframe_to_hdf5(h5py_group, df):
     """
     h5py_group['row_index'] = df.index.values
     h5py_group['column_index'] = repr(df.columns.values)
+    
+    # The deserialization function below requires this.
+    assert len(set(df.columns.values)) == len(df.columns.values), \
+        "DataFrame column names must be unique to be serialized!"
+    
     columns_group = h5py_group.create_group('columns')
-    for col_index, col_name in enumerate(df.columns.values):
-        columns_group['{:03}'.format(col_index)] = df[col_name].values
+    for col_index, _col_name in enumerate(df.columns.values):
+        columns_group['{:03}'.format(col_index)] = df.iloc[:, col_index].values
 
 def dataframe_from_hdf5(h5py_group):
     """
@@ -284,11 +289,16 @@ def dataframe_from_hdf5(h5py_group):
         raise NotImplementedError("I don't know how to handle that type of column index.: {}"
                                   .format(h5py_group['column_index'][()]))
 
+    # This assertion required due to our use of the dict syntax below.
+    # We could probably change this requirement if it's a problem...
+    assert len(set(column_index)) == len(column_index), \
+        "DataFrame column names must be unique to be deserialized!"
+    
     columns_group = h5py_group['columns']
     col_values = []
     for _name, col_values_dset in sorted(columns_group.items()):
         col_values.append( col_values_dset[:] )
-    
+
     return pd.DataFrame( index=row_index_values,
                          columns=column_index,
                          data={ name: values for name,values in zip(column_index_names, col_values) } )

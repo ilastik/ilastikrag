@@ -9,8 +9,7 @@ package:
   {% endif %}
 
 source:
-  git_url: ../
-  git_tag: HEAD
+  path: ../
 
 build:
   number: 0

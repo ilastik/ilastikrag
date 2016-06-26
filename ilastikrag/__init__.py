@@ -1,4 +1,4 @@
-__version__ = '0.1'
+from .version import __version__
 import accumulators
 from .accumulators import BaseEdgeAccumulator
 from .accumulators import BaseSpAccumulator

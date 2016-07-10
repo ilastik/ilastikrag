@@ -22,8 +22,8 @@ requirements:
   run:
     - python 2.7*
     - numpy  >=1.9
-    - hdf5   1.8.14
-    - h5py   >=2.5
+    - hdf5   1.8.16
+    - h5py   >=2.6
     - pandas >=0.16
     - vigra  >=1.11
     - networkx >=1.11

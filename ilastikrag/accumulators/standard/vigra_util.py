@@ -57,6 +57,7 @@ def append_vigra_features_to_dataframe( acc, df, feature_names, replace_nan=0.0,
             suffix = feature_name.split('_')[-1]
             assert len(suffix) == 2
             r_index, axis = suffix
+            r_index = int(r_index)
             axis_index = 'xyz'.index(axis) # vigra puts results in xyz order, regardless of array order.
             df[feature_name] = pd.Series(acc['regionaxes'][:, r_index, axis_index], dtype=np.float32, index=df.index)
 

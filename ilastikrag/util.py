@@ -18,7 +18,7 @@ def contingency_table(vol1, vol2, maxlabels=None):
 def label_vol_mapping(vol_from, vol_to):
     """
     Determine how remap voxel IDs in ``vol_from`` into corresponding
-    IDs in ``vol_to``, according to maximum overlap.
+    IDs in ``vol_to``, according to maxiumum overlap.
     (Note that this is not a commutative operation.)
     
     Returns

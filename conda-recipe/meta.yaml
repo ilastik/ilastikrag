@@ -22,7 +22,7 @@ requirements:
   run:
     - python 2.7*
     - numpy  >=1.9
-    - hdf5   1.8.16
+    - hdf5   1.8.17
     - h5py   >=2.6
     - pandas >=0.16
     - vigra  >=1.11

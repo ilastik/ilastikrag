@@ -84,6 +84,9 @@ class StandardEdgeAccumulator(BaseEdgeAccumulator):
             logger.debug("Computing global histogram range...")
             histogram_range = [min(map(np.min, edge_values.values())),
                                max(map(np.max, edge_values.values()))]
+            if histogram_range:
+                logger.warn("All edge pixels are identical. Is this image empty?")
+                histogram_range[1] += 1.0
         else:
             histogram_range = "globalminmax"
 

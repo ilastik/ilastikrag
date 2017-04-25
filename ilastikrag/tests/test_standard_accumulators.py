@@ -225,6 +225,48 @@ class TestStandardAccumulators(object):
             assert row['standard_edge_count'] > 0
             assert row['standard_edge_sum'] == row['standard_edge_count'] * (sp1+sp2)/2.
 
+    def test_edge_features_with_histogram_blank_data(self):
+        """
+        There was a bug related to histogram min/max if all edge pixels had the exact same value.
+        In that case, min and max were identical and vigra complained.
+        For example, if you give vigra histogramRange=(0.0, 0.0), that's a problem.
+        This test verifies that no crashes occur in such cases.
+        """
+        superpixels = generate_random_voronoi((100,200), 200)
+        rag = Rag( superpixels )
+
+        values = np.zeros_like(superpixels, dtype=np.float32)
+
+        feature_names = ['standard_edge_mean', 'standard_edge_minimum', 'standard_edge_maximum', 'standard_edge_variance',
+                         'standard_edge_quantiles_25', 'standard_edge_quantiles_50', 'standard_edge_quantiles_75',
+                         'standard_edge_count', 'standard_edge_sum']
+
+        features_df = rag.compute_features(values, feature_names)
+        assert len(features_df) == len(rag.edge_ids)
+        assert list(features_df.columns.values) == ['sp1', 'sp2'] + list(feature_names), \
+            "Wrong output feature names: {}".format( features_df.columns.values )
+
+        assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
+
+        # Check dtypes (pandas makes it too easy to get this wrong).
+        dtypes = { colname: series.dtype for colname, series in features_df.iterkv() }
+        assert all(dtype != np.float64 for dtype in dtypes.values()), \
+            "An accumulator returned float64 features. That's a waste of ram.\n"\
+            "dtypes were: {}".format(dtypes)
+
+        for row_tuple in features_df.itertuples():
+            row = OrderedDict( zip(['index', 'sp1', 'sp2'] + list(feature_names),
+                                   row_tuple) )
+
+            assert row['standard_edge_mean'] == 0.0
+            assert row['standard_edge_minimum'] == 0.0
+            assert row['standard_edge_maximum'] == 0.0
+            assert row['standard_edge_variance'] == 0.0
+            assert row['standard_edge_quantiles_25'] == 0.0
+            assert row['standard_edge_quantiles_75'] == 0.0
+            assert row['standard_edge_count'] > 0
+            assert row['standard_edge_sum'] == 0.0
+
     def test_edge_features_no_histogram(self):
         """
         Make sure vigra edge filters still work even if no histogram features are selected.

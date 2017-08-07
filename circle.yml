@@ -24,11 +24,12 @@ dependencies:
     - >
       if [[ ! -d ${CONDA_ROOT} ]]; then
           echo "Installing Miniconda...";
-          wget --quiet https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh;
-          bash Miniconda-latest-Linux-x86_64.sh -b -p ${CONDA_ROOT};
-          conda install -y conda-build=2.1.9;
-          conda config --add channels ilastik;
-          conda create -y -n ${TEST_ENV_NAME} ilastikrag;
+          wget --quiet https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh;
+          bash Miniconda3-latest-Linux-x86_64.sh -b -p ${CONDA_ROOT};
+          conda install -y conda-build;
+          conda config --add channels conda-forge;
+          conda config --add channels ilastik-forge;
+          conda create -y -n ${TEST_ENV_NAME} ilastikrag python=3;
           conda remove -y -n ${TEST_ENV_NAME} ilastikrag;
       else
           echo "Using cached Miniconda install";
@@ -45,5 +46,6 @@ checkout:
 ## Customize test commands
 test:
   override:
-    - conda config --add channels ilastik
+    - conda config --add channels conda-forge
+    - conda config --add channels ilastik-forge
     - conda build conda-recipe

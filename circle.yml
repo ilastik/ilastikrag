@@ -42,4 +42,4 @@ test:
   override:
     - conda config --add channels conda-forge
     - conda config --add channels ilastik-forge
-    - conda build conda-recipe
+    - conda build --python=3.6 conda-recipe

@@ -92,11 +92,11 @@ class Checklist(object):
         else:
             name, checkstate, children = tuples
             data = name
-        assert isinstance(name, (str, unicode))
+        assert isinstance(name, str)
         assert not children or isinstance(children, list)
         
         if children:
-            children = map(cls.from_tuples, children)
+            children = list(map(cls.from_tuples, children))
         return Checklist(name, checkstate, children, data)
 
     def to_tuples(self, filter_by_checkstate=None):
@@ -111,7 +111,7 @@ class Checklist(object):
         if not self.children:
             return (self.name, self.checkstate, None, self.data)
 
-        child_tuples = map(lambda c: c.to_tuples(filter_by_checkstate), self.children)
+        child_tuples = [c.to_tuples(filter_by_checkstate) for c in self.children]
 
         if filter_by_checkstate is not None:
             filtered_child_tuples = []
@@ -124,7 +124,7 @@ class Checklist(object):
         def convert_checkstates(tuples):
             child_tuples = tuples[2]
             if child_tuples:
-                child_tuples = map(convert_checkstates, child_tuples)
+                child_tuples = list(map(convert_checkstates, child_tuples))
             
             checkstate = (tuples[1] != Qt.Unchecked)
             return (tuples[0], checkstate, child_tuples, tuples[3])
@@ -309,14 +309,14 @@ if __name__ == "__main__":
     
     app.exec_()
 
-    print treeview.checklist
-    print treeview.checklist.to_tuples()
-    print treeview.checklist.to_nested_dict()
+    print(treeview.checklist)
+    print(treeview.checklist.to_tuples())
+    print(treeview.checklist.to_nested_dict())
 
     d = treeview.checklist.to_nested_dict(filter_by_checkstate=True)
-    print d
-    print ""
-    print ""
+    print(d)
+    print("")
+    print("")
 
     d = treeview.checklist.to_nested_dict()
     assert d['first'][0] == Qt.Checked
@@ -326,7 +326,7 @@ if __name__ == "__main__":
     assert d['fourth'][0] == Qt.Unchecked
 
     d = treeview.checklist.to_nested_dict(filter_by_checkstate=True)
-    print d
+    print(d)
     assert d['first'][0] == True
     assert 'second' not in d
     assert d['third']['third-first'][0] == True

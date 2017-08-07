@@ -1,1 +1,1 @@
-from similarity_flatedge_accumulator import SimilarityFlatEdgeAccumulator
+from .similarity_flatedge_accumulator import SimilarityFlatEdgeAccumulator

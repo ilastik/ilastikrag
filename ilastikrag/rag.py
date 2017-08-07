@@ -1,5 +1,5 @@
 from collections import defaultdict, OrderedDict, namedtuple
-from itertools import izip, imap, groupby
+from itertools import groupby
 
 import numpy as np
 import pandas as pd
@@ -284,7 +284,7 @@ class Rag(object):
             self._unique_edge_tables[all_axes] = unique_edge_labels( all_edge_ids )
         else:
             assert len(all_edge_ids) == 3
-            assert edge_datas.keys() == list('zyx')
+            assert list(edge_datas.keys()) == list('zyx')
             unique_z = unique_edge_labels( [all_edge_ids[0]] )
             unique_yx = unique_edge_labels( all_edge_ids[1:] )
             unique_zyx = unique_edge_labels( [ unique_z[['sp1', 'sp2']].values,
@@ -316,7 +316,7 @@ class Rag(object):
         
         shape = np.subtract(self._label_img.shape, (1, 0, 0))
         flat_edge_label_img.shape = tuple(shape)
-        assert self._label_img.axistags.keys() == list('zyx')
+        assert list(self._label_img.axistags.keys()) == list('zyx')
         self._flat_edge_label_img = vigra.taggedView(flat_edge_label_img, 'zyx')
 
     def _init_dense_edge_tables(self, edge_datas):
@@ -351,7 +351,7 @@ class Rag(object):
                 dense_edge_table[key] = coords
 
             # Set column names
-            coord_cols = self._label_img.axistags.keys()
+            coord_cols = list(self._label_img.axistags.keys())
             dense_edge_table.columns = ['sp1', 'sp2', 'forwardness', 'edge_label'] + coord_cols
 
             self._dense_edge_tables[axiskey] = dense_edge_table
@@ -562,7 +562,7 @@ class Rag(object):
                 "dtypes were: {}".format(dtypes)
 
         if len(results) == 1:
-            return results.values()[0]
+            return list(results.values())[0]
         return results
 
     def _get_feature_groups(self, feature_names, accumulator_set="default"):
@@ -572,7 +572,7 @@ class Rag(object):
         """
         Rag._check_accumulator_conflicts(accumulator_set)
 
-        feature_names = map(str.lower, feature_names)
+        feature_names = list(map(str.lower, feature_names))
         sorted_feature_names = sorted(feature_names, key=lambda name: name.split('_')[:2])
 
         # Group the names by type (edge/sp), then by accumulator ID,
@@ -585,7 +585,7 @@ class Rag(object):
         # We only know about 'edge' and 'sp' features.
         unknown_feature_types = list(set(feature_groups.keys()) - set(['edge', 'sp', 'flatedge']))
         if unknown_feature_types:
-            bad_names = feature_groups[unknown_feature_types[0]].values()[0]
+            bad_names = list(feature_groups[unknown_feature_types[0]].values())[0]
             assert not unknown_feature_types, "Feature(s) have unknown type: {}".format(bad_names)
 
         return feature_groups
@@ -605,10 +605,10 @@ class Rag(object):
         else:
             edge_values = OrderedDict()
             for axiskey, dense_edge_table in self.dense_edge_tables.items():
-                axis_index = self._label_img.axistags.keys().index(axiskey)
+                axis_index = list(self._label_img.axistags.keys()).index(axiskey)
                 logger.debug("Axis {}: Extracting values...".format( axiskey ))
-                coord_cols = self._label_img.axistags.keys()
-                mask_coords = tuple(series.values for _colname, series in dense_edge_table[coord_cols].iteritems())
+                coord_cols = list(self._label_img.axistags.keys())
+                mask_coords = tuple(series.values for _colname, series in dense_edge_table[coord_cols].items())
                 edge_values[axiskey] = extract_edge_values_for_axis(axis_index, mask_coords, value_img)
 
         # Create an accumulator for each group
@@ -710,7 +710,7 @@ class Rag(object):
         decisions = sp_to_gt_mapping[unique_sp_edges[:, 0]] != sp_to_gt_mapping[unique_sp_edges[:, 1]]
     
         if asdict:
-            return dict( izip(imap(tuple, unique_sp_edges), decisions) )
+            return dict( zip(map(tuple, unique_sp_edges), decisions) )
         return decisions
 
     def naive_segmentation_from_edge_decisions(self, edge_decisions, out=None ):
@@ -1017,18 +1017,18 @@ if __name__ == '__main__':
         rag = Rag( watershed )
     logger.info("Creating rag ({} superpixels, {} edges) took {} seconds"
                 .format( rag.num_sp, rag.num_edges, timer.seconds() ))
-    print "unique edge labels per axis: {}".format( [len(df['edge_label'].unique()) for df in rag.dense_edge_tables.values()] )
-    print "Total pixel edges: {}".format( sum(len(df) for df in rag.dense_edge_tables ) )
+    print("unique edge labels per axis: {}".format( [len(df['edge_label'].unique()) for df in list(rag.dense_edge_tables.values())] ))
+    print("Total pixel edges: {}".format( sum(len(df) for df in rag.dense_edge_tables ) ))
 
     with Timer() as timer:
         edge_features_df = rag.compute_features(grayscale, feature_names)
         #edge_features_df = rag.compute_features(None, ['edgeregion_edge_regionradii'])
         
-    print "Computing features with python Rag took: {}".format( timer.seconds() )
+    print("Computing features with python Rag took: {}".format( timer.seconds() ))
     #print edge_features_df[0:10]
     
-    print ""
-    print ""
+    print("")
+    print("")
 
 #     # For comparison with vigra.graphs.vigra.graphs.regionAdjacencyGraph
 #     import vigra

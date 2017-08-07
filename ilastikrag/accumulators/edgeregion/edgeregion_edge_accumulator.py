@@ -48,7 +48,7 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
         self.cleanup() # Initialize members
         
         label_img = rag.label_img
-        self._dense_axiskeys = label_img.axistags.keys()
+        self._dense_axiskeys = list(label_img.axistags.keys())
         if rag.flat_superpixels:
             self._dense_axiskeys = ['y', 'x']
         feature_names = list(feature_names)
@@ -63,7 +63,7 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
         if 'edgeregion_edge_regionaxes' in feature_names:
             feature_names.remove('edgeregion_edge_regionaxes')
             for component_index in range(label_img.ndim):
-                for axisname in map( lambda k: 'xyz'[k], range(label_img.ndim) ):
+                for axisname in ['xyz'[k] for k in range(label_img.ndim)]:
                     feature_names.append( 'edgeregion_edge_regionaxes_{}{}'.format( component_index, axisname ) )            
         
         self._feature_names = feature_names

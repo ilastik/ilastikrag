@@ -4,7 +4,7 @@ from itertools import groupby
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QDialogButtonBox
 
-from util import HierarchicalChecklistView, Checklist
+from .util import HierarchicalChecklistView, Checklist
 
 # FIXME: These imports will be needed if we ever figure out how to manage the sizes properly...
 #from PyQt5.QtCore import QSize
@@ -164,13 +164,13 @@ def _group_features(feature_names):
             # so we can use it as a catch-all subgroup for this widget
             assert subgroup_name != 'general'
 
-            subgroup_feature_names = map( '_'.join, subgroup )
+            subgroup_feature_names = list(map( '_'.join, subgroup ))
             if len(subgroup_feature_names) == 1:
                 subgroups['general'] += subgroup_feature_names
             else:
                 # Drop the 'top-level' feature name, e.g. 'standard_edge_quantiles',
                 # keeping only the 'low-level' names like 'standard_edge_quantiles_10'
-                subgroup_feature_names = filter( lambda name: len(name.split('_')) == 4, subgroup_feature_names )
+                subgroup_feature_names = [name for name in subgroup_feature_names if len(name.split('_')) == 4]
                 subgroups[subgroup_name] = subgroup_feature_names
         
         if len(subgroups['general']) == 0:
@@ -193,7 +193,7 @@ if __name__ == "__main__":
                            'Membranes': ['standard_edge_quantiles'] }
 
     selections = FeatureSelectionDialog.launch(channel_names, feature_names, default_selections)
-    print selections
+    print(selections)
 
 #     from PyQt5.QtWidgets import QApplication
 #     app = QApplication([])

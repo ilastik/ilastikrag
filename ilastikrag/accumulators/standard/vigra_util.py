@@ -32,7 +32,7 @@ def append_vigra_features_to_dataframe( acc, df, feature_names, replace_nan=0.0,
         (If not, then the values will be the same anyway.)
     """
     # Add a column for each feature we'll need
-    vigra_feature_names = map(lambda name: name.split('_')[2], feature_names )
+    vigra_feature_names = [name.split('_')[2] for name in feature_names]
     for feature_name, vigra_feature_name in zip(feature_names, vigra_feature_names):
         if 'quantiles' in feature_name:
             quantile_suffix = feature_name.split('_')[-1]
@@ -77,10 +77,10 @@ def get_vigra_feature_names(feature_names):
     
     For example: ['edge_vigra_mean', 'sp_vigra_quantiles_25'] -> ['mean', 'quantiles']
     """
-    feature_names = map(str.lower, feature_names)
+    feature_names = list(map(str.lower, feature_names))
 
     # drop  prefixes and quantile suffixes like '_25'
-    vigra_feature_names = map(lambda name: name.split('_')[2], feature_names )
+    vigra_feature_names = [name.split('_')[2] for name in feature_names]
     
     # drop duplicates (from multiple quantile selections)
     return list(set(vigra_feature_names))

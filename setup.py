@@ -23,7 +23,7 @@ def determine_version(default_version_file):
             # Weird: We're not in a git repo or conda-bld/work.
             # Read the default value from the source code, I guess.
             version_globals = {}
-            execfile(default_version_file, version_globals)
+            exec(compile(open(default_version_file).read(), default_version_file, 'exec'), version_globals)
             auto_version = version_globals['__version__']
     return auto_version
 

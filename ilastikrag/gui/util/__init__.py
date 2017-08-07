@@ -1,1 +1,1 @@
-from hierarchical_checklist_view import HierarchicalChecklistView, Checklist
+from .hierarchical_checklist_view import HierarchicalChecklistView, Checklist

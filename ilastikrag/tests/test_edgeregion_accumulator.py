@@ -41,7 +41,7 @@ class TestEdgeRegionEdgeAccumulator(object):
             problem_rows = np.logical_or(np.isclose(radii[:, 0], transposed_radii[:, 0]) != 1,
                                          np.isclose(radii[:, 1], transposed_radii[:, 1]) != 1)
             problem_df = combined_features_df.loc[problem_rows][sorted(list(combined_features_df.columns))]
-            print problem_df.transpose()
+            print(problem_df.transpose())
             
             debug_sp = np.zeros_like(superpixels, dtype=np.uint8)
             for sp1 in problem_df['sp1'].values:

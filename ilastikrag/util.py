@@ -281,7 +281,7 @@ def dataframe_from_hdf5(h5py_group):
     row_index_values = h5py_group['row_index'][:]
     column_index_names = list(eval(h5py_group['column_index'][()]))
     if isinstance(column_index_names[0], np.ndarray):
-        column_index_names = map(tuple, column_index_names)
+        column_index_names = list(map(tuple, column_index_names))
         column_index = pd.MultiIndex.from_tuples(column_index_names)
     elif isinstance(column_index_names[0], str):
         column_index = column_index_names

@@ -165,8 +165,8 @@ class TestStandardAccumulators(object):
         col_radius = np.sqrt(col_coord_variance).astype(np.float32)
 
         for row_tuple in features_df.itertuples():
-            row = OrderedDict( zip(['index'] + list(features_df.columns.values),
-                                   row_tuple) )
+            row = OrderedDict( list(zip(['index'] + list(features_df.columns.values),
+                                   row_tuple)) )
             # The superpixels were just vertical columns
             assert row['standard_sp_regionradii_0_sum'] == 2*col_radius
             assert row['standard_sp_regionradii_0_difference'] == 0.0
@@ -206,13 +206,13 @@ class TestStandardAccumulators(object):
 
         # Check dtypes (pandas makes it too easy to get this wrong).
         dtypes = { colname: series.dtype for colname, series in features_df.iterkv() }
-        assert all(dtype != np.float64 for dtype in dtypes.values()), \
+        assert all(dtype != np.float64 for dtype in list(dtypes.values())), \
             "An accumulator returned float64 features. That's a waste of ram.\n"\
             "dtypes were: {}".format(dtypes)
 
         for row_tuple in features_df.itertuples():
-            row = OrderedDict( zip(['index', 'sp1', 'sp2'] + list(feature_names),
-                                   row_tuple) )
+            row = OrderedDict( list(zip(['index', 'sp1', 'sp2'] + list(feature_names),
+                                   row_tuple)) )
             sp1 = row['sp1']
             sp2 = row['sp2']
             # Values were identical to the superpixels, so this is boring...
@@ -250,13 +250,13 @@ class TestStandardAccumulators(object):
 
         # Check dtypes (pandas makes it too easy to get this wrong).
         dtypes = { colname: series.dtype for colname, series in features_df.iterkv() }
-        assert all(dtype != np.float64 for dtype in dtypes.values()), \
+        assert all(dtype != np.float64 for dtype in list(dtypes.values())), \
             "An accumulator returned float64 features. That's a waste of ram.\n"\
             "dtypes were: {}".format(dtypes)
 
         for row_tuple in features_df.itertuples():
-            row = OrderedDict( zip(['index', 'sp1', 'sp2'] + list(feature_names),
-                                   row_tuple) )
+            row = OrderedDict( list(zip(['index', 'sp1', 'sp2'] + list(feature_names),
+                                   row_tuple)) )
 
             assert row['standard_edge_mean'] == 0.0
             assert row['standard_edge_minimum'] == 0.0
@@ -287,8 +287,8 @@ class TestStandardAccumulators(object):
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
 
         for row_tuple in features_df.itertuples():
-            row = OrderedDict( zip(['index', 'sp1', 'sp2'] + list(feature_names),
-                                   row_tuple) )
+            row = OrderedDict( list(zip(['index', 'sp1', 'sp2'] + list(feature_names),
+                                   row_tuple)) )
             sp1 = row['sp1']
             sp2 = row['sp2']
             # Values were identical to the superpixels, so this is boring...
@@ -307,8 +307,8 @@ class TestStandardAccumulators(object):
         features_df = rag.compute_features(values, ['standard_edge_quantiles', 'standard_sp_quantiles'])
         
         quantile_names = ['quantiles_0', 'quantiles_10', 'quantiles_25', 'quantiles_50', 'quantiles_75', 'quantiles_90', 'quantiles_100']
-        edge_feature_names = map( lambda name: 'standard_edge_' + name, quantile_names )
-        sp_features_names = map( lambda name: 'standard_sp_' + name, quantile_names )
+        edge_feature_names = ['standard_edge_' + name for name in quantile_names]
+        sp_features_names = ['standard_sp_' + name for name in quantile_names]
         
         sp_output_columns = []
         for name in sp_features_names:

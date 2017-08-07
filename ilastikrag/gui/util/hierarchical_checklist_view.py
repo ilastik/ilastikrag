@@ -2,8 +2,9 @@ from collections import OrderedDict
 from functools import partial
 from contextlib import contextmanager
 
-from PyQt4.QtCore import Qt, QEvent
-from PyQt4.QtGui import QTreeView, QStandardItemModel, QStandardItem, QStyledItemDelegate, QCheckBox
+from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtGui import QStandardItemModel, QStandardItem
+from PyQt5.QtWidgets import QTreeView, QStyledItemDelegate, QCheckBox
 
 
 class HierarchicalChecklistView(QTreeView):
@@ -287,7 +288,7 @@ if __name__ == "__main__":
     import signal
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    from PyQt4.QtGui import QApplication
+    from PyQt5.QtWidgets import QApplication
     app = QApplication([])
     
     example = ('root', False, [

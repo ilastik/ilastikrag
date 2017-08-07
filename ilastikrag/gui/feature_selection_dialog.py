@@ -1,14 +1,14 @@
 from collections import OrderedDict
 from itertools import groupby
 
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QDialog, QVBoxLayout, QHBoxLayout, QDialogButtonBox
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QDialogButtonBox
 
 from util import HierarchicalChecklistView, Checklist
 
 # FIXME: These imports will be needed if we ever figure out how to manage the sizes properly...
-#from PyQt4.QtCore import QSize
-#from PyQt4.QtGui import QSizePolicy, QScrollArea
+#from PyQt5.QtCore import QSize
+#from PyQt5.QtWidgets import QSizePolicy, QScrollArea
 
 class FeatureSelectionDialog(QDialog):
     """
@@ -110,7 +110,7 @@ class FeatureSelectionDialog(QDialog):
 
     @classmethod
     def launch(cls, channel_names, feature_names, default_selections=None):
-        from PyQt4.QtGui import QApplication
+        from PyQt5.QtWidgets import QApplication
         if QApplication.instance() is None:
             app = QApplication([])
         
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     selections = FeatureSelectionDialog.launch(channel_names, feature_names, default_selections)
     print selections
 
-#     from PyQt4.QtGui import QApplication
+#     from PyQt5.QtWidgets import QApplication
 #     app = QApplication([])
 # 
 # 

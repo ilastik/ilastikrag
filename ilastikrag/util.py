@@ -81,7 +81,7 @@ def edge_ids_for_axis(label_img, edge_mask, axis):
     Returns
     -------
     ``ndarray`` of ``edge_ids``, ``shape=(N,2)``
-    To sort each pair, call ``edge_ids.sort(axis=1)``
+    To sort each pair, call ``edge_ids.sort_values(axis=1)``
     """
     if axis < 0:
         axis += label_img.ndim
@@ -106,7 +106,7 @@ def edge_ids_for_axis(label_img, edge_mask, axis):
 
 
     # Do NOT sort. Edges are returned in left-to-right order.
-    # edge_ids.sort(axis=1)
+    # edge_ids.sort_values(axis=1)
 
     return edge_ids
 
@@ -135,7 +135,7 @@ def unique_edge_labels( all_edge_ids ):
 
     # This sort isn't necessary for most use-cases,
     # but it's convenient for debugging.
-    combined_df.sort(columns=['sp1', 'sp2'], inplace=True)
+    combined_df.sort_values(['sp1', 'sp2'], inplace=True)
 
     # TODO: Instead of adding a new column here, we might save some RAM 
     #       if we re-index and then add the index as a column
@@ -182,7 +182,7 @@ def get_edge_ids( label_img ):
     for axis in range(label_img.ndim):
         edge_mask = edge_mask_for_axis(label_img, axis)
         edge_ids = edge_ids_for_axis(label_img, edge_mask, axis)
-        edge_ids.sort(axis=1)
+        edge_ids.sort_values(axis=1)
         lookup = unique_edge_labels( [edge_ids] )
         all_edge_ids.append(lookup[['sp1', 'sp2']].values)
     final_edge_label_lookup_df = unique_edge_labels( all_edge_ids )

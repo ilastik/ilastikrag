@@ -41,7 +41,7 @@ class TestRag(object):
 
         # edge_ids should be sorted by u, then v.
         edge_df = pd.DataFrame(edge_ids_copy, columns=['sp1', 'sp2'])
-        edge_df.sort(columns=['sp1', 'sp2'], inplace=True)
+        edge_df.sort_values(['sp1', 'sp2'], inplace=True)
         assert (rag.edge_ids == edge_df.values).all()
 
         # We're just using default features, so the supported features should match.

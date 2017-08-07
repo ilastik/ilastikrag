@@ -8,9 +8,7 @@ machine:
   # Add some environment variables
   environment:
     CONDA_ROOT: /home/ubuntu/miniconda
-    TEST_ENV_NAME: test-env
-    TEST_ENV_PREFIX: /home/ubuntu/miniconda/envs/test-env
-    PATH: ${TEST_ENV_PREFIX}/bin:${CONDA_ROOT}/bin:${PATH}
+    PATH: ${CONDA_ROOT}/bin:${PATH}
 
 ## Customize dependencies
 dependencies:
@@ -27,10 +25,6 @@ dependencies:
           wget --quiet https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh;
           bash Miniconda3-latest-Linux-x86_64.sh -b -p ${CONDA_ROOT};
           conda install -y conda-build;
-          conda config --add channels conda-forge;
-          conda config --add channels ilastik-forge;
-          conda create -y -n ${TEST_ENV_NAME} ilastikrag python=3;
-          conda remove -y -n ${TEST_ENV_NAME} ilastikrag;
       else
           echo "Using cached Miniconda install";
       fi

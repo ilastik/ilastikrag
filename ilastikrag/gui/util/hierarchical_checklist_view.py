@@ -179,7 +179,7 @@ class Checklist(object):
             if (filter_by_checkstate is None) or (child.children or child.checkstate == filter_by_checkstate):
                 d[child.name] = child.to_nested_dict(filter_by_checkstate)                
 
-        for name in d.keys():
+        for name in list(d.keys()):
             if isinstance(d[name], dict) and len(d[name]) == 0:
                 del d[name]
 

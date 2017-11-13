@@ -90,10 +90,10 @@ class TestStandardAccumulators(object):
             sp_quantiles_25_sum, sp_quantiles_25_difference, \
             sp_quantiles_75_sum, sp_quantiles_75_difference in features_df.itertuples():
             
-            assert type(sp_quantiles_25_sum) == np.float32
-            assert type(sp_quantiles_75_sum) == np.float32
-            assert type(sp_quantiles_25_difference) == np.float32
-            assert type(sp_quantiles_75_difference) == np.float32
+            assert type(sp_quantiles_25_sum) in [np.float32, float], f"got {type(sp_quantiles_25_sum)} instead of np.float32"
+            assert type(sp_quantiles_75_sum) in [np.float32, float]
+            assert type(sp_quantiles_25_difference) in [np.float32, float]
+            assert type(sp_quantiles_75_difference) in [np.float32, float]
             
             assert sp_count_sum == np.power(sp_counts[sp1] + sp_counts[sp2], 1./superpixels.ndim).astype(np.float32)
             assert sp_count_difference == np.power(np.abs(sp_counts[sp1] - sp_counts[sp2]), 1./superpixels.ndim).astype(np.float32)

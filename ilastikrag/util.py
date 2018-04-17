@@ -4,21 +4,19 @@ import vigra
 
 def contingency_table(vol1, vol2, maxlabels=None):
     """
-    Return a 2D array 'table' such that ``table[i,j]`` represents
+    Return a pd.Series 'table' indexed by (i,j) such that ``table[i,j]`` represents
     the count of overlapping pixels with value ``i`` in ``vol1``
     and value ``j`` in ``vol2``. 
     """
-    maxlabels = maxlabels or (vol1.max(), vol2.max())
-    table = np.zeros( (maxlabels[0]+1, maxlabels[1]+1), dtype=np.uint32 )
-    
-    # np.add.at() will accumulate counts at the given array coordinates
-    np.add.at(table, [vol1.reshape(-1), vol2.reshape(-1)], 1 )
+    vols_df = pd.DataFrame({'vol1': vol1.reshape(-1), 'vol2': vol2.reshape(-1)})
+    table = vols_df.groupby(['vol1', 'vol2']).size()
+    table.name = 'overlap_size'
     return table
 
 def label_vol_mapping(vol_from, vol_to):
     """
     Determine how remap voxel IDs in ``vol_from`` into corresponding
-    IDs in ``vol_to``, according to maximum overlap.
+    IDs in ``vol_to``, according to maxiumum overlap.
     (Note that this is not a commutative operation.)
     
     Returns
@@ -28,8 +26,17 @@ def label_vol_mapping(vol_from, vol_to):
     ID in ``vol_to``.
     """
     table = contingency_table(vol_from, vol_to)
-    mapping = np.argmax(table, axis=1)
-    return mapping
+    
+    table = pd.DataFrame(table)
+    table['from'] = table.index.get_level_values(0)
+    table.index = table.index.get_level_values(1)
+    table.index.name = 'to'
+    
+    mapping = table.groupby('from').idxmax()
+    mapping.columns = ['to']
+    mapping_array = np.zeros((mapping.index.max()+1,), dtype=np.uint32)
+    mapping_array[(mapping.index.values,)] = mapping['to'].values
+    return mapping_array
 
 def edge_mask_for_axis( label_img, axis ):
     """

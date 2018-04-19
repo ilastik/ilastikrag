@@ -2,16 +2,24 @@ import numpy as np
 import pandas as pd
 import vigra
 
-def contingency_table(vol1, vol2, maxlabels=None):
+def contingency_table(left_vol, right_vol):
     """
-    Return a pd.Series 'table' indexed by (i,j) such that ``table[i,j]`` represents
-    the count of overlapping pixels with value ``i`` in ``vol1``
-    and value ``j`` in ``vol2``. 
+    Return a pd.DataFrame with columns 'left', 'right' and 'overlap_size',
+    indicating the count of overlapping pixels for each segment in 'from' with segments in 'to'.
+    
+    Note: Internally, copies both volumes multiple times.
+          This function seems to require an extra ~5x RAM relative to the inputs.
     """
-    vols_df = pd.DataFrame({'vol1': vol1.reshape(-1), 'vol2': vol2.reshape(-1)})
-    table = vols_df.groupby(['vol1', 'vol2']).size()
-    table.name = 'overlap_size'
+    assert left_vol.dtype == right_vol.dtype
+    dtype = left_vol.dtype
+    vols_combined = np.empty((left_vol.size,2), dtype)
+    vols_combined[:,0]= left_vol.flat
+    vols_combined[:,1]= right_vol.flat
+    vols_combined = vols_combined.reshape(-1).view([('left', dtype), ('right', dtype)])
+    pairs, counts = np.unique(vols_combined, return_counts=True)
+    table = pd.DataFrame({'left': pairs['left'], 'right': pairs['right'], 'overlap_size': counts})
     return table
+
 
 def label_vol_mapping(vol_from, vol_to):
     """
@@ -26,17 +34,14 @@ def label_vol_mapping(vol_from, vol_to):
     ID in ``vol_to``.
     """
     table = contingency_table(vol_from, vol_to)
+    table.index = table['right']
     
-    table = pd.DataFrame(table)
-    table['from'] = table.index.get_level_values(0)
-    table.index = table.index.get_level_values(1)
-    table.index.name = 'to'
-    
-    mapping = table.groupby('from').idxmax()
-    mapping.columns = ['to']
-    mapping_array = np.zeros((mapping.index.max()+1,), dtype=np.uint32)
-    mapping_array[(mapping.index.values,)] = mapping['to'].values
+    mapping = table.groupby('left').agg({'overlap_size': 'idxmax'})
+    mapping.columns = ['right']
+    mapping_array = np.zeros((int(mapping.index.max())+1,), dtype=np.uint32)
+    mapping_array[(mapping.index.values,)] = mapping['right'].values
     return mapping_array
+
 
 def edge_mask_for_axis( label_img, axis ):
     """

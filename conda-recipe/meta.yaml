@@ -13,20 +13,19 @@ source:
 
 build:
   number: 0
-  string: py{{py}}_{{PKG_BUILDNUM}}_g{{GIT_FULL_HASH[:7]}}
+  string: py{{CONDA_PY}}_{{PKG_BUILDNUM}}_h{{PKG_HASH}}_g{{GIT_FULL_HASH[:7]}}
 
 requirements:
   build:
-    - python >=2.7
-    - python {{PY_VER}}*
+    - python {{ python }}
 
   run:
-    - python {{PY_VER}}*
-    - numpy  >=1.9
-    - h5py   >=2.6
-    - pandas >=0.16
-    - vigra  >=1.11
-    - networkx >=1.11
+    - python
+    - numpy  >={{ numpy }}
+    - h5py   >={{ h5py }}
+    - pandas >={{ pandas }}
+    - vigra  >={{ vigra }}
+    - networkx >={{ networkx }}
 
 test:
   requires:

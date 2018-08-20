@@ -6,12 +6,5 @@ numpy:
   - 1.9
 pandas:
   - 0.16
-python:
-  - 2.7
-  - 3.6
 vigra:
   - 1.11
-
-pin_run_as_build:
-  python:
-    x.x

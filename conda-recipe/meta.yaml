@@ -31,8 +31,12 @@ requirements:
     - networkx >={{ networkx }}
 
 test:
+  source_files:
+    - ilastikrag/tests/*
   requires:
     - nose  >=1.3
+  commands:
+    - nosetests ilastikrag/tests
   
   imports:
     - ilastikrag

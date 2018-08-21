@@ -1,22 +1,15 @@
 version: 2
-
-general:
-  branches:
-    ignore:
-      - gh-pages # Don't test the gh-pages branch
-
 ## Customize the test machine
 jobs:
   build:
     # Add some environment variables
     environment:
       CONDA_ROOT: /home/ubuntu/miniconda
-      PATH: ${CONDA_ROOT}/bin:${PATH}
     docker:
     - image: circleci/build-image:ubuntu-14.04-XXL-upstart-1189-5614f37
       command: /sbin/init
     steps:
-      - run: echo 'export PATH=${CONDA_ROOT}/bin:${PATH}' >> $BASH_ENV
+    - run: echo 'export PATH=${CONDA_ROOT}/bin:${PATH}' >> $BASH_ENV
     - checkout
     ## Circle-ci checks out a "shallow" copy of the git repo,
     ## but conda-build can't handle that.

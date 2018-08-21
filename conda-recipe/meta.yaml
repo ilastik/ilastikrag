@@ -34,9 +34,9 @@ test:
   source_files:
     - ilastikrag/tests/*
   requires:
-    - nose  >=1.3
+    - pytest
   commands:
-    - nosetests ilastikrag/tests
+    - pytest ilastikrag/tests
   
   imports:
     - ilastikrag

@@ -3,6 +3,8 @@ version: 2
 jobs:
   build:
     # Add some environment variables
+    parallelism: 1
+    shell: /bin/bash --login
     environment:
       CONDA_ROOT: /home/ubuntu/miniconda
     docker:
@@ -35,9 +37,7 @@ jobs:
             echo "Using cached Miniconda install";
         fi
     - save_cache:
-        key: v1.31b3rc0-dep-{{ .Branch }}-{{ epoch }}
+        key: v0.dep-{{ .Branch }}-{{ epoch }}
         paths:
         - /home/ubuntu/miniconda
-    - run: conda config --add channels conda-forge
-    - run: conda config --add channels ilastik-forge
-    - run: conda build --python=3.6 conda-recipe
+    - run: conda build -c ilastik-forge -c conda-forge conda-recipe

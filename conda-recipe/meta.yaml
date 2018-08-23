@@ -24,7 +24,7 @@ requirements:
 
   run:
     - python
-    - numpy  >={{ numpy }}
+    - numpy  >={{ numpy }},<1.15 # Until this is fixed: https://github.com/ukoethe/vigra/issues/436
     - h5py   >={{ h5py }}
     - pandas >={{ pandas }}
     - vigra  >={{ vigra }}

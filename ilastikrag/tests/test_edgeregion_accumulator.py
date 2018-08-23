@@ -159,10 +159,7 @@ class TestEdgeRegionEdgeAccumulator(object):
         try_bad_features(['edgeregion_edge_regionaxes_2z'])
     
 if __name__ == "__main__":
-    import sys
-    import nose
-    sys.argv.append("--nocapture")    # Don't steal stdout.  Show it on the console as usual.
-    sys.argv.append("--nologcapture") # Don't set the logging level to DEBUG.  Leave it alone.
-    nose.run(defaultTest=__file__)
-
-        
+    import os
+    import pytest
+    module = os.path.split(__file__)[1][:-3]
+    pytest.main(['-s', '--tb=native', '--pyargs', f'ilastikrag.tests.{module}'])

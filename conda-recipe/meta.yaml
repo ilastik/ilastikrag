@@ -31,8 +31,6 @@ requirements:
     - networkx >={{ networkx }}
 
 test:
-  source_files:
-    - ilastikrag/tests/*
   requires:
     - pytest
   commands:

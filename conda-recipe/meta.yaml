@@ -18,25 +18,23 @@ build:
   script: python -m pip install --no-deps --ignore-installed .
 
 requirements:
-  build:
+  host:
     - python >=2.7
     - pip
 
   run:
     - python
-    - numpy  >={{ numpy }}
+    - numpy  >={{ numpy }},<1.15 # Until this is fixed: https://github.com/ukoethe/vigra/issues/436
     - h5py   >={{ h5py }}
     - pandas >={{ pandas }}
     - vigra  >={{ vigra }}
     - networkx >={{ networkx }}
 
 test:
-  source_files:
-    - ilastikrag/tests/*
   requires:
     - pytest
   commands:
-    - pytest ilastikrag/tests
+    - ${PYTHON} -m pytest -s --tb=native --pyargs ilastikrag.tests
   
   imports:
     - ilastikrag

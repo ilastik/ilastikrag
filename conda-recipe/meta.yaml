@@ -18,12 +18,11 @@ build:
   script: python -m pip install --no-deps --ignore-installed .
 
 requirements:
-  host:
+  build:
     - python >=2.7
     - pip
-
   run:
-    - python
+    - python >=2.7
     - numpy  >={{ numpy }},<1.15 # Until this is fixed: https://github.com/ukoethe/vigra/issues/436
     - h5py   >={{ h5py }}
     - pandas >={{ pandas }}

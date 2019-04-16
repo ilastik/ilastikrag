@@ -11,7 +11,7 @@ def determine_version(default_version_file):
     else:
         # Try getting it from the latest git tag
         try:
-            commit_details = subprocess.check_output("git describe --tags --long HEAD".split())
+            commit_details = subprocess.check_output("git describe --tags --long HEAD".split()).decode('utf-8')
             last_tag, commits_since_tag = commit_details.split('-')[:2]
             auto_version = last_tag
             if int(commits_since_tag) > 0:

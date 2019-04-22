@@ -19,10 +19,10 @@ build:
 
 requirements:
   build:
-    - python >=2.7
+    - python {{ python }}
     - pip
   run:
-    - python >=2.7
+    - python {{ python }}
     - numpy  >={{ numpy }}
     - h5py   >={{ h5py }}
     - pandas >={{ pandas }}

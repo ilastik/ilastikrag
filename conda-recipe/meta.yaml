@@ -34,7 +34,10 @@ test:
     - pytest
   commands:
     - pytest .
-  
+
+  source_files:
+    - ilastikrag/tests
+
   imports:
     - ilastikrag
 

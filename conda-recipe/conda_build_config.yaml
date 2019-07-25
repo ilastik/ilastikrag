@@ -5,6 +5,6 @@ networkx:
 numpy:
   - 1.12
 pandas:
-  - 0.16
+  - 0.24
 vigra:
   - 1.11

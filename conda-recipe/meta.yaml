@@ -33,7 +33,7 @@ test:
   requires:
     - pytest
   commands:
-    - ${PYTHON} -m pytest -s --tb=native --pyargs ilastikrag.tests
+    - pytest .
   
   imports:
     - ilastikrag

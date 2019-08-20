@@ -1,4 +1,4 @@
-[![Circle CI](https://circleci.com/gh/stuarteberg/ilastikrag.svg?style=svg)](https://circleci.com/gh/stuarteberg/ilastikrag)
+[![Build Status](https://travis-ci.org/ilastik/ilastikrag.svg?branch=master)](https://travis-ci.org/ilastik/ilastikrag)
 
 ilastikrag
 ==========

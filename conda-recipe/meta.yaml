@@ -13,7 +13,7 @@ source:
 
 build:
   noarch: python
-  number: 1000
+  number: 1001
   string: py_{{PKG_BUILDNUM}}_h{{PKG_HASH}}_g{{GIT_FULL_HASH[:7]}}
   script: python -m pip install --no-deps --ignore-installed .
 
@@ -22,12 +22,12 @@ requirements:
     - python {{ python }}
     - pip
   run:
-    - python {{ python }}
-    - numpy  >={{ numpy }}
-    - h5py   >={{ h5py }}
+    - {{ pin_compatible('python') }}
+    - {{ pin_compatible('numpy') }}
+    - {{ pin_compatible('h5py') }}
     - {{ pin_compatible('pandas', lower_bound='0.16', upper_bound='0.25')  }}
     - vigra  >={{ vigra }}
-    - networkx >={{ networkx }}
+    - {{ pin_compatible('networkx') }}
 
 test:
   requires:

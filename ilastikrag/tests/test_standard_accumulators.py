@@ -46,14 +46,14 @@ class TestStandardAccumulators(object):
 
         # sp sum features ought to be normalized, too...
         for _index, sp1, sp2, sp_sum_sum, sp_sum_difference in features_df.itertuples():
-            np.testing.assert_almost_equal(
+            np.testing.assert_allclose(
                 sp_sum_sum,
                 np.power(sp1*sp_counts[sp1] + sp2*sp_counts[sp2], 1./superpixels.ndim).astype(np.float32),
-                decimal=6)
-            np.testing.assert_almost_equal(
+                rtol=10e-4)
+            np.testing.assert_allclose(
                 sp_sum_difference,
                 np.power(np.abs(sp1*sp_counts[sp1] - sp2*sp_counts[sp2]), 1./superpixels.ndim).astype(np.float32),
-                decimal=6)
+                rtol=10e-4)
 
         # MEAN
         features_df = rag.compute_features(values, ['standard_sp_mean'])

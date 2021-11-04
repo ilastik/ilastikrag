@@ -88,19 +88,12 @@ class EdgeRegionEdgeAccumulator(BaseEdgeAccumulator):
         ndim = len(self._dense_axiskeys)
         covariance_matrices_array = np.zeros( (num_edges, ndim, ndim), dtype=np.float32 )
 
-        group_index = [-1]
+        group_index = [0]
         def write_covariance_matrix(group_df):
             """
             Computes the covariance matrix of the given group,
             and writes it into the pre-existing covariance_matrices_array.
             """
-            # There's one 'gotcha' to watch out for here:
-            # GroupBy.apply() calls this function *twice* for the first group.
-            # http://pandas.pydata.org/pandas-docs/stable/generated/pandas.core.groupby.GroupBy.apply.html
-            if group_index[0] < 0:
-                group_index[0] += 1
-                return None
-            
             # Compute covariance.
             # Apparently computing it manually is much faster than group_df.cov()
             group_vals = group_df.values.astype(np.float32, copy=False)

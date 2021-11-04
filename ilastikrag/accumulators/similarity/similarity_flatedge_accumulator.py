@@ -47,24 +47,17 @@ class SimilarityFlatEdgeAccumulator(BaseFlatEdgeAccumulator):
         z_edge_ids.sort(1)
         
         values_df = pd.DataFrame(z_edge_ids, columns=['sp1', 'sp2'])
-        values_df['left_values'] = value_img[:-1].reshape(-1)
-        values_df['right_values'] = value_img[1:].reshape(-1)
+        values_df['left_values'] = np.array(value_img[:-1].reshape(-1))
+        values_df['right_values'] = np.array(value_img[1:].reshape(-1))
         
         correlations = np.zeros( len(self._final_df), dtype=np.float32 )
         
-        group_index = [-1]
+        group_index = [0]
         def write_correlation(group_df):
             """
             Computes the correlation between 'left_values' and 'right_values' of the given group,
             and writes it into the pre-existing correlations_array.
             """
-            # There's one 'gotcha' to watch out for here:
-            # GroupBy.apply() calls this function *twice* for the first group.
-            # http://pandas.pydata.org/pandas-docs/stable/generated/pandas.core.groupby.GroupBy.apply.html
-            if group_index[0] < 0:
-                group_index[0] += 1
-                return None
-
             # Compute
             covariance = np.cov(group_df['left_values'].values, group_df['right_values'].values)
             denominator = np.sqrt(covariance[0,0]*covariance[1,1])

@@ -1,13 +1,11 @@
-name: ilastikrag-dev2
+name: ilastikrag-dev
 channels:
-  - defaults
   - conda-forge
-  - ilastik-forge
 dependencies:
-  - h5py=2.9*
-  - networkx=2.2*
-  - numpy=1.14*
-  - pandas=0.24*
+  - h5py
+  - networkx
+  - numpy>=1.12,<1.20
+  - pandas
   - pytest
-  - python=3.7*
-  - vigra=1.11*
+  - python>=3.7
+  - vigra

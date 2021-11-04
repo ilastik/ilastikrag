@@ -47,8 +47,8 @@ class SimilarityFlatEdgeAccumulator(BaseFlatEdgeAccumulator):
         z_edge_ids.sort(1)
         
         values_df = pd.DataFrame(z_edge_ids, columns=['sp1', 'sp2'])
-        values_df['left_values'] = value_img[:-1].reshape(-1)
-        values_df['right_values'] = value_img[1:].reshape(-1)
+        values_df['left_values'] = np.array(value_img[:-1].reshape(-1))
+        values_df['right_values'] = np.array(value_img[1:].reshape(-1))
         
         correlations = np.zeros( len(self._final_df), dtype=np.float32 )
         

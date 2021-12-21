@@ -49,6 +49,20 @@ class TestRag(object):
         default_features = itertools.chain(*default_features)
         assert set(rag.supported_features()) == set( default_features )
 
+    def test_superpixel_edges_only_in_y_direction(self):
+        superpixels = np.zeros((5, 6), dtype="uint32")
+        superpixels[0:2, ...] = 1
+        superpixels[2:, ...] = 2
+        superpixels = vigra.taggedView(superpixels, axistags="yx")
+        rag = Rag(superpixels)
+
+        dense_edge_tables = rag.dense_edge_tables
+        assert len(dense_edge_tables["x"]) == 0
+        assert isinstance(dense_edge_tables["x"].index, pd.Int64Index)
+
+        assert len(dense_edge_tables["y"]) == 6
+        assert isinstance(dense_edge_tables["y"].index, pd.Int64Index)
+
     def test_edge_decisions_from_groundtruth(self):
         # 1 2
         # 3 4

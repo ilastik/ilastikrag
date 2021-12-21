@@ -332,11 +332,14 @@ class Rag(object):
         self._dense_edge_tables = OrderedDict()
         coord_cols = list(self._label_img.axistags.keys())
         column_labels = ['sp1', 'sp2', 'forwardness', 'edge_label'] + coord_cols
+        column_default_dtypes = [np.uint32, np.uint32, np.bool, np.uint32] + [np.uint16 for _ in coord_cols]
         for axiskey in dense_axes:
             edge_data = edge_datas[axiskey]
             n_edges = len(edge_data.ids)
             if n_edges == 0:
-                self._dense_edge_tables[axiskey] = pd.DataFrame(columns=column_labels, index=pd.Index([], dtype=np.int64))
+                self._dense_edge_tables[axiskey] = pd.DataFrame(
+                    {cname: pd.Series(dtype=dt) for cname, dt in zip(column_labels, column_default_dtypes)},
+                    index=pd.Index([], dtype=np.int64))
                 continue
             # TODO: investigate if ram could be saved by using a uint32 index
             # note that the merge will change the index again          

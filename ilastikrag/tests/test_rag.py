@@ -63,6 +63,9 @@ class TestRag(object):
         assert len(dense_edge_tables["y"]) == 6
         assert isinstance(dense_edge_tables["y"].index, pd.Int64Index)
 
+        for column in dense_edge_tables["y"].columns:
+            assert dense_edge_tables["x"][column].dtype == dense_edge_tables["y"][column].dtype
+
     def test_edge_decisions_from_groundtruth(self):
         # 1 2
         # 3 4

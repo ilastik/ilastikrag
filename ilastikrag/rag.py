@@ -327,18 +327,24 @@ class Rag(object):
             dense_axes = 'yx'
         else:
             dense_axes = ''.join(self._label_img.axistags.keys())
-        
+
         # Now create an dense_edge_table for each axis
         self._dense_edge_tables = OrderedDict()
+        coord_cols = list(self._label_img.axistags.keys())
+        column_labels = ['sp1', 'sp2', 'forwardness', 'edge_label'] + coord_cols
         for axiskey in dense_axes:
             edge_data = edge_datas[axiskey]
-
-            # Use uint32 index instead of deafult int64 to save ram            
-            index_u32 = pd.Index(np.arange(len(edge_data.ids)), dtype=np.uint32)
+            n_edges = len(edge_data.ids)
+            if n_edges == 0:
+                self._dense_edge_tables[axiskey] = pd.DataFrame(columns=column_labels, index=pd.Index([], dtype=np.int64))
+                continue
+            # TODO: investigate if ram could be saved by using a uint32 index
+            # note that the merge will change the index again          
+            idx = pd.Index(np.arange(n_edges))
 
             # Initialize with edge sp ids and directionality
             edge_table = pd.DataFrame( columns=['sp1', 'sp2', 'is_forward'],
-                                       index=index_u32,
+                                       index=idx,
                                        data={ 'sp1': edge_data.ids[:, 0],
                                               'sp2': edge_data.ids[:, 1],
                                               'is_forward': edge_data.forwardness } )
@@ -351,8 +357,7 @@ class Rag(object):
                 dense_edge_table[key] = coords
 
             # Set column names
-            coord_cols = list(self._label_img.axistags.keys())
-            dense_edge_table.columns = ['sp1', 'sp2', 'forwardness', 'edge_label'] + coord_cols
+            dense_edge_table.columns = column_labels
 
             self._dense_edge_tables[axiskey] = dense_edge_table
 
@@ -521,8 +526,8 @@ class Rag(object):
             dense_axes = ''.join(self.dense_edge_tables.keys())
             dense_edge_ids = self.unique_edge_tables[dense_axes][['sp1', 'sp2']].values
             
-            index_u32 = pd.Index(np.arange(len(dense_edge_ids)), dtype=np.uint32)
-            edge_df = pd.DataFrame(dense_edge_ids, columns=['sp1', 'sp2'], index=index_u32)
+            idx = pd.Index(np.arange(len(dense_edge_ids)))
+            edge_df = pd.DataFrame(dense_edge_ids, columns=['sp1', 'sp2'], index=idx)
     
             # Compute and append columns
             if 'edge' in feature_groups:
@@ -543,8 +548,8 @@ class Rag(object):
         # FIXME: This recomputes the sp features
         if 'z' in results.keys():
             # Create a DataFrame for the results
-            index_u32 = pd.Index(np.arange(len(self.unique_edge_tables['z'])), dtype=np.uint32)
-            edge_df = pd.DataFrame(self.unique_edge_tables['z'][['sp1', 'sp2']].values, columns=['sp1', 'sp2'], index=index_u32)
+            idx = pd.Index(np.arange(len(self.unique_edge_tables['z'])))
+            edge_df = pd.DataFrame(self.unique_edge_tables['z'][['sp1', 'sp2']].values, columns=['sp1', 'sp2'], index=idx)
     
             # Compute and append columns
             if 'flatedge' in feature_groups:

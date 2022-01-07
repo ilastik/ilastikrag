@@ -74,13 +74,16 @@ class TestRag(object):
         vol1[ 0:10, 10:20] = 2
         vol1[10:20,  0:10] = 3
         vol1[10:20, 10:20] = 4
-        
-        vol1 = vigra.taggedView(vol1, 'yx')
-        rag = Rag(vol1)
-    
+
         # 2 3
         # 4 5
         vol2 = vol1.copy() + 1
+
+        # circumventing a incompatibility with vigra and numpy>1.19
+        # which was also fixed in newer vigra versions
+        vol1 = vigra.taggedView(vol1, 'yx')
+        vol2 = vigra.taggedView(vol2, 'yx')
+        rag = Rag(vol1)
 
         decisions = rag.edge_decisions_from_groundtruth(vol2)
         assert decisions.all()

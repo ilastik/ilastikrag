@@ -11,7 +11,7 @@ class TestStandardFlatEdgeAccumulator(object):
         # Create a volume of flat superpixels, where every slice 
         # is the same (except for the actual sp ids)
         num_sp_per_slice = 200
-        slice_superpixels = generate_random_voronoi((100,200), num_sp_per_slice)
+        slice_superpixels = generate_random_voronoi((100,200), num_sp_per_slice).view(np.ndarray)
          
         superpixels = np.zeros( shape=((10,) + slice_superpixels.shape), dtype=np.uint32 )
         for z in range(10):
@@ -32,7 +32,7 @@ class TestStandardFlatEdgeAccumulator(object):
         # Create a volume of flat superpixels, where every slice 
         # is the same (except for the actual sp ids)
         num_sp_per_slice = 200
-        slice_superpixels = generate_random_voronoi((100,200), num_sp_per_slice)
+        slice_superpixels = generate_random_voronoi((100,200), num_sp_per_slice).view(np.ndarray)
         
         superpixels = np.zeros( shape=((10,) + slice_superpixels.shape), dtype=np.uint32 )
         for z in range(10):
@@ -67,7 +67,7 @@ class TestStandardFlatEdgeAccumulator(object):
         # Create a volume of flat superpixels, where every slice
         # is the same (except for the actual sp ids)
         num_sp_per_slice = 200
-        slice_superpixels = generate_random_voronoi((100,200), num_sp_per_slice)
+        slice_superpixels = generate_random_voronoi((100,200), num_sp_per_slice).view(np.ndarray)
         
         superpixels = np.zeros( shape=((10,) + slice_superpixels.shape), dtype=np.uint32 )
         for z in range(10):

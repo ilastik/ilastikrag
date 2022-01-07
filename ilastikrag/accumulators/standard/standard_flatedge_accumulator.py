@@ -98,9 +98,15 @@ class StandardFlatEdgeAccumulator(BaseFlatEdgeAccumulator):
                 "Can't compute flatedge features without a value image (except for standard_flatedge_count)"
 
         if value_img is not None:
+            assert isinstance(value_img, vigra.VigraArray)
             # Convert to float32 if necessary
             value_img = value_img.astype(np.float32, copy=False)
-            value_img = (value_img[1:] + value_img[:-1]) / 2.
+            # operating on numpy view in order to circumvent incompatibility of
+            # vigra<1.11.1=*_1028 and numpy>1.19
+            # see https://github.com/ukoethe/vigra/pull/501
+            np_value_img = value_img.view(np.ndarray)
+            np_value_img = (np_value_img[1:] + np_value_img[:-1]) / 2.0
+            value_img = vigra.taggedView(np_value_img, axistags=value_img.axistags)
         else:
             for feat in self._vigra_feature_names:
                 assert feat.startswith('region') or feat == 'count', \

@@ -2,7 +2,7 @@ from collections import OrderedDict
 from itertools import groupby
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QDialogButtonBox
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QDialogButtonBox, QSizePolicy
 
 from .util import HierarchicalChecklistView, Checklist
 

@@ -52,7 +52,7 @@ class FeatureSelectionDialog(QDialog):
         parent
             *QWidget*
         """
-        super(FeatureSelectionDialog, self).__init__(parent)
+        super().__init__(parent)
         
         self.setWindowTitle("Select Edge Features")
         self.tree_widgets = {}
@@ -87,9 +87,11 @@ class FeatureSelectionDialog(QDialog):
         widget_layout.addWidget(buttonbox)
         self.setLayout(widget_layout)
 
-        total_spacing = self.width() - (len(channel_names)*checklist_widget.width())
-        total_width = total_spacing + len(channel_names) * ( 20 + checklist_widget.columnWidth(0) )
-        self.resize(total_width, 500)
+        desktopsize = QApplication.desktop().availableGeometry()
+        self.setMaximumSize(desktopsize.size())
+        self.setMinimumHeight(min(800, desktopsize.height()))
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
     def selections(self):
         """

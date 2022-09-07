@@ -162,10 +162,7 @@ def _make_checklist(feature_names, default_checked):
         for subgroup_name, subgroup in category_group.items():
             feature_checklist_items = []
             for feature_name in subgroup:
-                # Instead of looking for an exact match, 
-                # we use 'any' here to auto-check all quantiles if the user
-                # just gave e.g. 'standard_sp_quantiles'
-                checkstate = any(feature_name.startswith(checked) for checked in default_checked)
+                checkstate = any(feature_name == checked for checked in default_checked)
                 feature_checklist_items.append( Checklist(feature_name.split('_')[-1], checkstate, None, feature_name) )
             subgroup_checklists.append( Checklist(subgroup_name, Qt.Unchecked, feature_checklist_items, None ) )
         cat_checklists.append( Checklist( category, Qt.Unchecked, subgroup_checklists, None ) )

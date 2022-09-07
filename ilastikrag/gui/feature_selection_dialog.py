@@ -23,15 +23,15 @@ class FeatureSelectionDialog(QDialog):
                          'standard_sp_mean', 'standard_sp_count',
                          'standard_edge_quantiles', 'standard_edge_quantiles_10', 'standard_edge_quantiles_90']
 
-        default_selections = { 'Grayscale': ['standard_sp_mean', 'standard_sp_count'],
+        initial_selections = { 'Grayscale': ['standard_sp_mean', 'standard_sp_count'],
                                'Membranes': ['standard_edge_quantiles'] }
 
-        dlg = FeatureSelectionDialog(channel_names, feature_names, default_selections)
+        dlg = FeatureSelectionDialog(channel_names, feature_names, initial_selections)
         dlg.exec_()
         if dlg.exec_() == QDialog.Accepted:
             print dlg.selections()
     """
-    def __init__(self, channel_names, feature_names, default_selections=None, parent=None):
+    def __init__(self, channel_names, feature_names, initial_selections=None, default_selections=None, parent=None):
         """
         Parameters
         ----------
@@ -44,11 +44,17 @@ class FeatureSelectionDialog(QDialog):
             Feature names, exactly as expected by :py:meth:`~ilastikrag.rag.Rag.compute_features()`.
             The features will be grouped by category and shown in duplicate checklist widgets for each channel.
         
+        initial_selections
+            *dict, str: list-of-str*
+            Mapping from channel_name -> feature_names, indicating which
+            features should be selected when opening the dialog for each channel.
+        
         default_selections
             *dict, str: list-of-str*
             Mapping from channel_name -> feature_names, indicating which
             features should be selected by default for each channel.
-        
+            Clicking the reset button, will switch to these selected features.
+
         parent
             *QWidget*
         """
@@ -61,8 +67,8 @@ class FeatureSelectionDialog(QDialog):
         boxes_layout = QHBoxLayout()
         for channel_name in channel_names:
             default_checked = []
-            if default_selections and channel_name in default_selections:
-                default_checked = default_selections[channel_name]
+            if initial_selections and channel_name in initial_selections:
+                default_checked = initial_selections[channel_name]
             checklist = _make_checklist(feature_names, default_checked)
             checklist.name = channel_name
             checklist_widget = HierarchicalChecklistView( checklist, parent=self )
@@ -90,7 +96,7 @@ class FeatureSelectionDialog(QDialog):
         resetButton = QPushButton("Reset")
         resetButton.setToolTip("Reset feature selections to default")
 
-        resetButton.setEnabled(default_selections and channel_name in default_selections)
+        resetButton.setEnabled(bool(default_selections) and channel_name in default_selections)
         resetButton.clicked.connect(_reset_models_to_default)
         buttonbox.addButton(resetButton, QDialogButtonBox.ResetRole)
         resetButton.clicked.connect(_reset_models_to_default)
@@ -132,12 +138,12 @@ class FeatureSelectionDialog(QDialog):
         return selections
 
     @classmethod
-    def launch(cls, channel_names, feature_names, default_selections=None):
+    def launch(cls, channel_names, feature_names, initial_selections, default_selections=None):
         from PyQt5.QtWidgets import QApplication
         if QApplication.instance() is None:
             app = QApplication([])
         
-        dlg = FeatureSelectionDialog(channel_names, feature_names, default_selections)
+        dlg = FeatureSelectionDialog(channel_names, feature_names, initial_selections, default_selections)
         dlg.show()
         dlg.raise_()
         dlg.exec_()
@@ -206,20 +212,23 @@ if __name__ == "__main__":
     import signal
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
+    from PyQt5.QtWidgets import QApplication
+    app = QApplication([])
     #channel_names = ['Grayscale', 'Membranes', 'Cytoplasm', 'Mitochondria']
     channel_names = ['Grayscale', 'Membranes']
     feature_names = ['standard_edge_mean', 'standard_edge_maximum', 'standard_edge_count',
                      'standard_sp_mean', 'standard_sp_maximum', 'standard_sp_count',
                      'standard_edge_quantiles', 'standard_edge_quantiles_10', 'standard_edge_quantiles_90']
 
-    default_selections = { 'Grayscale': ['standard_sp_mean', 'standard_sp_count'],
+    initial_selections = { 'Grayscale': ['standard_sp_mean', 'standard_sp_count'],
                            'Membranes': ['standard_edge_quantiles'] }
 
-    selections = FeatureSelectionDialog.launch(channel_names, feature_names, default_selections)
+    default_selections = { 'Grayscale': ['standard_edge'],
+                           'Membranes': ['standard_edge_quantiles_10', 'standard_edge_quantiles_90'] }
+
+    selections = FeatureSelectionDialog.launch(channel_names, feature_names, initial_selections, default_selections)
     print(selections)
 
-#     from PyQt5.QtWidgets import QApplication
-#     app = QApplication([])
 # 
 # 
 #     dlg = FeatureSelectionDialog(

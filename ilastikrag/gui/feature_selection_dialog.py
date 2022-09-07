@@ -2,7 +2,7 @@ from collections import OrderedDict
 from itertools import groupby
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QDialogButtonBox, QSizePolicy
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QDialogButtonBox, QSizePolicy, QPushButton
 
 from .util import HierarchicalChecklistView, Checklist
 
@@ -73,6 +73,27 @@ class FeatureSelectionDialog(QDialog):
         buttonbox.setStandardButtons( QDialogButtonBox.Ok | QDialogButtonBox.Cancel )
         buttonbox.accepted.connect( self.accept )
         buttonbox.rejected.connect( self.reject )
+
+        resetButton = QPushButton("Reset")
+
+        def _reset_models_to_default():
+
+            for channel_name in channel_names:
+                default_checked = []
+                if default_selections and channel_name in default_selections:
+                    default_checked = default_selections[channel_name]
+
+                checklist = _make_checklist(feature_names, default_checked)
+                checklist.name = channel_name
+                self.checklist_widgets[channel_name].setModel(checklist)
+
+        resetButton = QPushButton("Reset")
+        resetButton.setToolTip("Reset feature selections to default")
+
+        resetButton.setEnabled(default_selections and channel_name in default_selections)
+        resetButton.clicked.connect(_reset_models_to_default)
+        buttonbox.addButton(resetButton, QDialogButtonBox.ResetRole)
+        resetButton.clicked.connect(_reset_models_to_default)
 
         widget_layout = QVBoxLayout()
 

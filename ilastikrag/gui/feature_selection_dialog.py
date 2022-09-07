@@ -2,7 +2,7 @@ from collections import OrderedDict
 from itertools import groupby
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QDialogButtonBox, QSizePolicy, QPushButton
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QDialogButtonBox, QSizePolicy, QPushButton, QApplication
 
 from .util import HierarchicalChecklistView, Checklist
 
@@ -100,7 +100,6 @@ class FeatureSelectionDialog(QDialog):
         resetButton.clicked.connect(_reset_models_to_default)
         buttonbox.addButton(resetButton, QDialogButtonBox.ResetRole)
         resetButton.clicked.connect(_reset_models_to_default)
-
         widget_layout = QVBoxLayout()
 
         # FIXME: Would like to hold the TreeWidgets in a QScrollArea,
@@ -119,6 +118,9 @@ class FeatureSelectionDialog(QDialog):
         self.setMinimumHeight(min(800, desktopsize.height()))
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        # for easy access in testing
+        self._resetButton = resetButton
 
     def selections(self):
         """

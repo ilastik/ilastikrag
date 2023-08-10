@@ -542,7 +542,7 @@ class Rag(object):
             results[dense_axes] = edge_df
 
             # Typecheck the columns to help new accumulator authors spot problems in their code.
-            dtypes = { colname: series.dtype for colname, series in edge_df.iteritems() }
+            dtypes = { colname: series.dtype for colname, series in edge_df.items() }
             assert all(dtype != np.float64 for dtype in dtypes.values()), \
                 "An accumulator returned float64 features. That's a waste of ram.\n"\
                 "dtypes were: {}".format(dtypes)
@@ -564,7 +564,7 @@ class Rag(object):
             results['z'] = edge_df
             
             # Typecheck the columns to help new accumulator authors spot problems in their code.
-            dtypes = { colname: series.dtype for colname, series in edge_df.iteritems() }
+            dtypes = { colname: series.dtype for colname, series in edge_df.items() }
             assert all(dtype != np.float64 for dtype in dtypes.values()), \
                 "An accumulator returned float64 features. That's a waste of ram.\n"\
                 "dtypes were: {}".format(dtypes)

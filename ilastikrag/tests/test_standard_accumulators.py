@@ -22,7 +22,7 @@ class TestStandardAccumulators(object):
         assert len(features_df) == len(rag.edge_ids)
         assert (features_df.columns.values == ['sp1', 'sp2', 'standard_sp_count_sum', 'standard_sp_count_difference']).all()
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
-        dtypes = { colname: series.dtype for colname, series in features_df.iteritems() }
+        dtypes = { colname: series.dtype for colname, series in features_df.items() }
         assert all(dtype != np.float64 for dtype in dtypes.values()), \
             "An accumulator returned float64 features. That's a waste of ram.\n"\
             "dtypes were: {}".format(dtypes)
@@ -91,7 +91,7 @@ class TestStandardAccumulators(object):
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
 
         # Check dtypes (pandas makes it too easy to get this wrong).
-        dtypes = { colname: series.dtype for colname, series in features_df.iteritems() }
+        dtypes = { colname: series.dtype for colname, series in features_df.items() }
         assert all(dtype != np.float64 for dtype in dtypes.values()), \
             "An accumulator returned float64 features. That's a waste of ram.\n"\
             "dtypes were: {}".format(dtypes)
@@ -164,7 +164,7 @@ class TestStandardAccumulators(object):
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
 
         # Check dtypes (pandas makes it too easy to get this wrong).
-        dtypes = { colname: series.dtype for colname, series in features_df.iteritems() }
+        dtypes = { colname: series.dtype for colname, series in features_df.items() }
         assert all(dtype != np.float64 for dtype in dtypes.values()), \
             "An accumulator returned float64 features. That's a waste of ram.\n"\
             "dtypes were: {}".format(dtypes)
@@ -217,7 +217,7 @@ class TestStandardAccumulators(object):
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
 
         # Check dtypes (pandas makes it too easy to get this wrong).
-        dtypes = { colname: series.dtype for colname, series in features_df.iteritems() }
+        dtypes = { colname: series.dtype for colname, series in features_df.items() }
         assert all(dtype != np.float64 for dtype in list(dtypes.values())), \
             "An accumulator returned float64 features. That's a waste of ram.\n"\
             "dtypes were: {}".format(dtypes)
@@ -261,7 +261,7 @@ class TestStandardAccumulators(object):
         assert (features_df[['sp1', 'sp2']].values == rag.edge_ids).all()
 
         # Check dtypes (pandas makes it too easy to get this wrong).
-        dtypes = { colname: series.dtype for colname, series in features_df.iteritems() }
+        dtypes = { colname: series.dtype for colname, series in features_df.items() }
         assert all(dtype != np.float64 for dtype in list(dtypes.values())), \
             "An accumulator returned float64 features. That's a waste of ram.\n"\
             "dtypes were: {}".format(dtypes)

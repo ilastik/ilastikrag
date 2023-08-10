@@ -27,7 +27,7 @@ requirements:
     # for multidimensional indexing;
     - numpy >=1.12,<1.23
     - h5py
-    - pandas >=0.25
+    - pandas >=1.0
     - vigra >=1.11
     - networkx >=1.11
 

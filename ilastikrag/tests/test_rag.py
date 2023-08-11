@@ -58,10 +58,10 @@ class TestRag(object):
 
         dense_edge_tables = rag.dense_edge_tables
         assert len(dense_edge_tables["x"]) == 0
-        assert isinstance(dense_edge_tables["x"].index, pd.Int64Index)
+        assert dense_edge_tables["x"].index.dtype == np.int64
 
         assert len(dense_edge_tables["y"]) == 6
-        assert isinstance(dense_edge_tables["y"].index, pd.Int64Index)
+        assert dense_edge_tables["y"].index.dtype == np.int64
 
         for column in dense_edge_tables["y"].columns:
             assert dense_edge_tables["x"][column].dtype == dense_edge_tables["y"][column].dtype

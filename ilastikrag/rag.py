@@ -332,7 +332,7 @@ class Rag(object):
         self._dense_edge_tables = OrderedDict()
         coord_cols = list(self._label_img.axistags.keys())
         column_labels = ['sp1', 'sp2', 'forwardness', 'edge_label'] + coord_cols
-        column_default_dtypes = [np.uint32, np.uint32, np.bool, np.uint32] + [np.uint16 for _ in coord_cols]
+        column_default_dtypes = [np.uint32, np.uint32, bool, np.uint32] + [np.uint16 for _ in coord_cols]
         for axiskey in dense_axes:
             edge_data = edge_datas[axiskey]
             n_edges = len(edge_data.ids)

@@ -1,4 +1,4 @@
-[![Circle CI](https://circleci.com/gh/stuarteberg/ilastikrag.svg?style=svg)](https://circleci.com/gh/stuarteberg/ilastikrag)
+[![test](https://github.com/ilastik/ilastikrag/actions/workflows/test.yaml/badge.svg)](https://github.com/ilastik/ilastikrag/actions/workflows/test.yaml)
 
 ilastikrag
 ==========
@@ -13,7 +13,7 @@ Installation
 ------------
 
 ```bash
-conda install -c stuarteberg ilastikrag
+conda install -c ilastik-forge ilastikrag
 ```
 
 [Documentation]: http://stuarteberg.github.io/ilastikrag

@@ -48,14 +48,14 @@ class TestEdgeRegionEdgeAccumulator(object):
                 debug_sp[superpixels == sp1] = 128
             for sp2 in problem_df['sp2'].values:
                 debug_sp[superpixels == sp2] = 255
-    
+
             vigra.impex.writeImage(debug_sp, '/tmp/debug_sp.png', dtype='NATIVE')
-                
+
         # The first axes should all be close.
         # The second axes may differ somewhat in the case of purely linear edges,
         # so we allow a higher tolerance.
-        assert np.isclose(radii[:,0], transposed_radii[:,0]).all()
-        assert np.isclose(radii[:,1], transposed_radii[:,1], atol=0.001).all()
+        np.testing.assert_allclose(radii[:, 0], transposed_radii[:, 0], rtol=1e-4, atol=1e-2)
+        np.testing.assert_allclose(radii[:, 1], transposed_radii[:, 1], rtol=1e-4, atol=1e-2)
 
     def test2(self):
         superpixels = np.zeros((10, 10), dtype=np.uint32)

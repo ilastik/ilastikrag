@@ -49,6 +49,23 @@ class TestRag(object):
         default_features = itertools.chain(*default_features)
         assert set(rag.supported_features()) == set( default_features )
 
+    def test_superpixel_edges_only_in_y_direction(self):
+        superpixels = np.zeros((5, 6), dtype="uint32")
+        superpixels[0:2, ...] = 1
+        superpixels[2:, ...] = 2
+        superpixels = vigra.taggedView(superpixels, axistags="yx")
+        rag = Rag(superpixels)
+
+        dense_edge_tables = rag.dense_edge_tables
+        assert len(dense_edge_tables["x"]) == 0
+        assert dense_edge_tables["x"].index.dtype == np.int64
+
+        assert len(dense_edge_tables["y"]) == 6
+        assert dense_edge_tables["y"].index.dtype == np.int64
+
+        for column in dense_edge_tables["y"].columns:
+            assert dense_edge_tables["x"][column].dtype == dense_edge_tables["y"][column].dtype
+
     def test_edge_decisions_from_groundtruth(self):
         # 1 2
         # 3 4
@@ -57,13 +74,16 @@ class TestRag(object):
         vol1[ 0:10, 10:20] = 2
         vol1[10:20,  0:10] = 3
         vol1[10:20, 10:20] = 4
-        
-        vol1 = vigra.taggedView(vol1, 'yx')
-        rag = Rag(vol1)
-    
+
         # 2 3
         # 4 5
         vol2 = vol1.copy() + 1
+
+        # circumventing a incompatibility with vigra and numpy>1.19
+        # which was also fixed in newer vigra versions
+        vol1 = vigra.taggedView(vol1, 'yx')
+        vol2 = vigra.taggedView(vol2, 'yx')
+        rag = Rag(vol1)
 
         decisions = rag.edge_decisions_from_groundtruth(vol2)
         assert decisions.all()

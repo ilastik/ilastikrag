@@ -1,0 +1,11 @@
+name: ilastikrag-dev
+channels:
+  - conda-forge
+dependencies:
+  - h5py
+  - networkx
+  - numpy>=1.12,<1.20
+  - pandas
+  - pytest
+  - python>=3.7
+  - vigra

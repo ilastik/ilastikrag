@@ -1,0 +1,32 @@
+name: test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-w-conda-recipe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: install xvfb/deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -yy mesa-utils libgl1-mesa-dev xvfb curl
+      - name: setup conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          auto-activate-base: true
+          activate-environment: ""
+      - name: linux conda build test
+        shell: bash -l {0}
+        run: |
+          conda install -n base -c conda-forge mamba boa -y
+          xvfb-run --server-args="-screen 0 1024x768x24" conda mambabuild --override-channels \
+          -c conda-forge conda-recipe

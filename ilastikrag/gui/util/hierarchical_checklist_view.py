@@ -18,14 +18,7 @@ class HierarchicalChecklistView(QTreeView):
     """
     def __init__(self, checklist, parent=None):
         super(HierarchicalChecklistView, self).__init__(parent)
-        self.setModel( HierarchicalChecklistModel(checklist) )
-        self.setItemDelegate( HierarchicalChecklistViewDelegate(self) )
-        
-        # Open a persistent editor for every item
-        self.open_persistent_editors_for_children(self.model().invisibleRootItem())
-        self.expandAll()
-        
-        self.model().setHorizontalHeaderLabels([self.model()._checklist.name])
+        self.setModel(checklist)
 
     def open_persistent_editors_for_children(self, item):
         model_index = self.model().indexFromItem(item)
@@ -44,6 +37,15 @@ class HierarchicalChecklistView(QTreeView):
         # (E.g. QDialog can accept/reject the dialog when the user presses 'enter' or 'esc'.)
         if  event.type() == QEvent.KeyPress:
             event.ignore()
+
+    def setModel(self, checklist):
+        super().setModel(HierarchicalChecklistModel(checklist))
+        self.setItemDelegate(HierarchicalChecklistViewDelegate(self))
+
+        # Open a persistent editor for every item
+        self.open_persistent_editors_for_children(self.model().invisibleRootItem())
+        self.expandAll()
+        self.model().setHorizontalHeaderLabels([self.model()._checklist.name])
 
 class Checklist(object):
     """

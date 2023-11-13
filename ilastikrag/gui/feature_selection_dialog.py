@@ -2,7 +2,7 @@ from collections import OrderedDict
 from itertools import groupby
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QDialogButtonBox
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QDialogButtonBox, QSizePolicy, QPushButton, QApplication
 
 from .util import HierarchicalChecklistView, Checklist
 
@@ -23,15 +23,15 @@ class FeatureSelectionDialog(QDialog):
                          'standard_sp_mean', 'standard_sp_count',
                          'standard_edge_quantiles', 'standard_edge_quantiles_10', 'standard_edge_quantiles_90']
 
-        default_selections = { 'Grayscale': ['standard_sp_mean', 'standard_sp_count'],
+        initial_selections = { 'Grayscale': ['standard_sp_mean', 'standard_sp_count'],
                                'Membranes': ['standard_edge_quantiles'] }
 
-        dlg = FeatureSelectionDialog(channel_names, feature_names, default_selections)
+        dlg = FeatureSelectionDialog(channel_names, feature_names, initial_selections)
         dlg.exec_()
         if dlg.exec_() == QDialog.Accepted:
             print dlg.selections()
     """
-    def __init__(self, channel_names, feature_names, default_selections=None, parent=None):
+    def __init__(self, channel_names, feature_names, initial_selections=None, default_selections=None, parent=None):
         """
         Parameters
         ----------
@@ -44,15 +44,21 @@ class FeatureSelectionDialog(QDialog):
             Feature names, exactly as expected by :py:meth:`~ilastikrag.rag.Rag.compute_features()`.
             The features will be grouped by category and shown in duplicate checklist widgets for each channel.
         
+        initial_selections
+            *dict, str: list-of-str*
+            Mapping from channel_name -> feature_names, indicating which
+            features should be selected when opening the dialog for each channel.
+        
         default_selections
             *dict, str: list-of-str*
             Mapping from channel_name -> feature_names, indicating which
             features should be selected by default for each channel.
-        
+            Clicking the reset button, will switch to these selected features.
+
         parent
             *QWidget*
         """
-        super(FeatureSelectionDialog, self).__init__(parent)
+        super().__init__(parent)
         
         self.setWindowTitle("Select Edge Features")
         self.tree_widgets = {}
@@ -61,8 +67,8 @@ class FeatureSelectionDialog(QDialog):
         boxes_layout = QHBoxLayout()
         for channel_name in channel_names:
             default_checked = []
-            if default_selections and channel_name in default_selections:
-                default_checked = default_selections[channel_name]
+            if initial_selections and channel_name in initial_selections:
+                default_checked = initial_selections[channel_name]
             checklist = _make_checklist(feature_names, default_checked)
             checklist.name = channel_name
             checklist_widget = HierarchicalChecklistView( checklist, parent=self )
@@ -74,6 +80,26 @@ class FeatureSelectionDialog(QDialog):
         buttonbox.accepted.connect( self.accept )
         buttonbox.rejected.connect( self.reject )
 
+        resetButton = QPushButton("Reset")
+
+        def _reset_models_to_default():
+
+            for channel_name in channel_names:
+                default_checked = []
+                if default_selections and channel_name in default_selections:
+                    default_checked = default_selections[channel_name]
+
+                checklist = _make_checklist(feature_names, default_checked)
+                checklist.name = channel_name
+                self.checklist_widgets[channel_name].setModel(checklist)
+
+        resetButton = QPushButton("Reset")
+        resetButton.setToolTip("Reset feature selections to default")
+
+        resetButton.setEnabled(bool(default_selections) and channel_name in default_selections)
+        resetButton.clicked.connect(_reset_models_to_default)
+        buttonbox.addButton(resetButton, QDialogButtonBox.ResetRole)
+        resetButton.clicked.connect(_reset_models_to_default)
         widget_layout = QVBoxLayout()
 
         # FIXME: Would like to hold the TreeWidgets in a QScrollArea,
@@ -87,9 +113,14 @@ class FeatureSelectionDialog(QDialog):
         widget_layout.addWidget(buttonbox)
         self.setLayout(widget_layout)
 
-        total_spacing = self.width() - (len(channel_names)*checklist_widget.width())
-        total_width = total_spacing + len(channel_names) * ( 20 + checklist_widget.columnWidth(0) )
-        self.resize(total_width, 500)
+        desktopsize = QApplication.desktop().availableGeometry()
+        self.setMaximumSize(desktopsize.size())
+        self.setMinimumHeight(min(800, desktopsize.height()))
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        # for easy access in testing
+        self._resetButton = resetButton
 
     def selections(self):
         """
@@ -109,12 +140,12 @@ class FeatureSelectionDialog(QDialog):
         return selections
 
     @classmethod
-    def launch(cls, channel_names, feature_names, default_selections=None):
+    def launch(cls, channel_names, feature_names, initial_selections, default_selections=None):
         from PyQt5.QtWidgets import QApplication
         if QApplication.instance() is None:
             app = QApplication([])
         
-        dlg = FeatureSelectionDialog(channel_names, feature_names, default_selections)
+        dlg = FeatureSelectionDialog(channel_names, feature_names, initial_selections, default_selections)
         dlg.show()
         dlg.raise_()
         dlg.exec_()
@@ -131,10 +162,7 @@ def _make_checklist(feature_names, default_checked):
         for subgroup_name, subgroup in category_group.items():
             feature_checklist_items = []
             for feature_name in subgroup:
-                # Instead of looking for an exact match, 
-                # we use 'any' here to auto-check all quantiles if the user
-                # just gave e.g. 'standard_sp_quantiles'
-                checkstate = any(feature_name.startswith(checked) for checked in default_checked)
+                checkstate = any(feature_name == checked for checked in default_checked)
                 feature_checklist_items.append( Checklist(feature_name.split('_')[-1], checkstate, None, feature_name) )
             subgroup_checklists.append( Checklist(subgroup_name, Qt.Unchecked, feature_checklist_items, None ) )
         cat_checklists.append( Checklist( category, Qt.Unchecked, subgroup_checklists, None ) )
@@ -183,20 +211,23 @@ if __name__ == "__main__":
     import signal
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
+    from PyQt5.QtWidgets import QApplication
+    app = QApplication([])
     #channel_names = ['Grayscale', 'Membranes', 'Cytoplasm', 'Mitochondria']
     channel_names = ['Grayscale', 'Membranes']
     feature_names = ['standard_edge_mean', 'standard_edge_maximum', 'standard_edge_count',
                      'standard_sp_mean', 'standard_sp_maximum', 'standard_sp_count',
                      'standard_edge_quantiles', 'standard_edge_quantiles_10', 'standard_edge_quantiles_90']
 
-    default_selections = { 'Grayscale': ['standard_sp_mean', 'standard_sp_count'],
+    initial_selections = { 'Grayscale': ['standard_sp_mean', 'standard_sp_count'],
                            'Membranes': ['standard_edge_quantiles'] }
 
-    selections = FeatureSelectionDialog.launch(channel_names, feature_names, default_selections)
+    default_selections = { 'Grayscale': ['standard_edge'],
+                           'Membranes': ['standard_edge_quantiles_10', 'standard_edge_quantiles_90'] }
+
+    selections = FeatureSelectionDialog.launch(channel_names, feature_names, initial_selections, default_selections)
     print(selections)
 
-#     from PyQt5.QtWidgets import QApplication
-#     app = QApplication([])
 # 
 # 
 #     dlg = FeatureSelectionDialog(

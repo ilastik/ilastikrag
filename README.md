@@ -3,6 +3,8 @@
 ilastikrag
 ==========
 
+originally developed by [Stuart Berg](https://github.com/stuarteberg), maintained by the ilastik team.
+
 ND Region Adjacency Graph, with superpixel edge features.
 
 See the online **[Documentation][]** and **[Quickstart Tutorial][]** for details.

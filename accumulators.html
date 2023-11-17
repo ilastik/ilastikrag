@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feature Accumulators &mdash; ilastikrag 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="util" href="util.html" />
+    <link rel="prev" title="Rag" href="rag.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ilastikrag
+          </a>
+              <div class="version">
+                0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="rag.html">Rag</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Feature Accumulators</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#built-in">Built-in</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#base-classes">Base classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reference">Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#standard-accumulators">Standard Accumulators</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ilastikrag.accumulators.standard.StandardEdgeAccumulator"><code class="docutils literal notranslate"><span class="pre">StandardEdgeAccumulator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ilastikrag.accumulators.standard.StandardSpAccumulator"><code class="docutils literal notranslate"><span class="pre">StandardSpAccumulator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ilastikrag.accumulators.standard.StandardFlatEdgeAccumulator"><code class="docutils literal notranslate"><span class="pre">StandardFlatEdgeAccumulator</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#edgeregion-accumulator">EdgeRegion Accumulator</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ilastikrag.accumulators.edgeregion.EdgeRegionEdgeAccumulator"><code class="docutils literal notranslate"><span class="pre">EdgeRegionEdgeAccumulator</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#similarity-flatedge-accumulator">Similarity FlatEdge Accumulator</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ilastikrag.accumulators.similarity.SimilarityFlatEdgeAccumulator"><code class="docutils literal notranslate"><span class="pre">SimilarityFlatEdgeAccumulator</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#base-accumulators">Base Accumulators</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ilastikrag.accumulators.base.BaseEdgeAccumulator"><code class="docutils literal notranslate"><span class="pre">BaseEdgeAccumulator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ilastikrag.accumulators.base.BaseSpAccumulator"><code class="docutils literal notranslate"><span class="pre">BaseSpAccumulator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ilastikrag.accumulators.base.BaseFlatEdgeAccumulator"><code class="docutils literal notranslate"><span class="pre">BaseFlatEdgeAccumulator</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="util.html">util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui.html">Gui Extras</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ilastikrag</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Feature Accumulators</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/accumulators.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="feature-accumulators">
+<span id="accumulators"></span><h1>Feature Accumulators<a class="headerlink" href="#feature-accumulators" title="Link to this heading">¶</a></h1>
+<p>The main work of <a class="reference internal" href="rag.html#ilastikrag.rag.Rag.compute_features" title="ilastikrag.rag.Rag.compute_features"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_features()</span></code></a> is performed by “accumulator” classes.
+There are three types of acccumulators: <code class="docutils literal notranslate"><span class="pre">sp</span></code>, <code class="docutils literal notranslate"><span class="pre">edge</span></code>, and <code class="docutils literal notranslate"><span class="pre">flatedge</span></code>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">sp</span></code> features process the <strong>dense volume</strong> of labels and values.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">edge</span></code> accumulators process tables of <strong>edge pixels</strong> (and corresponding values).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">flatedge</span></code> accumulators process edges between <strong>flat superpixels</strong>.
+<code class="docutils literal notranslate"><span class="pre">flatedge</span></code> accumulators can only be used if your <a class="reference internal" href="rag.html#ilastikrag.rag.Rag" title="ilastikrag.rag.Rag"><code class="xref py py-class docutils literal notranslate"><span class="pre">Rag</span></code></a> is constructed with <code class="docutils literal notranslate"><span class="pre">flat_superpixels=True</span></code>.</p></li>
+</ul>
+<section id="built-in">
+<h2>Built-in<a class="headerlink" href="#built-in" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ilastikrag.accumulators.standard.StandardEdgeAccumulator" title="ilastikrag.accumulators.standard.StandardEdgeAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">StandardEdgeAccumulator</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ilastikrag.accumulators.standard.StandardSpAccumulator" title="ilastikrag.accumulators.standard.StandardSpAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">StandardSpAccumulator</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ilastikrag.accumulators.standard.StandardFlatEdgeAccumulator" title="ilastikrag.accumulators.standard.StandardFlatEdgeAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">StandardFlatEdgeAccumulator</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ilastikrag.accumulators.edgeregion.EdgeRegionEdgeAccumulator" title="ilastikrag.accumulators.edgeregion.EdgeRegionEdgeAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">EdgeRegionEdgeAccumulator</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ilastikrag.accumulators.similarity.SimilarityFlatEdgeAccumulator" title="ilastikrag.accumulators.similarity.SimilarityFlatEdgeAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">SimilarityFlatEdgeAccumulator</span></code></a></p></li>
+</ul>
+</section>
+<section id="base-classes">
+<h2>Base classes<a class="headerlink" href="#base-classes" title="Link to this heading">¶</a></h2>
+<p>You can write your own accumulator classes and pass them in an <code class="docutils literal notranslate"><span class="pre">accumulator_set</span></code>
+to <a class="reference internal" href="rag.html#ilastikrag.rag.Rag.compute_features" title="ilastikrag.rag.Rag.compute_features"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_features()</span></code></a>.
+All accumulators must inherit from one of these two base classes:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ilastikrag.accumulators.base.BaseEdgeAccumulator" title="ilastikrag.accumulators.base.BaseEdgeAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseEdgeAccumulator</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ilastikrag.accumulators.base.BaseSpAccumulator" title="ilastikrag.accumulators.base.BaseSpAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSpAccumulator</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ilastikrag.accumulators.base.BaseFlatEdgeAccumulator" title="ilastikrag.accumulators.base.BaseFlatEdgeAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseFlatEdgeAccumulator</span></code></a></p></li>
+</ul>
+</section>
+<section id="reference">
+<h2>Reference<a class="headerlink" href="#reference" title="Link to this heading">¶</a></h2>
+<section id="standard-accumulators">
+<span id="id1"></span><h3>Standard Accumulators<a class="headerlink" href="#standard-accumulators" title="Link to this heading">¶</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.standard.StandardEdgeAccumulator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ilastikrag.accumulators.standard.</span></span><span class="sig-name descname"><span class="pre">StandardEdgeAccumulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_names</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/standard/standard_edge_accumulator.html#StandardEdgeAccumulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.standard.StandardEdgeAccumulator" title="Link to this definition">¶</a></dt>
+<dd><p>Accumulator for features of the edge pixels (only) between superpixels.
+Uses vigra’s RegionFeatureAccumulator library to compute the features.</p>
+<p>Supported feature names:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>standard_edge_count</p></li>
+<li><p>standard_edge_sum</p></li>
+<li><p>standard_edge_minimum</p></li>
+<li><p>standard_edge_maximum</p></li>
+<li><p>standard_edge_mean</p></li>
+<li><p>standard_edge_variance</p></li>
+<li><p>standard_edge_kurtosis</p></li>
+<li><p>standard_edge_skewness</p></li>
+</ul>
+</div></blockquote>
+<blockquote>
+<div><ul class="simple">
+<li><p>standard_edge_quantiles (short for “all edge quantiles”)</p></li>
+<li><p>standard_edge_quantiles_0</p></li>
+<li><p>standard_edge_quantiles_10</p></li>
+<li><p>standard_edge_quantiles_25</p></li>
+<li><p>standard_edge_quantiles_50</p></li>
+<li><p>standard_edge_quantiles_75</p></li>
+<li><p>standard_edge_quantiles_90</p></li>
+<li><p>standard_edge_quantiles_100</p></li>
+</ul>
+</div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.standard.StandardEdgeAccumulator.ACCUMULATOR_TYPE">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_TYPE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'edge'</span></em><a class="headerlink" href="#ilastikrag.accumulators.standard.StandardEdgeAccumulator.ACCUMULATOR_TYPE" title="Link to this definition">¶</a></dt>
+<dd><p>Accumulator type</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.standard.StandardEdgeAccumulator.ACCUMULATOR_ID">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_ID</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'standard'</span></em><a class="headerlink" href="#ilastikrag.accumulators.standard.StandardEdgeAccumulator.ACCUMULATOR_ID" title="Link to this definition">¶</a></dt>
+<dd><p>An id string for this accumulator.
+Must not contain an underscore (<code class="docutils literal notranslate"><span class="pre">_</span></code>).
+Must not conflict with any other accumulators of the same type (‘edge’).
+All feature names supported by this accumulator must begin with the prefix <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_edge_</span></code></p>
+</dd></dl>
+
+<p><strong>Methods:</strong> See <a class="reference internal" href="#ilastikrag.accumulators.base.BaseEdgeAccumulator" title="ilastikrag.accumulators.base.BaseEdgeAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseEdgeAccumulator</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.standard.StandardSpAccumulator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ilastikrag.accumulators.standard.</span></span><span class="sig-name descname"><span class="pre">StandardSpAccumulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_names</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/standard/standard_sp_accumulator.html#StandardSpAccumulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.standard.StandardSpAccumulator" title="Link to this definition">¶</a></dt>
+<dd><p>Accumulator for features of the superpixels contents.
+Uses vigra’s RegionFeatureAccumulator library to compute the features.</p>
+<p>Supported feature names:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>standard_sp_count</p></li>
+<li><p>standard_sp_sum</p></li>
+<li><p>standard_sp_minimum</p></li>
+<li><p>standard_sp_maximum</p></li>
+<li><p>standard_sp_mean</p></li>
+<li><p>standard_sp_variance</p></li>
+<li><p>standard_sp_kurtosis</p></li>
+<li><p>standard_sp_skewness</p></li>
+</ul>
+</div></blockquote>
+<blockquote>
+<div><ul class="simple">
+<li><p>standard_sp_quantiles (short for “all sp quantiles”)</p></li>
+<li><p>standard_sp_quantiles_0</p></li>
+<li><p>standard_sp_quantiles_10</p></li>
+<li><p>standard_sp_quantiles_25</p></li>
+<li><p>standard_sp_quantiles_50</p></li>
+<li><p>standard_sp_quantiles_75</p></li>
+<li><p>standard_sp_quantiles_90</p></li>
+<li><p>standard_sp_quantiles_100</p></li>
+</ul>
+</div></blockquote>
+<blockquote>
+<div><ul class="simple">
+<li><p>standard_sp_regionradii (all of the below)</p></li>
+<li><p>standard_sp_regionradii_0</p></li>
+<li><p>standard_sp_regionradii_1</p></li>
+<li><p>standard_sp_regionradii_2</p></li>
+</ul>
+</div></blockquote>
+<blockquote>
+<div><ul class="simple">
+<li><p>standard_sp_regionaxes (all of the below)</p></li>
+<li><p>standard_sp_regionaxes_0x</p></li>
+<li><p>standard_sp_regionaxes_0y</p></li>
+<li><p>standard_sp_regionaxes_0z</p></li>
+<li><p>standard_sp_regionaxes_1x</p></li>
+<li><p>standard_sp_regionaxes_1y</p></li>
+<li><p>standard_sp_regionaxes_1z</p></li>
+<li><p>standard_sp_regionaxes_2x</p></li>
+<li><p>standard_sp_regionaxes_2y</p></li>
+<li><p>standard_sp_regionaxes_2z</p></li>
+</ul>
+</div></blockquote>
+<p>All input feature names result in <em>two</em> output columns, for the <code class="docutils literal notranslate"><span class="pre">_sum</span></code> and <code class="docutils literal notranslate"><span class="pre">_difference</span></code>
+between the two superpixels adjacent to the edge.</p>
+<p>As a special case, the output columns for the <code class="docutils literal notranslate"><span class="pre">sp_count</span></code> feature are
+reduced via cube-root (or square-root), as specified in the multicut paper.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.standard.StandardSpAccumulator.ACCUMULATOR_TYPE">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_TYPE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'sp'</span></em><a class="headerlink" href="#ilastikrag.accumulators.standard.StandardSpAccumulator.ACCUMULATOR_TYPE" title="Link to this definition">¶</a></dt>
+<dd><p>Accumulator type</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.standard.StandardSpAccumulator.ACCUMULATOR_ID">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_ID</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'standard'</span></em><a class="headerlink" href="#ilastikrag.accumulators.standard.StandardSpAccumulator.ACCUMULATOR_ID" title="Link to this definition">¶</a></dt>
+<dd><p>An id string for this accumulator.
+Must not contain an underscore (<code class="docutils literal notranslate"><span class="pre">_</span></code>).
+Must not conflict with any other accumulators of the same type (‘sp’).
+All feature names supported by this accumulator must begin with the prefix <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_sp_</span></code></p>
+</dd></dl>
+
+<p><strong>Methods:</strong> See <a class="reference internal" href="#ilastikrag.accumulators.base.BaseSpAccumulator" title="ilastikrag.accumulators.base.BaseSpAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSpAccumulator</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.standard.StandardFlatEdgeAccumulator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ilastikrag.accumulators.standard.</span></span><span class="sig-name descname"><span class="pre">StandardFlatEdgeAccumulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_names</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/standard/standard_flatedge_accumulator.html#StandardFlatEdgeAccumulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.standard.StandardFlatEdgeAccumulator" title="Link to this definition">¶</a></dt>
+<dd><p>Accumulator for basic features of ‘flat edges’,
+i.e. the edges in the Z-direction when <code class="docutils literal notranslate"><span class="pre">Rag.flat_superpixels</span> <span class="pre">==</span> <span class="pre">True</span></code>.</p>
+<p>Supported feature names:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>standard_flatedge_count</p></li>
+<li><p>standard_flatedge_sum</p></li>
+<li><p>standard_flatedge_minimum</p></li>
+<li><p>standard_flatedge_maximum</p></li>
+<li><p>standard_flatedge_mean</p></li>
+<li><p>standard_flatedge_variance</p></li>
+<li><p>standard_flatedge_kurtosis</p></li>
+<li><p>standard_flatedge_skewness</p></li>
+</ul>
+</div></blockquote>
+<blockquote>
+<div><ul class="simple">
+<li><p>standard_flatedge_quantiles (short for “all sp quantiles”)</p></li>
+<li><p>standard_flatedge_quantiles_0</p></li>
+<li><p>standard_flatedge_quantiles_10</p></li>
+<li><p>standard_flatedge_quantiles_25</p></li>
+<li><p>standard_flatedge_quantiles_50</p></li>
+<li><p>standard_flatedge_quantiles_75</p></li>
+<li><p>standard_flatedge_quantiles_90</p></li>
+<li><p>standard_flatedge_quantiles_100</p></li>
+</ul>
+</div></blockquote>
+<blockquote>
+<div><ul class="simple">
+<li><p>standard_flatedge_regionradii (both of the below)</p></li>
+<li><p>standard_flatedge_regionradii_0</p></li>
+<li><p>standard_flatedge_regionradii_1</p></li>
+</ul>
+</div></blockquote>
+<blockquote>
+<div><ul class="simple">
+<li><p>standard_flatedge_regionaxes (all of the below)</p></li>
+<li><p>standard_flatedge_regionaxes_0x</p></li>
+<li><p>standard_flatedge_regionaxes_0y</p></li>
+<li><p>standard_flatedge_regionaxes_1x</p></li>
+<li><p>standard_flatedge_regionaxes_1y</p></li>
+</ul>
+</div></blockquote>
+<blockquote>
+<div><ul class="simple">
+<li><p>standard_flatedge_correlation</p></li>
+</ul>
+</div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.standard.StandardFlatEdgeAccumulator.ACCUMULATOR_TYPE">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_TYPE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'flatedge'</span></em><a class="headerlink" href="#ilastikrag.accumulators.standard.StandardFlatEdgeAccumulator.ACCUMULATOR_TYPE" title="Link to this definition">¶</a></dt>
+<dd><p>Accumulator type</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.standard.StandardFlatEdgeAccumulator.ACCUMULATOR_ID">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_ID</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'standard'</span></em><a class="headerlink" href="#ilastikrag.accumulators.standard.StandardFlatEdgeAccumulator.ACCUMULATOR_ID" title="Link to this definition">¶</a></dt>
+<dd><p>An id string for this accumulator.
+Must not contain an underscore (<code class="docutils literal notranslate"><span class="pre">_</span></code>).
+Must not conflict with any other accumulators of the same type (‘sp’).
+All feature names supported by this accumulator must begin with the prefix <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_sp_</span></code></p>
+</dd></dl>
+
+<p><strong>Methods:</strong> See <a class="reference internal" href="#ilastikrag.accumulators.base.BaseFlatEdgeAccumulator" title="ilastikrag.accumulators.base.BaseFlatEdgeAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseFlatEdgeAccumulator</span></code></a></p>
+</dd></dl>
+
+</section>
+<section id="edgeregion-accumulator">
+<span id="id2"></span><h3>EdgeRegion Accumulator<a class="headerlink" href="#edgeregion-accumulator" title="Link to this heading">¶</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.edgeregion.EdgeRegionEdgeAccumulator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ilastikrag.accumulators.edgeregion.</span></span><span class="sig-name descname"><span class="pre">EdgeRegionEdgeAccumulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_names</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/edgeregion/edgeregion_edge_accumulator.html#EdgeRegionEdgeAccumulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.edgeregion.EdgeRegionEdgeAccumulator" title="Link to this definition">¶</a></dt>
+<dd><p>Accumulator for computing region axes and region radii over edge coordinates.
+(The <a class="reference internal" href="#ilastikrag.accumulators.standard.StandardEdgeAccumulator" title="ilastikrag.accumulators.standard.StandardEdgeAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">StandardEdgeAccumulator</span></code></a>
+class does not provide region features.)</p>
+<p>We don’t use vigra’s RegionFeatureAccumulators because we only have
+access to the sparse lists of edge pixels (along each axis).
+Instead, we manually compute the region axes/radii directly from the
+edge coordinate columns.</p>
+<p>Supported feature names:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>edgeregion_edge_area (radii_0 * radii_1)</p></li>
+<li><p>edgeregion_edge_volume (radii_0 * radii_1 * radii_2)</p></li>
+</ul>
+</div></blockquote>
+<blockquote>
+<div><ul class="simple">
+<li><p>edgeregion_edge_regionradii (all of the below)</p></li>
+<li><p>edgeregion_edge_regionradii_0</p></li>
+<li><p>edgeregion_edge_regionradii_1</p></li>
+<li><p>edgeregion_edge_regionradii_2</p></li>
+</ul>
+</div></blockquote>
+<blockquote>
+<div><ul class="simple">
+<li><p>edgeregion_edge_regionaxes (all of the below)</p></li>
+<li><p>edgeregion_edge_regionaxes_0x</p></li>
+<li><p>edgeregion_edge_regionaxes_0y</p></li>
+<li><p>edgeregion_edge_regionaxes_0z</p></li>
+<li><p>edgeregion_edge_regionaxes_1x</p></li>
+<li><p>edgeregion_edge_regionaxes_1y</p></li>
+<li><p>edgeregion_edge_regionaxes_1z</p></li>
+<li><p>edgeregion_edge_regionaxes_2x</p></li>
+<li><p>edgeregion_edge_regionaxes_2y</p></li>
+<li><p>edgeregion_edge_regionaxes_2z</p></li>
+</ul>
+</div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.edgeregion.EdgeRegionEdgeAccumulator.ACCUMULATOR_TYPE">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_TYPE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'edge'</span></em><a class="headerlink" href="#ilastikrag.accumulators.edgeregion.EdgeRegionEdgeAccumulator.ACCUMULATOR_TYPE" title="Link to this definition">¶</a></dt>
+<dd><p>Accumulator type</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.edgeregion.EdgeRegionEdgeAccumulator.ACCUMULATOR_ID">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_ID</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'edgeregion'</span></em><a class="headerlink" href="#ilastikrag.accumulators.edgeregion.EdgeRegionEdgeAccumulator.ACCUMULATOR_ID" title="Link to this definition">¶</a></dt>
+<dd><p>An id string for this accumulator.
+Must not contain an underscore (<code class="docutils literal notranslate"><span class="pre">_</span></code>).
+Must not conflict with any other accumulators of the same type (‘edge’).
+All feature names supported by this accumulator must begin with the prefix <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_edge_</span></code></p>
+</dd></dl>
+
+<p><strong>Methods:</strong> See <a class="reference internal" href="#ilastikrag.accumulators.base.BaseEdgeAccumulator" title="ilastikrag.accumulators.base.BaseEdgeAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseEdgeAccumulator</span></code></a></p>
+</dd></dl>
+
+</section>
+<section id="similarity-flatedge-accumulator">
+<span id="similarity-accumulator"></span><h3>Similarity FlatEdge Accumulator<a class="headerlink" href="#similarity-flatedge-accumulator" title="Link to this heading">¶</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.similarity.SimilarityFlatEdgeAccumulator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ilastikrag.accumulators.similarity.</span></span><span class="sig-name descname"><span class="pre">SimilarityFlatEdgeAccumulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_names</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/similarity/similarity_flatedge_accumulator.html#SimilarityFlatEdgeAccumulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.similarity.SimilarityFlatEdgeAccumulator" title="Link to this definition">¶</a></dt>
+<dd><p>Accumulator for computing various similarity metrics between pixel values adjacent to ‘flat edges’,
+i.e. the edges in the Z-direction when <code class="docutils literal notranslate"><span class="pre">Rag.flat_superpixels</span> <span class="pre">==</span> <span class="pre">True</span></code>.</p>
+<p>Supported feature names:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>similarity_flatedge_correlation</p></li>
+</ul>
+</div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.similarity.SimilarityFlatEdgeAccumulator.ACCUMULATOR_TYPE">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_TYPE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'flatedge'</span></em><a class="headerlink" href="#ilastikrag.accumulators.similarity.SimilarityFlatEdgeAccumulator.ACCUMULATOR_TYPE" title="Link to this definition">¶</a></dt>
+<dd><p>Accumulator type</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.similarity.SimilarityFlatEdgeAccumulator.ACCUMULATOR_ID">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_ID</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'similarity'</span></em><a class="headerlink" href="#ilastikrag.accumulators.similarity.SimilarityFlatEdgeAccumulator.ACCUMULATOR_ID" title="Link to this definition">¶</a></dt>
+<dd><p>An id string for this accumulator.
+Must not contain an underscore (<code class="docutils literal notranslate"><span class="pre">_</span></code>).
+Must not conflict with any other accumulators of the same type (‘sp’).
+All feature names supported by this accumulator must begin with the prefix <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_sp_</span></code></p>
+</dd></dl>
+
+<p><strong>Methods:</strong> See <a class="reference internal" href="#ilastikrag.accumulators.base.BaseFlatEdgeAccumulator" title="ilastikrag.accumulators.base.BaseFlatEdgeAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseFlatEdgeAccumulator</span></code></a></p>
+</dd></dl>
+
+</section>
+<section id="base-accumulators">
+<span id="id3"></span><h3>Base Accumulators<a class="headerlink" href="#base-accumulators" title="Link to this heading">¶</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseEdgeAccumulator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ilastikrag.accumulators.base.</span></span><span class="sig-name descname"><span class="pre">BaseEdgeAccumulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_names</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_edge_accumulator.html#BaseEdgeAccumulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseEdgeAccumulator" title="Link to this definition">¶</a></dt>
+<dd><p>Base class for all edge accumulators,
+i.e. accumulators that compute features from the edge values
+between superpixels (not superpixel contents).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseEdgeAccumulator.ACCUMULATOR_TYPE">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_TYPE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'edge'</span></em><a class="headerlink" href="#ilastikrag.accumulators.base.BaseEdgeAccumulator.ACCUMULATOR_TYPE" title="Link to this definition">¶</a></dt>
+<dd><p>Accumulator type</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseEdgeAccumulator.ACCUMULATOR_ID">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_ID</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#ilastikrag.accumulators.base.BaseEdgeAccumulator.ACCUMULATOR_ID" title="Link to this definition">¶</a></dt>
+<dd><p>An id string for this accumulator.
+Must not contain an underscore (<code class="docutils literal notranslate"><span class="pre">_</span></code>).
+Must not conflict with any other accumulators of the same type (‘edge’).
+All feature names supported by this accumulator must begin with the prefix <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_edge_</span></code></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseEdgeAccumulator.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_names</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_edge_accumulator.html#BaseEdgeAccumulator.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseEdgeAccumulator.__init__" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rag</strong> – The rag.</p></li>
+<li><p><strong>feature_names</strong> – A list of feature names to compute with this accumulator.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseEdgeAccumulator.cleanup">
+<span class="sig-name descname"><span class="pre">cleanup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_edge_accumulator.html#BaseEdgeAccumulator.cleanup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseEdgeAccumulator.cleanup" title="Link to this definition">¶</a></dt>
+<dd><p>Called by the Rag to indicate that processing has completed, and
+the accumulator should discard all cached data and intermediate results.
+Subclasses must reimplement this function.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseEdgeAccumulator.ingest_edges">
+<span class="sig-name descname"><span class="pre">ingest_edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_edge_accumulator.html#BaseEdgeAccumulator.ingest_edges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseEdgeAccumulator.ingest_edges" title="Link to this definition">¶</a></dt>
+<dd><p>Ingests the given edge values using the given Rag.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rag</strong> – <em>Rag</em></p></li>
+<li><p><strong>edge_values</strong> – <em>OrderedDict</em> of 1D <em>ndarray</em>.
+Each ndarray <code class="docutils literal notranslate"><span class="pre">edge_values[k]</span></code> is in the same order as <code class="docutils literal notranslate"><span class="pre">rag.dense_edges[k]</span></code></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseEdgeAccumulator.append_edge_features_to_df">
+<span class="sig-name descname"><span class="pre">append_edge_features_to_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_edge_accumulator.html#BaseEdgeAccumulator.append_edge_features_to_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseEdgeAccumulator.append_edge_features_to_df" title="Link to this definition">¶</a></dt>
+<dd><p>Called by the Rag after <code class="docutils literal notranslate"><span class="pre">ingest_edges()</span></code>.</p>
+<p>Merges the features of all ingested edges into a final set of edge
+feature columns, and appends those columns to the given
+<code class="docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code> object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseEdgeAccumulator.supported_features">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">supported_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_edge_accumulator.html#BaseEdgeAccumulator.supported_features"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseEdgeAccumulator.supported_features" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the list of feature names that can be computed for the given Rag.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseSpAccumulator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ilastikrag.accumulators.base.</span></span><span class="sig-name descname"><span class="pre">BaseSpAccumulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_names</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_sp_accumulator.html#BaseSpAccumulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseSpAccumulator" title="Link to this definition">¶</a></dt>
+<dd><p>Base class for all superpixel accumulators,
+i.e. accumulators that compute features from the
+contents of superpixels (not their edges).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseSpAccumulator.ACCUMULATOR_TYPE">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_TYPE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'sp'</span></em><a class="headerlink" href="#ilastikrag.accumulators.base.BaseSpAccumulator.ACCUMULATOR_TYPE" title="Link to this definition">¶</a></dt>
+<dd><p>Accumulator type</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseSpAccumulator.ACCUMULATOR_ID">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_ID</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#ilastikrag.accumulators.base.BaseSpAccumulator.ACCUMULATOR_ID" title="Link to this definition">¶</a></dt>
+<dd><p>An id string for this accumulator.
+Must not contain an underscore (<code class="docutils literal notranslate"><span class="pre">_</span></code>).
+Must not conflict with any other accumulators of the same type (‘sp’).
+All feature names supported by this accumulator must begin with the prefix <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_sp_</span></code></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseSpAccumulator.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_names</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_sp_accumulator.html#BaseSpAccumulator.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseSpAccumulator.__init__" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rag</strong> – The rag.</p></li>
+<li><p><strong>feature_names</strong> – A list of feature names to compute with this accumulator.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseSpAccumulator.cleanup">
+<span class="sig-name descname"><span class="pre">cleanup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_sp_accumulator.html#BaseSpAccumulator.cleanup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseSpAccumulator.cleanup" title="Link to this definition">¶</a></dt>
+<dd><p>Called by the Rag to indicate that processing has completed, and
+the accumulator should discard all cached data and intermediate results.
+Subclasses must reimplement this function.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseSpAccumulator.ingest_values">
+<span class="sig-name descname"><span class="pre">ingest_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value_img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_sp_accumulator.html#BaseSpAccumulator.ingest_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseSpAccumulator.ingest_values" title="Link to this definition">¶</a></dt>
+<dd><p>Ingest the given (single-channel) pixel values, using the superpixels stored in <code class="docutils literal notranslate"><span class="pre">rag.label_img</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rag</strong> – <em>Rag</em></p></li>
+<li><p><strong>value_img</strong> – <em>VigraArray</em>, same shape as <code class="docutils literal notranslate"><span class="pre">rag.label_img</span></code></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseSpAccumulator.append_edge_features_to_df">
+<span class="sig-name descname"><span class="pre">append_edge_features_to_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_sp_accumulator.html#BaseSpAccumulator.append_edge_features_to_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseSpAccumulator.append_edge_features_to_df" title="Link to this definition">¶</a></dt>
+<dd><p>Called by the Rag after <code class="docutils literal notranslate"><span class="pre">ingest_values()</span></code>.</p>
+<p>Merges the features of ingested data into a final set of edge
+feature columns, and appends those columns to the given
+<code class="docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code> object.</p>
+<p>This involves converting pairs superpixel features into edge features,
+typically by taking the sum and/or difference between the features of
+each superpixel in an adjacent pair.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseSpAccumulator.supported_features">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">supported_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_sp_accumulator.html#BaseSpAccumulator.supported_features"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseSpAccumulator.supported_features" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the list of feature names that can be computed for the given Rag.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseFlatEdgeAccumulator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ilastikrag.accumulators.base.</span></span><span class="sig-name descname"><span class="pre">BaseFlatEdgeAccumulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_names</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_flatedge_accumulator.html#BaseFlatEdgeAccumulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseFlatEdgeAccumulator" title="Link to this definition">¶</a></dt>
+<dd><p>Base class for all flatedge accumulators,
+i.e. accumulators that compute features over the edges
+in the Z direction when <code class="docutils literal notranslate"><span class="pre">Rag.flat_superpixels</span> <span class="pre">==</span> <span class="pre">True</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseFlatEdgeAccumulator.ACCUMULATOR_TYPE">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_TYPE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'flatedge'</span></em><a class="headerlink" href="#ilastikrag.accumulators.base.BaseFlatEdgeAccumulator.ACCUMULATOR_TYPE" title="Link to this definition">¶</a></dt>
+<dd><p>Accumulator type</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseFlatEdgeAccumulator.ACCUMULATOR_ID">
+<span class="sig-name descname"><span class="pre">ACCUMULATOR_ID</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#ilastikrag.accumulators.base.BaseFlatEdgeAccumulator.ACCUMULATOR_ID" title="Link to this definition">¶</a></dt>
+<dd><p>An id string for this accumulator.
+Must not contain an underscore (<code class="docutils literal notranslate"><span class="pre">_</span></code>).
+Must not conflict with any other accumulators of the same type (‘sp’).
+All feature names supported by this accumulator must begin with the prefix <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;_sp_</span></code></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseFlatEdgeAccumulator.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_names</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_flatedge_accumulator.html#BaseFlatEdgeAccumulator.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseFlatEdgeAccumulator.__init__" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rag</strong> – The rag.</p></li>
+<li><p><strong>feature_names</strong> – A list of feature names to compute with this accumulator.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseFlatEdgeAccumulator.cleanup">
+<span class="sig-name descname"><span class="pre">cleanup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_flatedge_accumulator.html#BaseFlatEdgeAccumulator.cleanup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseFlatEdgeAccumulator.cleanup" title="Link to this definition">¶</a></dt>
+<dd><p>Called by the Rag to indicate that processing has completed, and
+the accumulator should discard all cached data and intermediate results.
+Subclasses must reimplement this function.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseFlatEdgeAccumulator.ingest_values">
+<span class="sig-name descname"><span class="pre">ingest_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value_img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_flatedge_accumulator.html#BaseFlatEdgeAccumulator.ingest_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseFlatEdgeAccumulator.ingest_values" title="Link to this definition">¶</a></dt>
+<dd><p>Ingest the given (single-channel) pixel values, using the (flat) superpixels stored in <code class="docutils literal notranslate"><span class="pre">rag.label_img</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rag</strong> – <em>Rag</em></p></li>
+<li><p><strong>value_img</strong> – <em>VigraArray</em>, same shape as <code class="docutils literal notranslate"><span class="pre">rag.label_img</span></code></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseFlatEdgeAccumulator.append_edge_features_to_df">
+<span class="sig-name descname"><span class="pre">append_edge_features_to_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_flatedge_accumulator.html#BaseFlatEdgeAccumulator.append_edge_features_to_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseFlatEdgeAccumulator.append_edge_features_to_df" title="Link to this definition">¶</a></dt>
+<dd><p>Called by the Rag after <code class="docutils literal notranslate"><span class="pre">ingest_values()</span></code>.</p>
+<p>Merges the features of all ingested edges into a final set of edge
+feature columns, and appends those columns to the given
+<code class="docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code> object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ilastikrag.accumulators.base.BaseFlatEdgeAccumulator.supported_features">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">supported_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/accumulators/base/base_flatedge_accumulator.html#BaseFlatEdgeAccumulator.supported_features"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ilastikrag.accumulators.base.BaseFlatEdgeAccumulator.supported_features" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the list of feature names that can be computed for the given Rag.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="rag.html" class="btn btn-neutral float-left" title="Rag" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="util.html" class="btn btn-neutral float-right" title="util" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016, Stuart Berg.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

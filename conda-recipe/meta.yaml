@@ -1,12 +1,8 @@
+{% set setup_py_data = load_setup_py_data(setup_file='../setup.py', from_recipe_dir=True) %}
+
 package:
     name: ilastikrag
-
-  {% if GIT_DESCRIBE_NUMBER|int == 0 %}
-    version: {{GIT_DESCRIBE_TAG}}
-  {% else %}
-    # If we're using a non-tagged revision, append '.postN' to the version
-    version: {{GIT_DESCRIBE_TAG}}.post{{GIT_DESCRIBE_NUMBER}}
-  {% endif %}
+    version: {{ setup_py_data.version }}
 
 source:
   path: ../
@@ -14,7 +10,8 @@ source:
 build:
   noarch: python
   number: 0
-  string: py_{{PKG_BUILDNUM}}_g{{GIT_FULL_HASH[:7]}}
+  script_env:
+    - SETUPTOOLS_SCM_PRETEND_VERSION={{ setup_py_data.version }}
   script: python -m pip install --no-deps --ignore-installed .
 
 requirements:

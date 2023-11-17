@@ -13,3 +13,5 @@ ilastikrag.egg-info
 *.jpg
 *.swp
 *.ipynb_checkpoints
+
+ilastikrag/_version.py

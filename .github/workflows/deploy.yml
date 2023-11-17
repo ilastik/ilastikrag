@@ -7,7 +7,6 @@ on:
 
 jobs:
   package:
-    strategy:
     runs-on: ubuntu-latest
     env:
       ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}

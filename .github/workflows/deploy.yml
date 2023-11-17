@@ -28,6 +28,5 @@ jobs:
           miniforge-variant: Miniforge3
           use-mamba: true
       - name: linux conda build
-        if: matrix.os == 'ubuntu-latest'
         shell: bash -l {0}
         run: xvfb-run --server-args="-screen 0 1024x768x24" conda mambabuild -c conda-forge conda-recipe

@@ -22,7 +22,7 @@ curr_commit=$(git rev-parse HEAD)
 
 # Read the url of the user's 'origin' remote
 origin_details=$(git remote -v | grep "^origin\s")
-origin_url=$(echo ${origin_details} | python -c "import sys; print sys.stdin.read().split(' ')[1]") 
+origin_url=$(echo ${origin_details} | python -c "import sys; print(sys.stdin.read().split(' ')[1])") 
 
 # Clone a copy into /tmp/
 rm -rf /tmp/ilastikrag-gh-pages
@@ -41,8 +41,6 @@ cp -r "${repo_dir}"/docs/build/html/* .
 # but we don't need jekyll anyway. Disable it.
 touch .nojekyll
 
-# Copy circle.yml so that circle-ci knows not to build this branch.
-cp -r ${repo_dir}/circle.yml .
 
 # Commit everything to gh-pages
 git add .

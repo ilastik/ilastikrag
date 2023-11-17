@@ -18,15 +18,16 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -yy mesa-utils libgl1-mesa-dev xvfb curl
-      - name: setup conda
-        uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
           auto-activate-base: true
-          activate-environment: ""
+          activate-environment: bld-env
+          environment-file: .github/workflows/etc/bld-environment.yml
+          miniforge-variant: Miniforge3
+          use-mamba: true
       - name: linux conda build test
         shell: bash -l {0}
         run: |
-          conda install -n base -c conda-forge mamba boa -y
           xvfb-run --server-args="-screen 0 1024x768x24" conda mambabuild --override-channels \
           -c conda-forge conda-recipe

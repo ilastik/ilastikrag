@@ -3,13 +3,15 @@ channels:
 dependencies:
   - h5py
   - networkx
-  - numpy>=1.12,<1.20
+  - numpy>=1.12,<2
   - pandas
   - pip
   - pytest
+  - pytest-qt
+  - pyqt 5.15
   - python>=3.7
   - setuptools_scm
-  - vigra
+  - vigra=1.11.1=*_1038
   # for building the docs
   - sphinx
   - sphinx_rtd_theme

@@ -8,13 +8,18 @@ on:
 
 jobs:
   test-w-conda-recipe:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: install xvfb/deps
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -yy mesa-utils libgl1-mesa-dev xvfb curl
@@ -27,7 +32,18 @@ jobs:
           miniforge-variant: Miniforge3
           use-mamba: true
       - name: linux conda build test
+        if: matrix.os == 'ubuntu-latest'
         shell: bash -l {0}
         run: |
-          xvfb-run --server-args="-screen 0 1024x768x24" conda mambabuild --override-channels \
+          xvfb-run --server-args="-screen 0 1024x768x24" conda build --override-channels \
           -c conda-forge conda-recipe
+      - name: linux/osx conda build test
+        if: matrix.os == 'macos-latest'
+        shell: bash -l {0}
+        run: |
+          conda build --override-channels -c conda-forge conda-recipe
+      - name: windows conda build test
+        if: matrix.os == 'windows-latest'
+        shell: cmd /C CALL {0}
+        run: |
+          conda build --override-channels -c conda-forge conda-recipe

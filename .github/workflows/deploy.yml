@@ -25,8 +25,8 @@ jobs:
           activate-environment: bld-env
           environment-file: .github/workflows/etc/bld-environment.yml
           condarc-file: .github/workflows/etc/conda-rc-deploy.yml
-          miniforge-variant: Miniforge3
-          use-mamba: true
+          miniforge-variant: latest
+          conda-solver: libmamba
       - name: linux conda build
         shell: bash -l {0}
-        run: xvfb-run --server-args="-screen 0 1024x768x24" conda mambabuild -c conda-forge conda-recipe
+        run: xvfb-run --server-args="-screen 0 1024x768x24" conda build -c conda-forge conda-recipe

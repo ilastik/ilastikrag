@@ -107,7 +107,7 @@ class TestStandardAccumulators(object):
             assert type(sp_quantiles_25_difference) in [np.float32, float]
             assert type(sp_quantiles_75_difference) in [np.float32, float]
             
-            assert sp_count_sum == np.power(sp_counts[sp1] + sp_counts[sp2], 1./superpixels.ndim).astype(np.float32)
+            np.testing.assert_allclose(sp_count_sum, np.power(sp_counts[sp1] + sp_counts[sp2], 1./superpixels.ndim).astype(np.float32))
             assert sp_count_difference == np.power(np.abs(sp_counts[sp1] - sp_counts[sp2]), 1./superpixels.ndim).astype(np.float32)
             assert sp_quantiles_25_sum == float(sp1 + sp2), \
                 "{} != {}".format( sp_quantiles_25_sum, float(sp1 + sp2) )

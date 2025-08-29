@@ -9,7 +9,7 @@ source:
 
 build:
   noarch: python
-  number: 1
+  number: 0
   script_env:
     - SETUPTOOLS_SCM_PRETEND_VERSION={{ setup_py_data.version }}
   script: python -m pip install --no-deps --ignore-installed .
@@ -21,10 +21,10 @@ requirements:
     - setuptools >=40.0
     - setuptools_scm
   run:
-    - python >=3.7
+    - python >=3.9
     # vigra/numpy incompatibility - related to indexing with a non-tuple sequence
     # for multidimensional indexing;
-    - numpy >=2,<3
+    - numpy >=1.26,<3
     - h5py
     - pandas >=1.0
     - vigra >=1.11
@@ -34,7 +34,9 @@ test:
   requires:
     - pytest
     - pytest-qt
-    - pyqt >5.6
+    - qtpy
+    - pyside6
+    - qt6-main
   commands:
     - pytest .
 

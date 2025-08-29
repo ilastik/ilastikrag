@@ -1,14 +1,14 @@
 from collections import OrderedDict
 from itertools import groupby
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QDialogButtonBox, QSizePolicy, QPushButton, QApplication
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QDialogButtonBox, QSizePolicy, QPushButton, QApplication
 
 from .util import HierarchicalChecklistView, Checklist
 
 # FIXME: These imports will be needed if we ever figure out how to manage the sizes properly...
-#from PyQt5.QtCore import QSize
-#from PyQt5.QtWidgets import QSizePolicy, QScrollArea
+#from qtpy.QtCore import QSize
+#from qtpy.QtWidgets import QSizePolicy, QScrollArea
 
 class FeatureSelectionDialog(QDialog):
     """
@@ -141,7 +141,7 @@ class FeatureSelectionDialog(QDialog):
 
     @classmethod
     def launch(cls, channel_names, feature_names, initial_selections, default_selections=None):
-        from PyQt5.QtWidgets import QApplication
+        from qtpy.QtWidgets import QApplication
         if QApplication.instance() is None:
             app = QApplication([])
         
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     import signal
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    from PyQt5.QtWidgets import QApplication
+    from qtpy.QtWidgets import QApplication
     app = QApplication([])
     #channel_names = ['Grayscale', 'Membranes', 'Cytoplasm', 'Mitochondria']
     channel_names = ['Grayscale', 'Membranes']

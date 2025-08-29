@@ -1,5 +1,5 @@
 import pytest
-from PyQt5.QtCore import Qt
+from qtpy.QtCore import Qt
 
 from ilastikrag.gui.feature_selection_dialog import FeatureSelectionDialog
 

@@ -29,8 +29,10 @@ jobs:
           auto-activate-base: true
           activate-environment: bld-env
           environment-file: .github/workflows/etc/bld-environment.yml
-          miniforge-variant: Miniforge3
+          miniforge-version: latest
           use-mamba: true
+          conda-solver: libmamba
+          conda-remove-defaults: "true"
       - name: linux conda build test
         if: matrix.os == 'ubuntu-latest'
         shell: bash -l {0}

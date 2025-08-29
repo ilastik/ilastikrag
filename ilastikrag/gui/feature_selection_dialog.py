@@ -2,7 +2,9 @@ from collections import OrderedDict
 from itertools import groupby
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QDialogButtonBox, QSizePolicy, QPushButton, QApplication
+from qtpy.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QDialogButtonBox, QSizePolicy, QPushButton
+from qtpy.QtGui import QGuiApplication
+
 
 from .util import HierarchicalChecklistView, Checklist
 
@@ -113,7 +115,7 @@ class FeatureSelectionDialog(QDialog):
         widget_layout.addWidget(buttonbox)
         self.setLayout(widget_layout)
 
-        desktopsize = QApplication.desktop().availableGeometry()
+        desktopsize = QGuiApplication.primaryScreen().availableGeometry()
         self.setMaximumSize(desktopsize.size())
         self.setMinimumHeight(min(800, desktopsize.height()))
 

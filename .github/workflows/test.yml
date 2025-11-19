@@ -12,6 +12,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
+        numpy: ["1.26", "2.3"]
+        python: ["3.11", "3.13"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: checkout
@@ -33,19 +35,20 @@ jobs:
           use-mamba: true
           conda-solver: libmamba
           conda-remove-defaults: "true"
-      - name: linux conda build test
+      - name: linux conda build test py${{ matrix.python }} npy${{ matrix.npy }}
         if: matrix.os == 'ubuntu-latest'
         shell: bash -l {0}
         run: |
           xvfb-run --server-args="-screen 0 1024x768x24" conda build --override-channels \
+          --python=${{ matrix.python }} --numpy=${{ matrix.numpy }} \
           -c conda-forge conda-recipe
-      - name: linux/osx conda build test
+      - name: osx conda build test py${{ matrix.python }} npy${{ matrix.npy }}
         if: matrix.os == 'macos-latest'
         shell: bash -l {0}
         run: |
-          conda build --override-channels -c conda-forge conda-recipe
-      - name: windows conda build test
+          conda build --override-channels --python=${{ matrix.python }} --numpy=${{ matrix.numpy }} -c conda-forge conda-recipe
+      - name: windows conda build test py${{ matrix.python }} npy${{ matrix.npy }}
         if: matrix.os == 'windows-latest'
         shell: cmd /C CALL {0}
         run: |
-          conda build --override-channels -c conda-forge conda-recipe
+          conda build --override-channels --python=${{ matrix.python }} --numpy=${{ matrix.numpy }} -c conda-forge conda-recipe

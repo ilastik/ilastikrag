@@ -21,9 +21,7 @@ requirements:
     - setuptools >=40.0
     - setuptools_scm
   run:
-    - python >=3.9
-    # vigra/numpy incompatibility - related to indexing with a non-tuple sequence
-    # for multidimensional indexing;
+    - python >=3.10
     - numpy >=1.26,<3
     - h5py
     - pandas >=1.0
@@ -35,8 +33,7 @@ test:
     - pytest
     - pytest-qt
     - qtpy
-    - pyside6
-    - qt6-main
+    - pyqt >5.11
   commands:
     - pytest .
 
